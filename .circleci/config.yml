@@ -15,22 +15,21 @@ jobs:
             git submodule update --init
 
       # install android ndk
-      - run: sudo apt install make gcc
+      - run: sudo apt install build-essential
       - run: echo pylon-spokestack-android-ndk-${ANDROID_NDK_VERSION} > /tmp/ndk-version
       - restore_cache:
           key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
       - run:
           command: |
             if [ ! -d $ANDROID_NDK_HOME ]; then
-              wget -q -O android-ndk.zip https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
+              wget -q -O /tmp/android-ndk.zip https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
               mkdir /tmp/android-ndk &&
-              unzip -q android-ndk.zip -d /tmp/android-ndk &&
+              unzip -q /tmp/android-ndk.zip -d /tmp/android-ndk &&
               mv /tmp/android-ndk/android-ndk-${ANDROID_NDK_VERSION} $ANDROID_NDK_HOME ;
             fi
       - save_cache:
           key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
           paths:
-            - android-ndk.zip
             - ~/android-ndk
 
       # download dependencies
