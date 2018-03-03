@@ -2,11 +2,18 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/android:api-26-alpha
+      - image: circleci/openjdk:8-jdk-browsers
       - image: bitriseio/android-ndk
     working_directory: ~/repo
     steps:
       - checkout
+      - restore_cache:
+          key: spokestack-android-{{ checksum "pom.xml" }}
+      - run: mvn dependency:go-offline
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: spokestack-android-{{ checksum "pom.xml" }}
       - run: mvn test
 
 workflows:
@@ -14,3 +21,4 @@ workflows:
   build_and_deploy:
     jobs:
       - build:
+
