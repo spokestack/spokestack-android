@@ -164,7 +164,14 @@
                   <goals>
                      <goal>ndk-build</goal>
                   </goals>
-                  </execution>
+               </execution>
+               <execution>
+                  <id>package-native-library</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>ndk-build</goal>
+                  </goals>
+               </execution>
             </executions>
          </plugin>
       </plugins>
