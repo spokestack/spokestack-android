@@ -5,7 +5,7 @@ jobs:
       - image: circleci/openjdk:8-jdk-browsers
     working_directory: ~/repo
     environment:
-      ANDROID_NDK_HOME: /opt/android-ndk
+      ANDROID_NDK_HOME: "~/android-ndk"
       ANDROID_NDK_VERSION: r16b
     steps:
       - checkout
