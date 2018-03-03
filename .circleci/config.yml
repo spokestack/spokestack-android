@@ -10,10 +10,9 @@ jobs:
 
     steps:
       - checkout
-      - run:
-        - wget -q https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
-        - unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
-        - mv ./android-ndk-${ANDROID_NDK_VERSION} ${ANDROID_NDK_HOME}
+      - run: wget -q https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
+      - run: unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
+      - run: mv ./android-ndk-${ANDROID_NDK_VERSION} ${ANDROID_NDK_HOME}
       - restore_cache:
           key: spokestack-android-{{ checksum "pom.xml" }}
       - run: mvn dependency:go-offline
