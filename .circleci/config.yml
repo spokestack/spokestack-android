@@ -11,23 +11,24 @@ jobs:
       - checkout
 
       # install android ndk
+      - run: echo ${ANDROID_NDK_VERSION} > /tmp/ndk-version
       - restore_cache:
-          key: spokestack-android-ndk-{{ checksum "android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip" }}
+          key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
       - run: wget -q -nc https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
-      - run: if [ ! -d ${ANDROID_NDK_HOME} ]; then unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip -d ${ANDROID_NDK_HOME}
+      - run: if [ ! -d ${ANDROID_NDK_HOME} ]; then unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip -d ${ANDROID_NDK_HOME}; fi
       - save_cache:
+          key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
           paths:
             - ${ANDROID_NDK_HOME}
-          key: spokestack-android-ndk-{{ checksum "android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip" }}
 
       # download dependencies
       - restore_cache:
           key: spokestack-android-maven-{{ checksum "pom.xml" }}
       - run: mvn dependency:go-offline
       - save_cache:
+          key: spokestack-android-maven-{{ checksum "pom.xml" }}
           paths:
             - ~/.m2
-          key: spokestack-android-{{ checksum "pom.xml" }}
 
       # build and verify
       - run: mvn -D$COVERALLS_REPO_TOKEN test jacoco:report coveralls:report
