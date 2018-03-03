@@ -16,7 +16,7 @@ jobs:
 
       # install android ndk
       - run: sudo apt install build-essential
-      - run: echo pylon-spokestack-android-ndk-${ANDROID_NDK_VERSION} > /tmp/ndk-version
+      - run: echo android-ndk-${ANDROID_NDK_VERSION}-1 > /tmp/ndk-version
       - restore_cache:
           key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
       - run:
@@ -42,7 +42,7 @@ jobs:
             - ~/.m2
 
       # build and verify
-      - run: mvn -D$COVERALLS_REPO_TOKEN test jacoco:report coveralls:report
+      - run: mvn -DrepoToken=${COVERALLS_REPO_TOKEN} test jacoco:report coveralls:report
       - run: mvn checkstyle:check
 
 workflows:
