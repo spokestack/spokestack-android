@@ -1,7 +1,7 @@
 CC           = gcc
 CFLAGS       = -dynamiclib -Wall -O3 -fpic \
-					-I$(shell /usr/libexec/java_home)/include \
-					-I$(shell /usr/libexec/java_home)/include/$(shell uname)
+					-I$(JAVA_HOME)/include \
+					-I$(JAVA_HOME)/include/$(shell uname)
 OUTDIR=../target
 
 all: $(OUTDIR)/libspokestack.jnilib
