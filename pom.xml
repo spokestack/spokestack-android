@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.pylon</groupId>
    <artifactId>spokestack</artifactId>
-   <version>0.1.4-SNAPSHOT</version>
+   <version>0.1.5-SNAPSHOT</version>
    <packaging>jar</packaging>
    <name>Pylon SpokeStack Library for Android</name>
    <description>Core library of the SpokeStack framework for android</description>
@@ -113,10 +113,6 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
             <version>3.0.0</version>
-            <configuration>
-               <reportOutputDirectory>.</reportOutputDirectory>
-               <destDir>docs</destDir>
-            </configuration>
             <executions>
                <execution>
                   <id>attach-javadocs</id>
@@ -168,7 +164,38 @@
                   <goals>
                      <goal>ndk-build</goal>
                   </goals>
-                  </execution>
+               </execution>
+               <execution>
+                  <id>package-native-library</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>ndk-build</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.6.0</version>
+            <inherited>false</inherited>
+            <executions>
+               <execution>
+                  <id>git submodule update</id>
+                  <phase>initialize</phase>
+                  <configuration>
+                     <executable>git</executable>
+                     <arguments>
+                        <argument>submodule</argument>
+                        <argument>update</argument>
+                        <argument>--init</argument>
+                        <argument>--recursive</argument>
+                     </arguments>
+                  </configuration>
+                  <goals>
+                     <goal>exec</goal>
+                  </goals>
+               </execution>
             </executions>
          </plugin>
       </plugins>

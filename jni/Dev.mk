@@ -1,17 +1,18 @@
-CC           = gcc
-CFLAGS       = -dynamiclib -Wall -O3 -fpic \
-					-I$(shell /usr/libexec/java_home)/include \
-					-I$(shell /usr/libexec/java_home)/include/$(shell uname)
-OUTDIR=../target
+CC     = gcc
+CFLAGS = -shared -Wall -O3 -fpic \
+         -I$(JAVA_HOME)/include \
+         -I$(JAVA_HOME)/include/$(shell uname | tr A-Z a-z)
+OUTDIR = ../target
 
 all: $(OUTDIR)/libspokestack.jnilib
 
 clean:
 	$(RM) $(OUTDIR)/libspokestack.jnilib
+	$(RM) $(OUTDIR)/libspokestack.so
 
 rebuild: clean all
 
-$(OUTDIR)/libspokestack.jnilib: \
+$(OUTDIR)/libspokestack.so: \
 	vad.cpp \
 	libfvad/src/signal_processing/division_operations.c \
 	libfvad/src/signal_processing/energy.c \
@@ -26,7 +27,10 @@ $(OUTDIR)/libspokestack.jnilib: \
 	libfvad/src/vad/vad_sp.c \
 	libfvad/src/fvad.c
 
-%.jnilib:
+%.so:
 	$(CC) $(CFLAGS) -o $@ $^
+
+%.jnilib: %.so
+	cp $^ $@
 
 .PHONY: all clean rebuild
