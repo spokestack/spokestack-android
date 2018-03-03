@@ -15,7 +15,7 @@ jobs:
             git submodule update --init
 
       # install android ndk
-      - run: sudo apt install make
+      - run: sudo apt install make gcc
       - run: echo pylon-spokestack-android-ndk-${ANDROID_NDK_VERSION} > /tmp/ndk-version
       - restore_cache:
           key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
