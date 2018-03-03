@@ -11,11 +11,11 @@ jobs:
       - checkout
 
       # install android ndk
-      - run: echo android-ndk-${ANDROID_NDK_VERSION} > /tmp/ndk-version
+      - run: echo spokestack-android-ndk-${ANDROID_NDK_VERSION} > /tmp/ndk-version
       - restore_cache:
           key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
       - run: wget -q -nc https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
-      - run: if [ ! -d $ANDROID_NDK_HOME ]; then mkdir $ANDROID_NDK_HOME && unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip -d $ANDROID_NDK_HOME; fi
+      - run: if [ ! -d $ANDROID_NDK_HOME ]; then mkdir /tmp/android-ndk && unzip -q android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip -d /tmp/android-ndk && mv /tmp/android-ndk/android-ndk-${ANDROID_NDK_VERSION} $ANDROID_NDK_HOME; fi
       - save_cache:
           key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
           paths:
