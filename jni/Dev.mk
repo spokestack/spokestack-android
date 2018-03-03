@@ -31,6 +31,6 @@ $(OUTDIR)/libspokestack.so: \
 	$(CC) $(CFLAGS) -o $@ $^
 
 %.jnilib: %.so
-	ln -s $^ $@
+	cp $^ $@
 
 .PHONY: all clean rebuild
