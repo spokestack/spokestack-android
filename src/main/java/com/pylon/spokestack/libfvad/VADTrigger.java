@@ -1,8 +1,9 @@
 package com.pylon.spokestack.libfvad;
 
-import java.util.Map;
 import java.nio.ByteBuffer;
 
+import com.pylon.spokestack.SpeechConfig;
+import com.pylon.spokestack.SpeechProcessor;
 import com.pylon.spokestack.SpeechContext;
 
 /**
@@ -56,20 +57,14 @@ import com.pylon.spokestack.SpeechContext;
  * on the speech context during edge transitions.
  * </p>
  */
-public final class VADTrigger {
+public final class VADTrigger implements SpeechProcessor {
+    /** default voice detection mode (high precision). */
+    public static final String DEFAULT_MODE = "very-aggressive";
+
     private static final int MODE_QUALITY = 0;
     private static final int MODE_LOW_BITRATE = 1;
     private static final int MODE_AGGRESSIVE = 2;
     private static final int MODE_VERY_AGGRESSIVE = 3;
-
-    private static final int RATE_8KHZ = 8000;
-    private static final int RATE_16KHZ = 16000;
-    private static final int RATE_32KHZ = 32000;
-    private static final int RATE_48KHZ = 48000;
-
-    private static final int WIDTH_10MS = 10;
-    private static final int WIDTH_20MS = 20;
-    private static final int WIDTH_30MS = 30;
 
     private final long vadHandle;
     private final int riseLength;
@@ -79,30 +74,30 @@ public final class VADTrigger {
 
     /**
      * constructs a new trigger instance.
-     * @param config the pipeline configuration map
+     * @param config the pipeline configuration instance
      */
-    public VADTrigger(Map<String, Object> config) {
+    public VADTrigger(SpeechConfig config) {
         // decode the sample rate
-        int rate = (Integer) config.get("sample-rate");
+        int rate = config.getInteger("sample-rate");
         switch (rate) {
-            case RATE_8KHZ: break;
-            case RATE_16KHZ: break;
-            case RATE_32KHZ: break;
-            case RATE_48KHZ: break;
+            case 8000: break;
+            case 16000: break;
+            case 32000: break;
+            case 48000: break;
             default: throw new IllegalArgumentException("sample-rate");
         }
 
         // validate the frame width
-        int frameWidth = (Integer) config.get("frame-width");
+        int frameWidth = config.getInteger("frame-width");
         switch (frameWidth) {
-            case WIDTH_10MS: break;
-            case WIDTH_20MS: break;
-            case WIDTH_30MS: break;
+            case 10: break;
+            case 20: break;
+            case 30: break;
             default: throw new IllegalArgumentException("frame-width");
         }
 
         // decode the vad mode
-        String modeString = (String) config.get("vad-mode");
+        String modeString = config.getString("vad-mode", DEFAULT_MODE);
         int mode = MODE_VERY_AGGRESSIVE;
         if (modeString == "quality")
             mode = MODE_QUALITY;
@@ -112,16 +107,12 @@ public final class VADTrigger {
             mode = MODE_AGGRESSIVE;
         else if (modeString == "very-aggressive")
             mode = MODE_VERY_AGGRESSIVE;
-        else if (modeString != null)
+        else
             throw new IllegalArgumentException("mode");
 
         // decode the rising/falling edge delay, in ms
-        this.riseLength = config.containsKey("vad-rise-delay")
-            ? (Integer) config.get("vad-rise-delay") / frameWidth
-            : 0;
-        this.fallLength = config.containsKey("vad-fall-delay")
-            ? (Integer) config.get("vad-fall-delay") / frameWidth
-            : 0;
+        this.riseLength = config.getInteger("vad-rise-delay", 0) / frameWidth;
+        this.fallLength = config.getInteger("vad-fall-delay", 0) / frameWidth;
 
         // initialize the vad
         this.vadHandle = create(mode, rate);
@@ -132,10 +123,8 @@ public final class VADTrigger {
     /**
      * destroys the unmanaged VAD instance.
      */
-    @Override
-    protected void finalize() throws Throwable {
-        if (this.vadHandle != 0)
-            destroy(this.vadHandle);
+    public void close() {
+        destroy(this.vadHandle);
     }
 
     /**
