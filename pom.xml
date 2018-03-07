@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.pylon</groupId>
    <artifactId>spokestack</artifactId>
-   <version>0.1.5-SNAPSHOT</version>
+   <version>0.1.6-SNAPSHOT</version>
    <packaging>jar</packaging>
    <name>Pylon SpokeStack Library for Android</name>
    <description>Core library of the SpokeStack framework for android</description>
@@ -25,7 +25,6 @@
       <connection>scm:git:git://github.com/pylon/spokestack-android.git</connection>
       <developerConnection>scm:git:git@github.com:pylon/spokestack-android.git</developerConnection>
       <url>https://github.com/pylon/spokestack-android</url>
-      <tag>spokestack-0.1.1</tag>
    </scm>
    <distributionManagement>
       <snapshotRepository>
@@ -39,6 +38,8 @@
    </distributionManagement>
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <maven.compiler.source>1.7</maven.compiler.source>
+      <maven.compiler.target>1.7</maven.compiler.target>
    </properties>
    <dependencies>
       <dependency>
@@ -57,6 +58,12 @@
          <groupId>org.junit.jupiter</groupId>
          <artifactId>junit-jupiter-api</artifactId>
          <version>5.1.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.mockito</groupId>
+         <artifactId>mockito-core</artifactId>
+         <version>2.15.0</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
