@@ -74,7 +74,7 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
 
         // shutdown
         recognizer.close();
-        verify(client).close();
+        verify(client.getStub()).close();
     }
 
     @Test
