@@ -26,6 +26,9 @@
       <developerConnection>scm:git:git@github.com:pylon/spokestack-android.git</developerConnection>
       <url>https://github.com/pylon/spokestack-android</url>
    </scm>
+   <prerequisites>
+       <maven>3.2.1</maven>
+   </prerequisites>
    <distributionManagement>
       <snapshotRepository>
          <id>ossrh</id>
@@ -46,6 +49,12 @@
          <groupId>com.google.android</groupId>
          <artifactId>android</artifactId>
          <version>4.1.1.4</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.google.cloud</groupId>
+         <artifactId>google-cloud-speech</artifactId>
+         <version>0.38.0-alpha</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
