@@ -25,6 +25,7 @@
       <connection>scm:git:git://github.com/pylon/spokestack-android.git</connection>
       <developerConnection>scm:git:git@github.com:pylon/spokestack-android.git</developerConnection>
       <url>https://github.com/pylon/spokestack-android</url>
+      <tag>HEAD</tag>
    </scm>
    <prerequisites>
        <maven>3.2.1</maven>
