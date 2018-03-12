@@ -14,8 +14,10 @@ jobs:
             git submodule sync &&
             git submodule update --init
 
+      # install dependencies
+      - run: sudo apt install file build-essential maven
+
       # install android ndk
-      - run: sudo apt install file build-essential
       - run: echo android-ndk-${ANDROID_NDK_VERSION}-1 > /tmp/ndk-version
       - restore_cache:
           key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
