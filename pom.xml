@@ -3,14 +3,14 @@
    <groupId>com.pylon</groupId>
    <artifactId>spokestack</artifactId>
    <version>0.1.7-SNAPSHOT</version>
-   <packaging>jar</packaging>
+   <packaging>aar</packaging>
    <name>Pylon SpokeStack Library for Android</name>
    <description>Core library of the SpokeStack framework for android</description>
    <url>https://github.com/pylon/spokestack-android</url>
    <licenses>
       <license>
-         <name>Eclipse Public License - v 1.0</name>
-         <url>https://www.eclipse.org/legal/epl-v10.html</url>
+         <name>Apache License - v 2.0</name>
+         <url>http://www.apache.org/licenses/LICENSE-2.0</url>
       </license>
    </licenses>
    <developers>
@@ -27,9 +27,11 @@
       <url>https://github.com/pylon/spokestack-android</url>
       <tag>HEAD</tag>
    </scm>
+
    <prerequisites>
-       <maven>3.2.1</maven>
+      <maven>3.2.1</maven>
    </prerequisites>
+
    <distributionManagement>
       <snapshotRepository>
          <id>ossrh</id>
@@ -40,24 +42,45 @@
          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
       </repository>
    </distributionManagement>
+
    <properties>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <maven.compiler.source>1.7</maven.compiler.source>
       <maven.compiler.target>1.7</maven.compiler.target>
    </properties>
+
    <dependencies>
+      <!-- android platform -->
       <dependency>
          <groupId>com.google.android</groupId>
          <artifactId>android</artifactId>
          <version>4.1.1.4</version>
          <scope>provided</scope>
       </dependency>
+
+      <!-- google speech api -->
       <dependency>
          <groupId>com.google.cloud</groupId>
          <artifactId>google-cloud-speech</artifactId>
          <version>0.38.0-alpha</version>
          <scope>provided</scope>
       </dependency>
+
+      <!-- microsoft speech api -->
+      <dependency>
+         <groupId>com.squareup.okhttp3</groupId>
+         <artifactId>okhttp</artifactId>
+         <version>3.10.0</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.google.code.gson</groupId>
+         <artifactId>gson</artifactId>
+         <version>2.8.2</version>
+         <scope>provided</scope>
+      </dependency>
+
+      <!-- testing -->
       <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
@@ -77,16 +100,91 @@
          <scope>test</scope>
       </dependency>
    </dependencies>
+
    <build>
       <plugins>
+         <!-- build -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.7.0</version>
+            <configuration>
+               <compilerArgs>
+                  <arg>-Xlint:all</arg>
+                  </compilerArgs>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>com.simpligility.maven.plugins</groupId>
+            <artifactId>android-maven-plugin</artifactId>
+            <version>4.5.0</version>
+            <extensions>true</extensions>
+            <configuration>
+               <sdk>
+                  <platform>26</platform>
+               </sdk>
+            </configuration>
+         </plugin>
+         <plugin>
+            <groupId>com.simpligility.maven.plugins</groupId>
+            <artifactId>android-ndk-maven-plugin</artifactId>
+            <version>1.1.2</version>
+            <executions>
+               <execution>
+                  <id>build-native-library</id>
+                  <phase>compile</phase>
+                  <goals>
+                     <goal>ndk-build</goal>
+                  </goals>
+               </execution>
+               <execution>
+                  <id>package-native-library</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>ndk-build</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+
+         <!-- submodules -->
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>1.6.0</version>
+            <inherited>false</inherited>
+            <executions>
+               <execution>
+                  <id>git submodule update</id>
+                  <phase>initialize</phase>
+                  <configuration>
+                     <executable>git</executable>
+                     <arguments>
+                        <argument>submodule</argument>
+                        <argument>update</argument>
+                        <argument>--init</argument>
+                        <argument>--recursive</argument>
+                     </arguments>
+                  </configuration>
+                  <goals>
+                     <goal>exec</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+
+         <!-- testing -->
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.20.1</version>
             <configuration>
+               <!-- required for testing the native module -->
                <argLine>${argLine} -Djava.library.path=./target</argLine>
             </configuration>
          </plugin>
+
+         <!-- coverage -->
          <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
@@ -105,6 +203,8 @@
             <artifactId>coveralls-maven-plugin</artifactId>
             <version>4.3.0</version>
          </plugin>
+
+         <!-- lint -->
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-checkstyle-plugin</artifactId>
@@ -113,19 +213,8 @@
                <configLocation>src/main/resources/checkstyle.xml</configLocation>
             </configuration>
          </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>3.0.1</version>
-            <executions>
-               <execution>
-                  <id>attach-sources</id>
-                  <goals>
-                     <goal>jar-no-fork</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
+
+         <!-- docs -->
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
@@ -135,6 +224,21 @@
                   <id>attach-javadocs</id>
                   <goals>
                      <goal>jar</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+
+         <!-- deployment -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
+            <executions>
+               <execution>
+                  <id>attach-sources</id>
+                  <goals>
+                     <goal>jar-no-fork</goal>
                   </goals>
                </execution>
             </executions>
@@ -163,57 +267,6 @@
                <nexusUrl>https://oss.sonatype.org/</nexusUrl>
                <autoReleaseAfterClose>true</autoReleaseAfterClose>
             </configuration>
-         </plugin>
-         <plugin>
-           <groupId>com.simpligility.maven.plugins</groupId>
-           <artifactId>android-maven-plugin</artifactId>
-           <version>4.5.0</version>
-           <extensions>true</extensions>
-         </plugin>
-         <plugin>
-            <groupId>com.simpligility.maven.plugins</groupId>
-            <artifactId>android-ndk-maven-plugin</artifactId>
-            <version>1.1.2</version>
-            <executions>
-               <execution>
-                  <id>build-native-library</id>
-                  <phase>compile</phase>
-                  <goals>
-                     <goal>ndk-build</goal>
-                  </goals>
-               </execution>
-               <execution>
-                  <id>package-native-library</id>
-                  <phase>package</phase>
-                  <goals>
-                     <goal>ndk-build</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.6.0</version>
-            <inherited>false</inherited>
-            <executions>
-               <execution>
-                  <id>git submodule update</id>
-                  <phase>initialize</phase>
-                  <configuration>
-                     <executable>git</executable>
-                     <arguments>
-                        <argument>submodule</argument>
-                        <argument>update</argument>
-                        <argument>--init</argument>
-                        <argument>--recursive</argument>
-                     </arguments>
-                  </configuration>
-                  <goals>
-                     <goal>exec</goal>
-                  </goals>
-               </execution>
-            </executions>
          </plugin>
       </plugins>
    </build>

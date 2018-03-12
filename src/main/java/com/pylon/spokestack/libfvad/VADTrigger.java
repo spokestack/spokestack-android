@@ -99,13 +99,13 @@ public final class VADTrigger implements SpeechProcessor {
         // decode the vad mode
         String modeString = config.getString("vad-mode", DEFAULT_MODE);
         int mode = MODE_VERY_AGGRESSIVE;
-        if (modeString == "quality")
+        if (modeString.equals("quality"))
             mode = MODE_QUALITY;
-        else if (modeString == "low-bitrate")
+        else if (modeString.equals("low-bitrate"))
             mode = MODE_LOW_BITRATE;
-        else if (modeString == "aggressive")
+        else if (modeString.equals("aggressive"))
             mode = MODE_AGGRESSIVE;
-        else if (modeString == "very-aggressive")
+        else if (modeString.equals("very-aggressive"))
             mode = MODE_VERY_AGGRESSIVE;
         else
             throw new IllegalArgumentException("mode");

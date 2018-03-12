@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/openjdk:8-jdk-browsers
+      - image: circleci/android:api-26-alpha
     working_directory: ~/repo
     environment:
       ANDROID_NDK_HOME: /home/circleci/android-ndk
