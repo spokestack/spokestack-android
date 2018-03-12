@@ -200,8 +200,6 @@ public class BingSpeechClientTest implements BingSpeechClient.Listener {
         client.beginAudio();
         client.endAudio();
 
-        Thread.sleep(1000);
-
         // valid audio
         client.beginAudio();
         for (int i = 0; i < 200; i++)
