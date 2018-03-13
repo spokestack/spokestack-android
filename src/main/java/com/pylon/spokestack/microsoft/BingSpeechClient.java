@@ -50,7 +50,7 @@ import okhttp3.WebSocketListener;
  * }
  * </pre>
  */
-public final class BingSpeechClient implements AutoCloseable {
+public class BingSpeechClient implements AutoCloseable {
     private static final int MESSAGE_BUFFER_SIZE = 8192;
     private static final String TOKEN_URL =
         "https://api.cognitive.microsoft.com/sts/v1.0/issueToken";
@@ -69,7 +69,7 @@ public final class BingSpeechClient implements AutoCloseable {
     private WebSocket socket;
     private String requestId;
 
-    private BingSpeechClient(Builder builder) throws Exception {
+    BingSpeechClient(Builder builder) throws Exception {
         this.sampleRate = builder.sampleRate;
         this.locale = builder.locale;
         this.listener = builder.listener;
