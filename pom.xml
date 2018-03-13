@@ -197,6 +197,11 @@
                   </goals>
                </execution>
             </executions>
+            <configuration>
+               <excludes>
+                  <exclude>**/com/pylon/spokestack/BuildConfig.*</exclude>
+               </excludes>
+            </configuration>
          </plugin>
          <plugin>
             <groupId>org.eluder.coveralls</groupId>
