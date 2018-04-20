@@ -62,7 +62,7 @@
       <dependency>
          <groupId>com.google.cloud</groupId>
          <artifactId>google-cloud-speech</artifactId>
-         <version>0.38.0-alpha</version>
+         <version>0.44.0-alpha</version>
          <scope>provided</scope>
       </dependency>
 
