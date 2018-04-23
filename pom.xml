@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.pylon</groupId>
    <artifactId>spokestack</artifactId>
-   <version>0.1.8-SNAPSHOT</version>
+   <version>0.1.8</version>
    <packaging>aar</packaging>
    <name>Pylon SpokeStack Library for Android</name>
    <description>Core library of the SpokeStack framework for android</description>
@@ -62,7 +62,7 @@
       <dependency>
          <groupId>com.google.cloud</groupId>
          <artifactId>google-cloud-speech</artifactId>
-         <version>0.38.0-alpha</version>
+         <version>0.44.0-alpha</version>
          <scope>provided</scope>
       </dependency>
 
