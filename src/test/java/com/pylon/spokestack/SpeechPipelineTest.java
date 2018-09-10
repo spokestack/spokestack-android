@@ -51,6 +51,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         config.put("sample-rate", 8000);
         config.put("frame-width", 10);
         config.put("buffer-width", 300);
+        config.put("gain", "automatic");
         try (SpeechPipeline pipeline = new SpeechPipeline.Builder()
                 .setInputClass("com.pylon.spokestack.SpeechPipelineTest$Input")
                 .setConfig(config)
@@ -59,6 +60,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             assertEquals(8000, pipeline.getConfig().getInteger("sample-rate"));
             assertEquals(10, pipeline.getConfig().getInteger("frame-width"));
             assertEquals(300, pipeline.getConfig().getInteger("buffer-width"));
+            assertEquals("automatic", pipeline.getConfig().getString("gain"));
             Input.stop();
         }
 
@@ -82,6 +84,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .setProperty("sample-rate", 16000)
             .setProperty("frame-width", 20)
             .setProperty("buffer-width", 300)
+            .setProperty("gain", "automatic")
             .addOnSpeechEventListener(this)
             .build();
 
