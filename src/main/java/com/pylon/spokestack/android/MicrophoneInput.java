@@ -40,7 +40,7 @@ public final class MicrophoneInput implements SpeechInput {
             AudioFormat.ENCODING_PCM_16BIT
         );
         this.recorder = new AudioRecord(
-            AudioSource.MIC,
+            AudioSource.VOICE_RECOGNITION,
             sampleRate,
             AudioFormat.CHANNEL_IN_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
