@@ -56,8 +56,6 @@ public final class SpeechPipeline implements AutoCloseable {
     public static final int DEFAULT_FRAME_WIDTH = 20;
     /** audio frame buffer width, in ms. */
     public static final int DEFAULT_BUFFER_WIDTH = 20;
-    /** microphone gain type. */
-    public static final String DEFAULT_GAIN = "none";
 
     private final String inputClass;
     private final List<String> stageClasses;
@@ -245,7 +243,6 @@ public final class SpeechPipeline implements AutoCloseable {
             this.config.put("sample-rate", DEFAULT_SAMPLE_RATE);
             this.config.put("frame-width", DEFAULT_FRAME_WIDTH);
             this.config.put("buffer-width", DEFAULT_BUFFER_WIDTH);
-            this.config.put("gain", DEFAULT_GAIN);
         }
 
         /**

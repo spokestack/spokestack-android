@@ -5,7 +5,6 @@ import java.nio.ByteBuffer;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
-import android.media.audiofx.AutomaticGainControl;
 
 import com.pylon.spokestack.SpeechInput;
 import com.pylon.spokestack.SpeechConfig;
@@ -24,10 +23,6 @@ import com.pylon.spokestack.SpeechConfig;
  * <p>
  * This class uses the configured sample rate and always reads single-chanel
  * 16-bit PCM samples.
- * </p>
- *
- * <p>
- * This class uses the configured gain type, either "automatic" or "none".
  * </p>
  */
 public final class MicrophoneInput implements SpeechInput {
@@ -51,10 +46,6 @@ public final class MicrophoneInput implements SpeechInput {
             AudioFormat.ENCODING_PCM_16BIT,
             bufferSize
         );
-        if (config.getString("gain") == "automatic"
-            && AutomaticGainControl.isAvailable()) {
-            AutomaticGainControl.create(this.recorder.getAudioSessionId());
-        }
         this.recorder.startRecording();
     }
 
