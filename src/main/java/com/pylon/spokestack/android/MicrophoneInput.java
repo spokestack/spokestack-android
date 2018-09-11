@@ -9,7 +9,6 @@ import android.media.audiofx.AutomaticGainControl;
 
 import com.pylon.spokestack.SpeechInput;
 import com.pylon.spokestack.SpeechConfig;
-import android.util.Log;
 
 /**
  * android microphone speech input.
