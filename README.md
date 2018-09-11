@@ -7,7 +7,7 @@ speech recognition services, such as the Google Speech API and Bing Speech
 API.
 
 ## Status
-[![Test](http://circleci-badges-max.herokuapp.com/img/pylon/spokestack-android?token=:circle-ci-token)](https://circleci.com/gh/pylon/spokestack-android)
+[![CircleCI](https://circleci.com/gh/pylon/spokestack-android.svg?style=shield)](https://circleci.com/gh/pylon/spokestack-android)
 [![Coverage](https://coveralls.io/repos/github/pylon/spokestack-android/badge.svg)](https://coveralls.io/github/pylon/spokestack-android)
 [![Maven](https://maven-badges.herokuapp.com/maven-central/com.pylon/spokestack/badge.svg)](https://search.maven.org/#search%7Cga%7C1%7Ccom.pylon.spokestack)
 [![Javadocs](https://www.javadoc.io/badge/com.pylon/spokestack.svg)](https://www.javadoc.io/doc/com.pylon/spokestack)
