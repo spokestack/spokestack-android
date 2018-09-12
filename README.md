@@ -77,19 +77,20 @@ mvn checkstyle:check
 ```
 
 ### Release
-Remove the -SNAPSHOT suffix from the version in `pom.xml`, then run the
+On a non-master branch, remove the -SNAPSHOT suffix from the version in `pom.xml`, then run the
 following command. This will deploy the package to Maven Central.
 
 ```bash
 mvn deploy
 ```
 
-Use the Maven release plugin to tag the release and advance the version number.
+Revert your above change using `git checkout .`, then use the Maven release plugin to tag the release and advance the version number.
 
 ```bash
 mvn release:clean release:prepare release:perform
 ```
 
+For additional information about releasing see http://maven.apache.org/maven-release/maven-release-plugin/
 ## License
 
 Copyright 2018 Pylon, Inc.
