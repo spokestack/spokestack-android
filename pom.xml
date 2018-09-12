@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.pylon</groupId>
    <artifactId>spokestack</artifactId>
-   <version>0.1.8</version>
+   <version>0.1.9-SNAPSHOT</version>
    <packaging>aar</packaging>
    <name>Pylon SpokeStack Library for Android</name>
    <description>Core library of the SpokeStack framework for android</description>
@@ -25,7 +25,7 @@
       <connection>scm:git:git://github.com/pylon/spokestack-android.git</connection>
       <developerConnection>scm:git:git@github.com:pylon/spokestack-android.git</developerConnection>
       <url>https://github.com/pylon/spokestack-android</url>
-      <tag>spokestack-0.1.8</tag>
+      <tag>HEAD</tag>
    </scm>
 
    <prerequisites>
