@@ -32,6 +32,13 @@
       <maven>3.2.1</maven>
    </prerequisites>
 
+   <repositories>
+      <repository>
+         <id>jcenter</id>
+         <url>https://jcenter.bintray.com/</url>
+      </repository>
+   </repositories>
+
    <distributionManagement>
       <snapshotRepository>
          <id>ossrh</id>
@@ -80,6 +87,20 @@
          <scope>provided</scope>
       </dependency>
 
+      <!-- fft and tensorflow -->
+      <dependency>
+         <groupId>com.github.wendykierp</groupId>
+         <artifactId>JTransforms</artifactId>
+         <version>3.0</version>
+      </dependency>
+      <dependency>
+         <groupId>org.tensorflow</groupId>
+         <artifactId>tensorflow-lite</artifactId>
+         <version>1.10.0</version>
+         <type>aar</type>
+         <scope>provided</scope>
+      </dependency>
+
       <!-- testing -->
       <dependency>
          <groupId>junit</groupId>
@@ -111,7 +132,7 @@
             <configuration>
                <compilerArgs>
                   <arg>-Xlint:all</arg>
-                  </compilerArgs>
+               </compilerArgs>
             </configuration>
          </plugin>
          <plugin>
@@ -129,6 +150,9 @@
             <groupId>com.simpligility.maven.plugins</groupId>
             <artifactId>android-ndk-maven-plugin</artifactId>
             <version>1.1.2</version>
+            <configuration>
+               <useHeaderArchives>false</useHeaderArchives>
+            </configuration>
             <executions>
                <execution>
                   <id>build-native-library</id>
