@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /**
  * SpokeStack speech pipeline.
@@ -149,7 +150,9 @@ public final class SpeechPipeline implements AutoCloseable {
         // allocate the deque of frame buffers
         LinkedList<ByteBuffer> buffer = new LinkedList<>();
         for (int i = 0; i < frameCount; i++)
-            buffer.addLast(ByteBuffer.allocateDirect(frameSize));
+            buffer.addLast(ByteBuffer
+                .allocateDirect(frameSize)
+                .order(ByteOrder.nativeOrder()));
 
         // attach the buffers to the speech context
         this.context.attachBuffer(buffer);
