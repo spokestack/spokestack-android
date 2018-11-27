@@ -177,7 +177,7 @@ public final class WakewordTrigger implements SpeechProcessor {
     public static final int DEFAULT_WAKE_ACTIVE_MAX = 5000;
 
     // voice activity detection
-    private final VADTrigger vadTrigger;
+    private final SpeechProcessor vadTrigger;
     private final SpeechContext vadContext;
 
     // keyword/phrase configuration and preallocated buffers
@@ -218,8 +218,21 @@ public final class WakewordTrigger implements SpeechProcessor {
      * @param config the pipeline configuration instance
      */
     public WakewordTrigger(SpeechConfig config) {
+        this(config, new TensorflowModel.Loader(), new VADTrigger(config));
+    }
+
+    /**
+     * constructs a new trigger instance, for testing.
+     * @param config the pipeline configuration instance
+     * @param loader tensorflow model loader
+     * @param vad voice activity detector to attach
+     */
+    public WakewordTrigger(
+            SpeechConfig config,
+            TensorflowModel.Loader loader,
+            SpeechProcessor vad) {
         // create and configure the embedded voice detector
-        this.vadTrigger = new VADTrigger(config);
+        this.vadTrigger = vad;
         this.vadContext = new SpeechContext();
 
         // parse the configured list of keywords
@@ -232,7 +245,7 @@ public final class WakewordTrigger implements SpeechProcessor {
 
         // parse the keyword phrase configuration
         String[] wakePhrases = config
-            .getString("wake-phrases", String.join(",", words))
+            .getString("wake-phrases", String.join(",", wakeWords))
             .split(",");
         this.phrases = new int[wakePhrases.length][];
         for (int i = 0; i < wakePhrases.length; i++) {
@@ -307,12 +320,12 @@ public final class WakewordTrigger implements SpeechProcessor {
         this.phraseWindow.fill(0);
 
         // load the tensorflow-lite models
-        this.filterModel = new TensorflowModel.Loader()
+        this.filterModel = loader
             .setPath(config.getString("wake-filter-path"))
             .setInputShape(windowSize / 2 + 1)
             .setOutputShape(this.melWidth)
             .load();
-        this.detectModel = new TensorflowModel.Loader()
+        this.detectModel = loader
             .setPath(config.getString("wake-detect-path"))
             .setInputShape(melLength * this.melWidth)
             .setOutputShape(this.words.length)
@@ -336,8 +349,9 @@ public final class WakewordTrigger implements SpeechProcessor {
 
     /**
      * releases resources associated with the wakeword detector.
+     * @throws Exception on error
      */
-    public void close() {
+    public void close() throws Exception {
         this.vadTrigger.close();
         this.filterModel.close();
         this.detectModel.close();
@@ -347,8 +361,10 @@ public final class WakewordTrigger implements SpeechProcessor {
      * processes a frame of audio.
      * @param context the current speech context
      * @param buffer  the audio frame to detect
+     * @throws Exception on error
      */
-    public void process(SpeechContext context, ByteBuffer buffer) {
+    public void process(SpeechContext context, ByteBuffer buffer)
+            throws Exception {
         // pass all frames through the VAD trigger
         // detect deactivation edges for wakeword deactivation
         boolean vadWasActive = this.vadContext.isActive();
@@ -364,8 +380,7 @@ public final class WakewordTrigger implements SpeechProcessor {
         } else {
             // continue this wakeword (or external) activation
             // until a vad deactivation or timeout
-            this.activeLength++;
-            if (this.activeLength > this.minActive)
+            if (++this.activeLength > this.minActive)
                 if (vadDeactivate || this.activeLength > this.maxActive)
                     deactivate(context);
         }

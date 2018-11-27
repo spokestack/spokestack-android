@@ -141,8 +141,10 @@ public final class SpeechConfig {
      * writes a configuration value.
      * @param key   key to put
      * @param value value to store for the key
+     * @return this
      */
-    public void put(String key, Object value) {
+    public SpeechConfig put(String key, Object value) {
         this.params.put(key, value);
+        return this;
     }
 }

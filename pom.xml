@@ -204,7 +204,8 @@
             <version>2.22.0</version>
             <configuration>
                <!-- required for testing the native module -->
-               <argLine>${argLine} -Djava.library.path=./target</argLine>
+               <argLine>${argLine} -Djava.library.path=./target -XX:-OmitStackTraceInFastThrow</argLine>
+               <trimStackTrace>false</trimStackTrace>
             </configuration>
          </plugin>
 
