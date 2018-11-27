@@ -2,37 +2,14 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/android:api-26-alpha
+      - image: circleci/android:api-26-ndk-r17b
     working_directory: ~/repo
-    environment:
-      ANDROID_NDK_HOME: /home/circleci/android-ndk
-      ANDROID_NDK_VERSION: r16b
     steps:
       - checkout
-      - run:
-          command: |
-            git submodule sync &&
-            git submodule update --init
+      - run: git submodule sync && git submodule update --init
 
       # install dependencies
-      - run: sudo apt install file build-essential maven
-
-      # install android ndk
-      - run: echo android-ndk-${ANDROID_NDK_VERSION}-1 > /tmp/ndk-version
-      - restore_cache:
-          key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
-      - run:
-          command: |
-            if [ ! -d $ANDROID_NDK_HOME ]; then
-              wget -q -O /tmp/android-ndk.zip https://dl.google.com/android/repository/android-ndk-${ANDROID_NDK_VERSION}-linux-x86_64.zip
-              mkdir /tmp/android-ndk &&
-              unzip -q /tmp/android-ndk.zip -d /tmp/android-ndk &&
-              mv /tmp/android-ndk/android-ndk-${ANDROID_NDK_VERSION} $ANDROID_NDK_HOME ;
-            fi
-      - save_cache:
-          key: spokestack-android-ndk-{{ checksum "/tmp/ndk-version" }}
-          paths:
-            - ~/android-ndk
+      - run: sudo apt-get update && sudo apt-get install file build-essential maven
 
       # download dependencies
       - restore_cache:
