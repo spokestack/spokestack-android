@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.pylon</groupId>
    <artifactId>spokestack</artifactId>
-   <version>0.1.9-SNAPSHOT</version>
+   <version>0.2.1-SNAPSHOT</version>
    <packaging>aar</packaging>
    <name>Pylon SpokeStack Library for Android</name>
    <description>Core library of the SpokeStack framework for android</description>
@@ -31,6 +31,13 @@
    <prerequisites>
       <maven>3.2.1</maven>
    </prerequisites>
+
+   <repositories>
+      <repository>
+         <id>jcenter</id>
+         <url>https://jcenter.bintray.com/</url>
+      </repository>
+   </repositories>
 
    <distributionManagement>
       <snapshotRepository>
@@ -80,6 +87,20 @@
          <scope>provided</scope>
       </dependency>
 
+      <!-- fft and tensorflow -->
+      <dependency>
+         <groupId>com.github.wendykierp</groupId>
+         <artifactId>JTransforms</artifactId>
+         <version>3.0</version>
+      </dependency>
+      <dependency>
+         <groupId>org.tensorflow</groupId>
+         <artifactId>tensorflow-lite</artifactId>
+         <version>1.10.0</version>
+         <type>aar</type>
+         <scope>provided</scope>
+      </dependency>
+
       <!-- testing -->
       <dependency>
          <groupId>junit</groupId>
@@ -111,7 +132,7 @@
             <configuration>
                <compilerArgs>
                   <arg>-Xlint:all</arg>
-                  </compilerArgs>
+               </compilerArgs>
             </configuration>
          </plugin>
          <plugin>
@@ -129,6 +150,9 @@
             <groupId>com.simpligility.maven.plugins</groupId>
             <artifactId>android-ndk-maven-plugin</artifactId>
             <version>1.1.2</version>
+            <configuration>
+               <useHeaderArchives>false</useHeaderArchives>
+            </configuration>
             <executions>
                <execution>
                   <id>build-native-library</id>
@@ -179,8 +203,9 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <version>2.22.0</version>
             <configuration>
-               <!-- required for testing the native module -->
-               <argLine>${argLine} -Djava.library.path=./target</argLine>
+               <useSystemClassLoader>false</useSystemClassLoader>
+               <argLine>${argLine} -Djava.library.path=./target -XX:-OmitStackTraceInFastThrow</argLine>
+               <trimStackTrace>false</trimStackTrace>
             </configuration>
          </plugin>
 

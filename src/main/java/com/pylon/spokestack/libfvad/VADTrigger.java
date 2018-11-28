@@ -57,7 +57,7 @@ import com.pylon.spokestack.SpeechContext;
  * on the speech context during edge transitions.
  * </p>
  */
-public final class VADTrigger implements SpeechProcessor {
+public class VADTrigger implements SpeechProcessor {
     /** default voice detection mode (high precision). */
     public static final String DEFAULT_MODE = "very-aggressive";
 
