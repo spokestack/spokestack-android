@@ -1,0 +1,3 @@
+[submodule "jni/filter_audio"]
+	path = jni/filter_audio
+	url = git@github.com:irungentoo/filter_audio
