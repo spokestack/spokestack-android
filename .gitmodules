@@ -1,3 +1,0 @@
-[submodule "jni/libfvad"]
-	path = jni/libfvad
-	url = git@github.com:dpirch/libfvad
