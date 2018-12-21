@@ -7,11 +7,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.pylon.spokestack.SpeechConfig;
 import com.pylon.spokestack.SpeechContext;
-import com.pylon.spokestack.OnSpeechEventListener;
-import com.pylon.spokestack.libfvad.VADTrigger;
+import com.pylon.spokestack.webrtc.VoiceActivityDetector;
 
-public class VADTriggerTest implements OnSpeechEventListener {
-    private SpeechContext.Event event;
+public class VoiceActivityDetectorTest {
 
     @Test
     public void testConstruction() {
@@ -19,64 +17,64 @@ public class VADTriggerTest implements OnSpeechEventListener {
         final SpeechConfig config = new SpeechConfig();
         config.put("sample-rate", 8000);
         config.put("frame-width", 10);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
 
         // invalid mode
         config.put("vad-mode", "invalid");
         assertThrows(IllegalArgumentException.class, new Executable() {
-            public void execute() { new VADTrigger(config); }
+            public void execute() { new VoiceActivityDetector(config); }
         });
 
         // invalid sample rate
         config.put("sample-rate", 44100);
         config.put("frame-width", 20);
         assertThrows(IllegalArgumentException.class, new Executable() {
-            public void execute() { new VADTrigger(config); }
+            public void execute() { new VoiceActivityDetector(config); }
         });
 
         // invalid frame width
         config.put("sample-rate", 8000);
         config.put("frame-width", 25);
         assertThrows(IllegalArgumentException.class, new Executable() {
-            public void execute() { new VADTrigger(config); }
+            public void execute() { new VoiceActivityDetector(config); }
         });
 
         // valid config
         config.put("vad-mode", "quality");
         config.put("sample-rate", 16000);
         config.put("frame-width", 20);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
 
         // valid rates
         config.put("sample-rate", 8000);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("sample-rate", 16000);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("sample-rate", 32000);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("sample-rate", 48000);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
 
         // valid widths
         config.put("frame-width", 10);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("frame-width", 20);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("frame-width", 30);
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
 
         // valid modes
         config.put("vad-mode", "quality");
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("vad-mode", "low-bitrate");
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("vad-mode", "aggressive");
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
         config.put("vad-mode", "very-aggressive");
-        new VADTrigger(config);
+        new VoiceActivityDetector(config);
 
         // close coverage
-        new VADTrigger(config).close();
+        new VoiceActivityDetector(config).close();
     }
 
     @Test
@@ -88,10 +86,8 @@ public class VADTriggerTest implements OnSpeechEventListener {
         config.put("vad-rise-delay", 30);
         config.put("vad-fall-delay", 40);
 
-        final SpeechContext context = new SpeechContext();
-        context.addOnSpeechEventListener(this);
-
-        final VADTrigger vad = new VADTrigger(config);
+        final SpeechContext context = new SpeechContext(config);
+        final VoiceActivityDetector vad = new VoiceActivityDetector(config);
 
         // invalid frame
         assertThrows(IllegalStateException.class, new Executable() {
@@ -99,37 +95,29 @@ public class VADTriggerTest implements OnSpeechEventListener {
                 vad.process(context, ByteBuffer.allocateDirect(1));
             }
         });
-        assertEquals(null, this.event);
 
         // initial silence
         for (int i = 0; i < 10; i++) {
             vad.process(context, silenceFrame(config));
-            assertEquals(null, this.event);
-            assertFalse(context.isActive());
+            assertFalse(context.isSpeech());
         }
 
         // voice transition
-        this.event = null;
         for (int i = 0; i < 2; i++) {
             vad.process(context, voiceFrame(config));
-            assertEquals(null, this.event);
-            assertFalse(context.isActive());
+            assertFalse(context.isSpeech());
         }
         vad.process(context, voiceFrame(config));
-        assertEquals(SpeechContext.Event.ACTIVATE, this.event);
-        assertTrue(context.isActive());
+        assertTrue(context.isSpeech());
 
         // silence transition
-        this.event = null;
         int filterLag = 8;
         for (int i = 0; i < filterLag + 4; i++) {
             vad.process(context, silenceFrame(config));
-            assertEquals(null, this.event);
-            assertTrue(context.isActive());
+            assertTrue(context.isSpeech());
         }
         vad.process(context, silenceFrame(config));
-        assertEquals(SpeechContext.Event.DEACTIVATE, this.event);
-        assertFalse(context.isActive());
+        assertFalse(context.isSpeech());
     }
 
     private ByteBuffer silenceFrame(SpeechConfig config) {
@@ -155,9 +143,5 @@ public class VADTriggerTest implements OnSpeechEventListener {
             / 1000
             * config.getInteger("frame-width");
         return ByteBuffer.allocateDirect(samples * 2);
-    }
-
-    public void onEvent(SpeechContext.Event event, SpeechContext context) {
-        this.event = event;
     }
 }
