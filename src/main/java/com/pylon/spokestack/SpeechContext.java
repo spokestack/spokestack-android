@@ -24,7 +24,9 @@ public final class SpeechContext {
         /** speech was recognized. */
         RECOGNIZE("recognize"),
         /** a speech error occurred. */
-        ERROR("error");
+        ERROR("error"),
+        /** a trace event occurred. */
+        TRACE("trace");
 
         private final String event;
 
@@ -39,12 +41,48 @@ public final class SpeechContext {
         }
     }
 
+    /** trace levels, for simple filtering. */
+    public enum TraceLevel {
+        /** all the traces. */
+        DEBUG(10),
+        /** performance traces. */
+        PERF(20),
+        /** informational traces. */
+        INFO(30),
+        /** no traces. */
+        NONE(100);
+
+        private final int level;
+
+        TraceLevel(int l) {
+            this.level = l;
+        }
+
+        /** @return the trace level value */
+        public int value() {
+            return this.level;
+        }
+    }
+
     private final List<OnSpeechEventListener> listeners = new ArrayList<>();
+    private final int traceLevel;
     private Deque<ByteBuffer> buffer;
+    private boolean speech;
     private boolean active;
     private String transcript = "";
     private double confidence;
     private Throwable error;
+    private String message;
+
+    /**
+     * initializes a new configuration instance.
+     * @param config speech configuration
+    */
+    public SpeechContext(SpeechConfig config) {
+        this.traceLevel = config.getInteger(
+            "trace-level",
+            TraceLevel.NONE.value());
+    }
 
     /** @return speech frame buffer */
     public Deque<ByteBuffer> getBuffer() {
@@ -54,16 +92,35 @@ public final class SpeechContext {
     /**
      * attaches a frame buffer to the context.
      * @param value frame buffer to attach
+     * @return this
      */
-    public void attachBuffer(Deque<ByteBuffer> value) {
+    public SpeechContext attachBuffer(Deque<ByteBuffer> value) {
         this.buffer = value;
+        return this;
     }
 
     /**
      * removes the attached frame buffer.
+     * @return this
      */
-    public void detachBuffer() {
+    public SpeechContext detachBuffer() {
         this.buffer = null;
+        return this;
+    }
+
+    /** @return speech detected indicator */
+    public boolean isSpeech() {
+        return this.speech;
+    }
+
+    /**
+     * sets speech detected indicator.
+     * @param value value to assign
+     * @return this
+     */
+    public SpeechContext setSpeech(boolean value) {
+        this.speech = value;
+        return this;
     }
 
     /** @return speech recognition active indicator */
@@ -74,9 +131,11 @@ public final class SpeechContext {
     /**
      * activates speech recognition.
      * @param value value to assign
+     * @return this
      */
-    public void setActive(boolean value) {
+    public SpeechContext setActive(boolean value) {
         this.active = value;
+        return this;
     }
 
     /** @return the current speech transcript. */
@@ -87,9 +146,11 @@ public final class SpeechContext {
     /**
      * updates the current speech transcript.
      * @param value speech text value to assign
+     * @return this
      */
-    public void setTranscript(String value) {
+    public SpeechContext setTranscript(String value) {
         this.transcript = value;
+        return this;
     }
 
     /** @return the current speech recognition confidence: [0-1) */
@@ -100,9 +161,11 @@ public final class SpeechContext {
     /**
      * updates the current speech confidence level.
      * @param value speech confidence to assign
+     * @return this
      */
-    public void setConfidence(double value) {
+    public SpeechContext setConfidence(double value) {
         this.confidence = value;
+        return this;
     }
 
     /** @return the last error raised on the context */
@@ -113,43 +176,127 @@ public final class SpeechContext {
     /**
      * raises an error with the speech context.
      * @param value the exception to attach
+     * @return this
      */
-    public void setError(Throwable value) {
+    public SpeechContext setError(Throwable value) {
         this.error = value;
+        return this;
+    }
+
+    /**
+     * @return the current trace message
+     */
+    public String getMessage() {
+        return this.message;
     }
 
     /**
      * resets the context to the default state.
+     * @return this
      */
-    public void reset() {
+    public SpeechContext reset() {
+        setSpeech(false);
         setActive(false);
         setTranscript("");
         setConfidence(0);
         setError(null);
+        this.message = null;
+        return this;
+    }
+
+    /**
+     * traces a debug level message.
+     * @param format trace message format string
+     * @param params trace message format parameters
+     * @return this
+     */
+    public SpeechContext traceDebug(String format, Object... params) {
+        return trace(TraceLevel.DEBUG, format, params);
+    }
+
+    /**
+     * traces a performance level message.
+     * @param format trace message format string
+     * @param params trace message format parameters
+     * @return this
+     */
+    public SpeechContext tracePerf(String format, Object... params) {
+        return trace(TraceLevel.PERF, format, params);
+    }
+
+    /**
+     * traces an informational level message.
+     * @param format trace message format string
+     * @param params trace message format parameters
+     * @return this
+     */
+    public SpeechContext traceInfo(String format, Object... params) {
+        return trace(TraceLevel.INFO, format, params);
+    }
+
+    /**
+     * raises a trace event.
+     * @param level tracing level
+     * @param format trace message format string
+     * @param params trace message format parameters
+     * @return this
+     */
+    public SpeechContext trace(
+            TraceLevel level,
+            String format,
+            Object... params) {
+        if (canTrace(level)) {
+            this.message = String.format(format, params);
+            dispatch(Event.TRACE);
+        }
+        return this;
+    }
+
+    /**
+     * indicates whether a message will be traced at a level.
+     * @param level tracing level
+     * @return true if tracing will occur, false otherwise
+     */
+    public boolean canTrace(TraceLevel level) {
+        return level.value() >= this.traceLevel;
     }
 
     /**
      * dispatches a speech event.
      * @param event the event to publish
+     * @return this
      */
-    public void dispatch(Event event) {
-        for (OnSpeechEventListener listener: this.listeners)
-            listener.onEvent(event, this);
+    public SpeechContext dispatch(Event event) {
+        for (OnSpeechEventListener listener: this.listeners) {
+            try {
+                listener.onEvent(event, this);
+            } catch (Exception e) {
+                if (event != Event.TRACE)
+                    traceInfo("dispatch-failed: %s", e.toString());
+            }
+        }
+        return this;
     }
 
     /**
      * attaches a speech listener.
      * @param listener listener callback to attach
+     * @return this
      */
-    public void addOnSpeechEventListener(OnSpeechEventListener listener) {
+    public SpeechContext addOnSpeechEventListener(
+            OnSpeechEventListener listener) {
         this.listeners.add(listener);
+        return this;
     }
 
     /**
      * detaches a speech listener.
      * @param listener listener callback to remove
+     * @return this
      */
-    public void removeOnSpeechEventListener(OnSpeechEventListener listener) {
+    public SpeechContext removeOnSpeechEventListener(
+            OnSpeechEventListener listener) {
         this.listeners.remove(listener);
+        return this;
     }
 }

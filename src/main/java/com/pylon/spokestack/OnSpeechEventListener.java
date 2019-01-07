@@ -11,6 +11,8 @@ public interface OnSpeechEventListener {
      * receives a speech event.
      * @param event   the name of the event that was raised
      * @param context the current speech context
+     * @throws Exception on error
      */
-    void onEvent(SpeechContext.Event event, SpeechContext context);
+    void onEvent(SpeechContext.Event event, SpeechContext context)
+        throws Exception;
 }

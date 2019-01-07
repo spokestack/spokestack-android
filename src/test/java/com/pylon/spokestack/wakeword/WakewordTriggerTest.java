@@ -36,7 +36,7 @@ public class WakewordTriggerTest {
             .put("wake-words", "hello")
             .put("wake-filter-path", "filter-path")
             .put("wake-detect-path", "detect-path");
-        new WakewordTrigger(config, loader, new TestVad());
+        new WakewordTrigger(config, loader);
 
         // valid config
         config
@@ -52,13 +52,13 @@ public class WakewordTriggerTest {
             .put("fft-hop-length", 10)
             .put("mel-frame-length", 400)
             .put("mel-frame-width", 40);
-        new WakewordTrigger(config, loader, new TestVad());
+        new WakewordTrigger(config, loader);
 
         // invalid wake phrases
         config.put("wake-phrases", "goodbye");
         assertThrows(IllegalArgumentException.class, new Executable() {
             public void execute() {
-                new WakewordTrigger(config, loader, new TestVad());
+                new WakewordTrigger(config, loader);
             }
         });
         config.put("wake-phrases", "hello");
@@ -67,7 +67,7 @@ public class WakewordTriggerTest {
         config.put("fft-window-size", 513);
         assertThrows(IllegalArgumentException.class, new Executable() {
             public void execute() {
-                new WakewordTrigger(config, loader, new TestVad());
+                new WakewordTrigger(config, loader);
             }
         });
         config.put("fft-window-size", 512);
@@ -76,13 +76,13 @@ public class WakewordTriggerTest {
         config.put("fft-window-type", "hamming");
         assertThrows(IllegalArgumentException.class, new Executable() {
             public void execute() {
-                new WakewordTrigger(config, loader, new TestVad());
+                new WakewordTrigger(config, loader);
             }
         });
         config.put("fft-window-type", "hann");
 
         // close coverage
-        new WakewordTrigger(config, loader, new TestVad()).close();
+        new WakewordTrigger(config, loader).close();
     }
 
     @Test
@@ -91,13 +91,11 @@ public class WakewordTriggerTest {
         // run and activation doesn't occur when vad is inactive
         TestEnv env = new TestEnv(testConfig());
 
-        env.vad.active = false;
+        env.context.setSpeech(false);
         env.process();
 
-        verify(env.vad).process(any(SpeechContext.class), any(ByteBuffer.class));
         verify(env.filter, never()).run();
         verify(env.detect, never()).run();
-        reset(env.vad);
 
         assertEquals(null, env.event);
         assertFalse(env.context.isActive());
@@ -109,7 +107,7 @@ public class WakewordTriggerTest {
         // but that activation doesn't occur for the null class
         TestEnv env = new TestEnv(testConfig());
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.process();
 
         verify(env.filter, atLeast(1)).run();
@@ -125,10 +123,10 @@ public class WakewordTriggerTest {
         // for the null class
         TestEnv env = new TestEnv(testConfig());
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.process();
 
-        env.vad.active = false;
+        env.context.setSpeech(false);
         env.process();
 
         assertEquals(null, env.event);
@@ -140,7 +138,7 @@ public class WakewordTriggerTest {
         // verify a simple activation - single keyword phrase
         TestEnv env = new TestEnv(testConfig());
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.detect.setOutputs(0, 1);
         env.process();
 
@@ -156,7 +154,7 @@ public class WakewordTriggerTest {
         // verify deactivation on vad timeout after min activation length
         TestEnv env = new TestEnv(testConfig());
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.detect.setOutputs(0, 1);
         env.process();
 
@@ -176,14 +174,14 @@ public class WakewordTriggerTest {
         // verify no deactivation on vad timeout before min activation length
         TestEnv env = new TestEnv(testConfig());
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.detect.setOutputs(0, 1);
         env.process();
 
         env.detect.setOutputs(1, 0);
         env.process();
 
-        env.vad.active = false;
+        env.context.setSpeech(false);
         env.process();
         env.process();
 
@@ -195,7 +193,7 @@ public class WakewordTriggerTest {
         // verify max activation timeout
         TestEnv env = new TestEnv(testConfig());
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.detect.setOutputs(0, 1);
         env.process();
 
@@ -203,7 +201,7 @@ public class WakewordTriggerTest {
         env.process();
         env.process();
 
-        env.vad.active = false;
+        env.context.setSpeech(false);
         env.process();
 
         assertEquals(SpeechContext.Event.DEACTIVATE, env.event);
@@ -216,11 +214,11 @@ public class WakewordTriggerTest {
         TestEnv env = new TestEnv(testConfig());
 
         env.context.setActive(true);
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.process();
         env.process();
 
-        env.vad.active = false;
+        env.context.setSpeech(false);
         env.process();
 
         assertEquals(SpeechContext.Event.DEACTIVATE, env.event);
@@ -261,7 +259,7 @@ public class WakewordTriggerTest {
         TestEnv env = new TestEnv(testConfig()
             .put("wake-words", "up,dog"));
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
 
         env.detect.setOutputs(0, 1, 0);
         env.process();
@@ -289,7 +287,7 @@ public class WakewordTriggerTest {
             .put("wake-phrases", "up dog")
             .put("wake-phrase-length", 30));
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
 
         env.detect.setOutputs(0, 0, 1);
         env.process();
@@ -319,14 +317,14 @@ public class WakewordTriggerTest {
             .put("wake-phrases", "up dog")
             .put("wake-phrase-length", 40));
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.detect.setOutputs(0, 1, 0);
         env.process();
 
-        env.vad.active = false;
+        env.context.setSpeech(false);
         env.process();
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
         env.detect.setOutputs(0, 0, 1);
         env.process();
         env.detect.setOutputs(1, 0, 0);
@@ -343,7 +341,7 @@ public class WakewordTriggerTest {
             .put("wake-phrases", "up dog")
             .put("wake-phrase-length", 30));
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
 
         env.detect.setOutputs(0, 1, 0, 0);
         env.process();
@@ -363,7 +361,7 @@ public class WakewordTriggerTest {
         TestEnv env = new TestEnv(testConfig()
             .put("wake-smooth-length", 20));
 
-        env.vad.active = true;
+        env.context.setSpeech(true);
 
         env.detect.setOutputs(1, 0);
         env.process();
@@ -385,10 +383,28 @@ public class WakewordTriggerTest {
         assertTrue(env.context.isActive());
     }
 
+    @Test
+    public void testTracing() throws Exception {
+        // exercise trace events on activation
+        TestEnv env = new TestEnv(testConfig()
+            .put("trace-level", 0));
+
+        env.context.setSpeech(true);
+        env.detect.setOutputs(0, 1);
+        env.process();
+
+        env.detect.setOutputs(1, 0);
+        env.process();
+
+        assertTrue(env.context.getMessage() != null);
+    }
+
     public SpeechConfig testConfig() {
         return new SpeechConfig()
             .put("sample-rate", 16000)
             .put("frame-width", 10)
+            .put("rms-alpha", 0.1)
+            .put("pre-emphasis", 0.97)
             .put("fft-hop-length", 10)
             .put("fft-window-size", 160)
             .put("mel-frame-length", 40)
@@ -400,17 +416,6 @@ public class WakewordTriggerTest {
             .put("wake-phrase-length", 20)
             .put("wake-active-min", 20)
             .put("wake-active-max", 30);
-    }
-
-    public static class TestVad implements SpeechProcessor {
-        public boolean active;
-
-        public void close() {
-        }
-
-        public void process(SpeechContext context, ByteBuffer buffer) {
-            context.setActive(this.active);
-        }
     }
 
     public static class TestModel extends TensorflowModel {
@@ -435,7 +440,6 @@ public class WakewordTriggerTest {
         public final TestModel filter;
         public final TestModel detect;
         public final ByteBuffer frame;
-        public final TestVad vad;
         public final WakewordTrigger wake;
         public final SpeechContext context;
         public SpeechContext.Event event;
@@ -476,13 +480,12 @@ public class WakewordTriggerTest {
             doCallRealMethod().when(this.detect).run();
             doReturn(this.filter).doReturn(this.detect).when(this.loader).load();
 
-            // create the frame buffer, vad mock, and wakeword trigger
+            // create the frame buffer and wakeword trigger
             this.frame = ByteBuffer.allocateDirect(frameWidth * sampleRate / 1000 * 2);
-            this.vad = spy(TestVad.class);
-            this.wake = new WakewordTrigger(config, this.loader, this.vad);
+            this.wake = new WakewordTrigger(config, this.loader);
 
             // create the speech context for processing calls
-            this.context = new SpeechContext();
+            this.context = new SpeechContext(config);
             context.addOnSpeechEventListener(this);
         }
 

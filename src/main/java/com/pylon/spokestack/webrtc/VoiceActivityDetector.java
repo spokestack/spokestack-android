@@ -1,4 +1,4 @@
-package com.pylon.spokestack.libfvad;
+package com.pylon.spokestack.webrtc;
 
 import java.nio.ByteBuffer;
 
@@ -10,10 +10,10 @@ import com.pylon.spokestack.SpeechContext;
  * Voice Activity Detection (VAD) pipeline component
  *
  * <p>
- * VADTrigger is a speech pipeline component that implements Voice Activity
- * Detection (VAD) using the libfvad native component. The detector processes
- * each frame and sets the speech context to active/inactive based on the
- * results of the VAD algorithm. The libfvad implementation is based on
+ * VoiceActivityDetector is a speech pipeline component that implements Voice
+ * Activity Detection (VAD) using the webrtc native component. The detector
+ * processes each frame and sets the speech context to speech/nonspeech based
+ * on the results of the VAD algorithm. The VAD implementation is based on
  * the webrtc VAD in the Chromium browser. It supports 16-bit PCM samples.
  * </p>
  *
@@ -52,12 +52,10 @@ import com.pylon.spokestack.SpeechContext;
  *
  * <p>
  * The detector uses a simple consecutive value filter to eliminate noisy
- * transitions and allow the recognizer to continue listening during pauses
- * between voiced speech. It raises the "activate" and "deactivate" events
- * on the speech context during edge transitions.
+ * transitions.
  * </p>
  */
-public class VADTrigger implements SpeechProcessor {
+public class VoiceActivityDetector implements SpeechProcessor {
     /** default voice detection mode (high precision). */
     public static final String DEFAULT_MODE = "very-aggressive";
 
@@ -66,6 +64,7 @@ public class VADTrigger implements SpeechProcessor {
     private static final int MODE_AGGRESSIVE = 2;
     private static final int MODE_VERY_AGGRESSIVE = 3;
 
+    private final int rate;
     private final long vadHandle;
     private final int riseLength;
     private final int fallLength;
@@ -76,10 +75,10 @@ public class VADTrigger implements SpeechProcessor {
      * constructs a new trigger instance.
      * @param config the pipeline configuration instance
      */
-    public VADTrigger(SpeechConfig config) {
+    public VoiceActivityDetector(SpeechConfig config) {
         // decode the sample rate
-        int rate = config.getInteger("sample-rate");
-        switch (rate) {
+        this.rate = config.getInteger("sample-rate");
+        switch (this.rate) {
             case 8000: break;
             case 16000: break;
             case 32000: break;
@@ -115,7 +114,7 @@ public class VADTrigger implements SpeechProcessor {
         this.fallLength = config.getInteger("vad-fall-delay", 0) / frameWidth;
 
         // initialize the vad
-        this.vadHandle = create(mode, rate);
+        this.vadHandle = create(mode);
         if (this.vadHandle == 0)
             throw new OutOfMemoryError();
     }
@@ -134,7 +133,11 @@ public class VADTrigger implements SpeechProcessor {
      */
     public void process(SpeechContext context, ByteBuffer frame) {
         // frame detection
-        int result = process(this.vadHandle, frame, frame.capacity());
+        int result = process(
+            this.vadHandle,
+            this.rate,
+            frame,
+            frame.capacity());
         if (result < 0)
             throw new IllegalStateException();
 
@@ -148,14 +151,14 @@ public class VADTrigger implements SpeechProcessor {
         }
 
         // edge triggering
-        if (this.runValue != context.isActive()) {
+        if (this.runValue != context.isSpeech()) {
             if (this.runValue && this.runLength >= this.riseLength) {
-                context.setActive(true);
-                context.dispatch(SpeechContext.Event.ACTIVATE);
+                context.setSpeech(true);
+                context.traceInfo("vad: true");
             }
             if (!this.runValue && this.runLength >= this.fallLength) {
-                context.setActive(false);
-                context.dispatch(SpeechContext.Event.DEACTIVATE);
+                context.setSpeech(false);
+                context.traceInfo("vad: false");
             }
         }
     }
@@ -167,7 +170,7 @@ public class VADTrigger implements SpeechProcessor {
         System.loadLibrary("spokestack");
     }
 
-    native long create(int mode, int rate);
+    native long create(int mode);
     native void destroy(long vad);
-    native int process(long vad, ByteBuffer buffer, int length);
+    native int process(long vad, int fs, ByteBuffer buffer, int length);
 }

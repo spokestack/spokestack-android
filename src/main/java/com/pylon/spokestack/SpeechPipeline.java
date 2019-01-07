@@ -75,7 +75,7 @@ public final class SpeechPipeline implements AutoCloseable {
         this.inputClass = builder.inputClass;
         this.stageClasses = builder.stageClasses;
         this.config = builder.config;
-        this.context = new SpeechContext();
+        this.context = new SpeechContext(this.config);
         this.stages = new ArrayList<>();
 
         for (OnSpeechEventListener l: builder.listeners)
@@ -197,8 +197,10 @@ public final class SpeechPipeline implements AutoCloseable {
             this.input.read(frame);
 
             // dispatch the frame to the stages
-            for (SpeechProcessor stage: this.stages)
+            for (SpeechProcessor stage: this.stages) {
+                frame.rewind();
                 stage.process(this.context, frame);
+            }
         } catch (Exception e) {
             raiseError(e);
         }

@@ -22,9 +22,10 @@ public class BingSpeechRecognizerTest implements OnSpeechEventListener {
         BingSpeechClient client = mock(BingSpeechClient.class);
         doReturn(client).when(builder).build();
 
-        SpeechContext context = createContext();
+        SpeechConfig config = createConfig();
+        SpeechContext context = createContext(config);
         BingSpeechRecognizer recognizer =
-            new BingSpeechRecognizer(createConfig(), builder);
+            new BingSpeechRecognizer(config, builder);
 
         // capture the listener
         ArgumentCaptor<BingSpeechClient.Listener> captor =
@@ -82,9 +83,10 @@ public class BingSpeechRecognizerTest implements OnSpeechEventListener {
         BingSpeechClient client = mock(BingSpeechClient.class);
         doReturn(client).when(builder).build();
 
-        SpeechContext context = createContext();
+        SpeechConfig config = createConfig();
+        SpeechContext context = createContext(config);
         BingSpeechRecognizer recognizer =
-            new BingSpeechRecognizer(createConfig(), builder);
+            new BingSpeechRecognizer(config, builder);
 
         // capture the listener
         ArgumentCaptor<BingSpeechClient.Listener> captor =
@@ -116,8 +118,8 @@ public class BingSpeechRecognizerTest implements OnSpeechEventListener {
         return config;
     }
 
-    private SpeechContext createContext() {
-        SpeechContext context = new SpeechContext();
+    private SpeechContext createContext(SpeechConfig config) {
+        SpeechContext context = new SpeechContext(config);
         context.addOnSpeechEventListener(this);
 
         context.attachBuffer(new LinkedList<ByteBuffer>());

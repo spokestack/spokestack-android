@@ -9,7 +9,6 @@ import org.jtransforms.fft.FloatFFT_1D;
 import com.pylon.spokestack.SpeechConfig;
 import com.pylon.spokestack.SpeechProcessor;
 import com.pylon.spokestack.SpeechContext;
-import com.pylon.spokestack.libfvad.VADTrigger;
 import com.pylon.spokestack.tensorflow.TensorflowModel;
 
 /**
@@ -22,13 +21,6 @@ import com.pylon.spokestack.tensorflow.TensorflowModel;
  * into phrases (up dog). Once a wakeword phrase is detected, the pipeline
  * is activated. The pipeline remains active until the user stops talking
  * or the activation timeout is reached.
- * </p>
- *
- * <p>
- * The wakeword detector uses an internal Voice Activity Detector (VAD) to
- * protect the classifier from non-speech audio and to detect the end of
- * speech for deactivation. The VAD may be configured as desired via pipeline
- * configuration.
  * </p>
  *
  * <p>
@@ -123,7 +115,12 @@ import com.pylon.spokestack.tensorflow.TensorflowModel;
  *   </li>
  *   <li>
  *      <b>rms-alpha</b> (double): the Exponentially-Weighted Moving Average
- *      (EWMA) update rate for the current RMS signal energy
+ *      (EWMA) update rate for the current RMS signal energy (0 for no
+ *      RMS normalization)
+ *   </li>
+ *   <li>
+ *      <b>pre-emphasis</b> (double): the pre-emphasis filter weight to apply
+ *      to the normalized audio signal (0 for no pre-emphasis)
  *   </li>
  *   <li>
  *      <b>fft-window-size</b> (integer): the size of the signal window used
@@ -158,7 +155,9 @@ public final class WakewordTrigger implements SpeechProcessor {
     /** default rms-target configuration value. */
     public static final float DEFAULT_RMS_TARGET = 0.08f;
     /** default rms-alpha configuration value. */
-    public static final float DEFAULT_RMS_ALPHA = 0.1f;
+    public static final float DEFAULT_RMS_ALPHA = 0.0f;
+    /** default pre-emphasis configuration value. */
+    public static final float DEFAULT_PRE_EMPHASIS = 0.0f;
     /** default fft-window-size configuration value. */
     public static final int DEFAULT_FFT_WINDOW_SIZE = 512;
     /** default fft-hop-length configuration value. */
@@ -177,19 +176,21 @@ public final class WakewordTrigger implements SpeechProcessor {
     public static final int DEFAULT_WAKE_ACTIVE_MAX = 5000;
 
     // voice activity detection
-    private final SpeechProcessor vadTrigger;
-    private final SpeechContext vadContext;
+    private boolean isSpeech;
 
     // keyword/phrase configuration and preallocated buffers
     private final String[] words;
     private final int[][] phrases;
     private final float[] phraseSum;
     private final int[] phraseArg;
+    private final float[] phraseMax;
 
-    // audio signal normalization
+    // audio signal normalization and pre-emphasis
     private final float rmsTarget;
     private final float rmsAlpha;
+    private final float preEmphasis;
     private float rmsValue;
+    private float prevSample;
 
     // stft/mel filterbank configuration
     private final FloatFFT_1D fft;
@@ -218,23 +219,17 @@ public final class WakewordTrigger implements SpeechProcessor {
      * @param config the pipeline configuration instance
      */
     public WakewordTrigger(SpeechConfig config) {
-        this(config, new TensorflowModel.Loader(), new VADTrigger(config));
+        this(config, new TensorflowModel.Loader());
     }
 
     /**
      * constructs a new trigger instance, for testing.
      * @param config the pipeline configuration instance
      * @param loader tensorflow model loader
-     * @param vad voice activity detector to attach
      */
     public WakewordTrigger(
             SpeechConfig config,
-            TensorflowModel.Loader loader,
-            SpeechProcessor vad) {
-        // create and configure the embedded voice detector
-        this.vadTrigger = vad;
-        this.vadContext = new SpeechContext();
-
+            TensorflowModel.Loader loader) {
         // parse the configured list of keywords
         // allocate an additional slot for the non-keyword class at 0
         List<String> wakeWords = Arrays
@@ -270,6 +265,8 @@ public final class WakewordTrigger implements SpeechProcessor {
             .getDouble("rms-target", (double) DEFAULT_RMS_TARGET);
         this.rmsAlpha = (float) config
             .getDouble("rms-alpha", (double) DEFAULT_RMS_ALPHA);
+        this.preEmphasis = (float) config
+            .getDouble("pre-emphasis", (double) DEFAULT_PRE_EMPHASIS);
         this.rmsValue = this.rmsTarget;
 
         // fetch and validate stft/mel spectrogram configuration
@@ -335,6 +332,7 @@ public final class WakewordTrigger implements SpeechProcessor {
         // and argmax used for phrasing, so that we don't do
         // any allocation within the frame loop
         this.phraseSum = new float[this.words.length];
+        this.phraseMax = new float[this.words.length];
         this.phraseArg = new int[phraseLength];
 
         // configure the wakeword activation lengths
@@ -352,7 +350,6 @@ public final class WakewordTrigger implements SpeechProcessor {
      * @throws Exception on error
      */
     public void close() throws Exception {
-        this.vadTrigger.close();
         this.filterModel.close();
         this.detectModel.close();
     }
@@ -365,36 +362,33 @@ public final class WakewordTrigger implements SpeechProcessor {
      */
     public void process(SpeechContext context, ByteBuffer buffer)
             throws Exception {
-        // pass all frames through the VAD trigger
-        // detect deactivation edges for wakeword deactivation
-        boolean vadWasActive = this.vadContext.isActive();
-        this.vadTrigger.process(this.vadContext, buffer);
-        boolean vadDeactivate = vadWasActive && !this.vadContext.isActive();
+        // detect speech deactivation edges for wakeword deactivation
+        boolean vadRise = !this.isSpeech && context.isSpeech();
+        boolean vadFall = this.isSpeech && !context.isSpeech();
+        this.isSpeech = context.isSpeech();
 
         if (!context.isActive()) {
             // run the current frame through the detector pipeline
             // activate if a keyword phrase was detected
-            sample(buffer);
-            if (this.activeLength > 0)
-                activate(context);
+            sample(context, buffer);
         } else {
             // continue this wakeword (or external) activation
             // until a vad deactivation or timeout
             if (++this.activeLength > this.minActive)
-                if (vadDeactivate || this.activeLength > this.maxActive)
+                if (vadFall || this.activeLength > this.maxActive)
                     deactivate(context);
         }
 
         // always clear detector state on a vad deactivation
         // this prevents <keyword1><pause><keyword2> detection
-        if (vadDeactivate)
-            reset();
+        if (vadFall)
+            reset(context);
     }
 
-    private void sample(ByteBuffer buffer) {
+    private void sample(SpeechContext context, ByteBuffer buffer) {
         // update the rms normalization factors
         // maintain an ewma of the rms signal energy for speech samples
-        if (this.vadContext.isActive())
+        if (context.isSpeech() && this.rmsAlpha > 0)
             this.rmsValue =
                 this.rmsAlpha * rms(buffer)
                 + (1 - this.rmsAlpha) * this.rmsValue;
@@ -404,8 +398,14 @@ public final class WakewordTrigger implements SpeechProcessor {
         while (buffer.hasRemaining()) {
             // normalize and clip the 16-bit sample to the target rms energy
             float sample = (float) buffer.getShort() / Short.MAX_VALUE;
-            sample = sample * (this.rmsTarget / this.rmsValue);
+            sample = sample * this.rmsTarget / this.rmsValue;
             sample = Math.max(-1f, Math.min(sample, 1f));
+
+            // run a pre-emphasis filter to balance high frequencies
+            // and eliminate any dc energy
+            float nextSample = sample;
+            sample -= this.preEmphasis * this.prevSample;
+            this.prevSample = nextSample;
 
             // process the sample
             // . write it to the sample sliding window
@@ -413,15 +413,14 @@ public final class WakewordTrigger implements SpeechProcessor {
             // . advance the sample sliding window
             this.sampleWindow.write(sample);
             if (this.sampleWindow.isFull()) {
-                if (this.vadContext.isActive())
-                    analyze();
+                if (context.isSpeech())
+                    analyze(context);
                 this.sampleWindow.rewind().seek(this.hopLength);
             }
         }
-
     }
 
-    private void analyze() {
+    private void analyze(SpeechContext context) {
         // apply the windowing function to the current sample window
         for (int i = 0; i < this.fftFrame.length; i++)
             this.fftFrame[i] = this.sampleWindow.read() * this.fftWindow[i];
@@ -429,10 +428,10 @@ public final class WakewordTrigger implements SpeechProcessor {
         // compute the stft
         this.fft.realForward(this.fftFrame);
 
-        filter();
+        filter(context);
     }
 
-    private void filter() {
+    private void filter(SpeechContext context) {
         // decode the FFT outputs into the filter model's inputs
         // . compute the magnitude (abs) of each complex stft component
         // . the first and last stft components contain only real parts
@@ -456,10 +455,10 @@ public final class WakewordTrigger implements SpeechProcessor {
         while (this.filterModel.outputs().hasRemaining())
             this.frameWindow.write(this.filterModel.outputs().getFloat());
 
-        detect();
+        detect(context);
     }
 
-    private void detect() {
+    private void detect(SpeechContext context) {
         // transfer the mel filterbank window to the detector model's inputs
         this.frameWindow.rewind();
         this.detectModel.inputs().rewind();
@@ -474,10 +473,10 @@ public final class WakewordTrigger implements SpeechProcessor {
         while (this.detectModel.outputs().hasRemaining())
             this.smoothWindow.write(this.detectModel.outputs().getFloat());
 
-        smooth();
+        smooth(context);
     }
 
-    private void smooth() {
+    private void smooth(SpeechContext context) {
         // sum the per-class posteriors across the smoothing window
         for (int i = 0; i < this.words.length; i++)
             this.phraseSum[i] = 0;
@@ -492,16 +491,17 @@ public final class WakewordTrigger implements SpeechProcessor {
         for (int i = 0; i < this.words.length; i++)
             this.phraseWindow.write(this.phraseSum[i] / total);
 
-        phrase();
+        phrase(context);
     }
 
-    private void phrase() {
+    private void phrase(SpeechContext context) {
         // compute the argmax (winning class) of each smoothed output
         // in the current phrase window
         for (int i = 0; !this.phraseWindow.isEmpty(); i++) {
             float max = -Float.MAX_VALUE;
             for (int j = 0; j < this.words.length; j++) {
                 float value = this.phraseWindow.read();
+                this.phraseMax[j] = Math.max(value, this.phraseMax[j]);
                 if (value > max) {
                     this.phraseArg[i] = j;
                     max = value;
@@ -522,24 +522,34 @@ public final class WakewordTrigger implements SpeechProcessor {
             // if we reached the end of a phrase, we have a match,
             // so start the activation counter
             if (match == phrase.length) {
-                this.activeLength = 1;
+                activate(context);
                 break;
             }
         }
     }
 
     private void activate(SpeechContext context) {
-        context.setActive(true);
-        context.dispatch(SpeechContext.Event.ACTIVATE);
+        if (!context.isActive()) {
+            trace(context);
+            this.activeLength = 1;
+            context.setActive(true);
+            context.dispatch(SpeechContext.Event.ACTIVATE);
+        }
     }
 
     private void deactivate(SpeechContext context) {
-        context.setActive(false);
-        context.dispatch(SpeechContext.Event.DEACTIVATE);
-        this.activeLength = 0;
+        if (context.isActive()) {
+            context.setActive(false);
+            context.dispatch(SpeechContext.Event.DEACTIVATE);
+            this.activeLength = 0;
+        }
     }
 
-    private void reset() {
+    private void reset(SpeechContext context) {
+        // trace on vad deactivate without detection
+        if (!context.isActive())
+            trace(context);
+
         // empty the sample buffer, so that only contiguous
         // speech samples are written to it
         this.sampleWindow.reset();
@@ -549,6 +559,21 @@ public final class WakewordTrigger implements SpeechProcessor {
         this.frameWindow.reset().fill(0);
         this.smoothWindow.reset().fill(0);
         this.phraseWindow.reset().fill(0);
+        Arrays.fill(this.phraseMax, 0);
+    }
+
+    private void trace(SpeechContext context) {
+        if (context.canTrace(SpeechContext.TraceLevel.INFO)) {
+            StringBuilder message = new StringBuilder();
+            message.append("wake: ");
+            for (int i = 0; i < this.words.length; i++)
+                message.append(
+                    String.format(
+                        "%s=%.2f ",
+                        this.words[i],
+                        this.phraseMax[i]));
+            context.traceInfo(message.toString());
+        }
     }
 
     private float[] hannWindow(int len) {

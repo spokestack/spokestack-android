@@ -29,10 +29,11 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
     @Test
     @SuppressWarnings("unchecked")
     public void testRecognize() throws Exception {
-        SpeechContext context = createContext();
+        SpeechConfig config = createConfig();
+        SpeechContext context = createContext(config);
         MockSpeechClient client = spy(MockSpeechClient.class);
         GoogleSpeechRecognizer recognizer =
-            new GoogleSpeechRecognizer(createConfig(), client);
+            new GoogleSpeechRecognizer(config, client);
 
         // inactive
         recognizer.process(context, context.getBuffer().getLast());
@@ -80,10 +81,11 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
     @Test
     @SuppressWarnings("unchecked")
     public void testError() throws Exception {
-        SpeechContext context = createContext();
+        SpeechConfig config = createConfig();
+        SpeechContext context = createContext(config);
         MockSpeechClient client = spy(MockSpeechClient.class);
         GoogleSpeechRecognizer recognizer =
-            new GoogleSpeechRecognizer(createConfig(), client);
+            new GoogleSpeechRecognizer(config, client);
 
         // trigger recognition
         context.setActive(true);
@@ -107,8 +109,8 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
         return config;
     }
 
-    private SpeechContext createContext() {
-        SpeechContext context = new SpeechContext();
+    private SpeechContext createContext(SpeechConfig config) {
+        SpeechContext context = new SpeechContext(config);
         context.addOnSpeechEventListener(this);
 
         context.attachBuffer(new LinkedList<ByteBuffer>());

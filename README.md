@@ -59,9 +59,12 @@ out the [documentation](https://azure.microsoft.com/en-us/services/cognitive-ser
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
     .setInputClass("com.pylon.spokestack.android.MicrophoneInput")
+    .addStageClass("com.pylon.spokestack.webrtc.AutomaticGainControl")
+    .addStageClass("com.pylon.spokestack.webrtc.VoiceActivityDetector")
     .addStageClass("com.pylon.spokestack.wakeword.WakewordTrigger")
     .addStageClass("com.pylon.spokestack.google.GoogleSpeechRecognizer")
     .setProperty("vad-fall-delay", 200)
+    .setProperty("pre-emphasis", 0.97)
     .setProperty("wake-words", "up,dog")
     .setProperty("wake-phrases", "up dog")
     .setProperty("wake-filter-path", "<tensorflow-lite-filter-path>")
