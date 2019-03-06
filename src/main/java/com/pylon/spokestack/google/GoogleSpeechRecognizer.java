@@ -108,8 +108,6 @@ public final class GoogleSpeechRecognizer implements SpeechProcessor {
      * @throws Exception on error
      */
     public void close() throws Exception {
-        if (this.request != null)
-            this.request.onCompleted();
         this.client.close();
     }
 

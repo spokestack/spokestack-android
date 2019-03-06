@@ -26,7 +26,9 @@ public final class SpeechContext {
         /** a speech error occurred. */
         ERROR("error"),
         /** a trace event occurred. */
-        TRACE("trace");
+        TRACE("trace"),
+        /** speech recognition timed out. */
+        TIMEDOUT("timedout");
 
         private final String event;
 

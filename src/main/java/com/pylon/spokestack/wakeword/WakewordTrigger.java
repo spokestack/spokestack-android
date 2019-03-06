@@ -374,9 +374,14 @@ public final class WakewordTrigger implements SpeechProcessor {
         } else {
             // continue this wakeword (or external) activation
             // until a vad deactivation or timeout
-            if (++this.activeLength > this.minActive)
-                if (vadFall || this.activeLength > this.maxActive)
+            if (++this.activeLength > this.minActive) {
+                if (vadFall) {
                     deactivate(context);
+                } else if (this.activeLength > this.maxActive) {
+                    timedOut(context);
+                    deactivate(context);
+                }
+            }
         }
 
         // always clear detector state on a vad deactivation
@@ -542,6 +547,12 @@ public final class WakewordTrigger implements SpeechProcessor {
             context.setActive(false);
             context.dispatch(SpeechContext.Event.DEACTIVATE);
             this.activeLength = 0;
+        }
+    }
+
+    private void timedOut(SpeechContext context) {
+        if (context.isActive()) {
+            context.dispatch(SpeechContext.Event.TIMEDOUT);
         }
     }
 
