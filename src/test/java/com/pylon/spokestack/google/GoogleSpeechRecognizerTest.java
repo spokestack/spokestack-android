@@ -80,6 +80,38 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
 
     @Test
     @SuppressWarnings("unchecked")
+    public void testTimeout() throws Exception {
+        SpeechConfig config = createConfig();
+        SpeechContext context = createContext(config);
+        MockSpeechClient client = spy(MockSpeechClient.class);
+        GoogleSpeechRecognizer recognizer =
+            new GoogleSpeechRecognizer(config, client);
+
+        // active/buffered frames
+        context.setActive(true);
+        recognizer.process(context, context.getBuffer().getLast());
+        verify(client.getRequests(), times(context.getBuffer().size() + 1))
+            .onNext(any(StreamingRecognizeRequest.class));
+
+        // timeout
+        context.setActive(false);
+        recognizer.process(context, context.getBuffer().getLast());
+        verify(client.getRequests())
+            .onCompleted();
+
+        // event
+        client.getResponses().onCompleted();
+        assertEquals("", context.getTranscript());
+        assertEquals(0, context.getConfidence());
+        assertEquals(SpeechContext.Event.TIMEOUT, this.event);
+
+        // shutdown
+        recognizer.close();
+        verify(client.getStub()).close();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
     public void testError() throws Exception {
         SpeechConfig config = createConfig();
         SpeechContext context = createContext(config);

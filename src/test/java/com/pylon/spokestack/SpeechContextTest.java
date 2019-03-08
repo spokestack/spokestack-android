@@ -199,6 +199,7 @@ public class SpeechContextTest implements OnSpeechEventListener {
         assertEquals("activate", Event.ACTIVATE.toString());
         assertEquals("deactivate", Event.DEACTIVATE.toString());
         assertEquals("recognize", Event.RECOGNIZE.toString());
+        assertEquals("timeout", Event.TIMEOUT.toString());
         assertEquals("error", Event.ERROR.toString());
         assertEquals("trace", Event.TRACE.toString());
     }

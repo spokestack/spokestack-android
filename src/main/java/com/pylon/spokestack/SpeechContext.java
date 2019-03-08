@@ -23,6 +23,8 @@ public final class SpeechContext {
         DEACTIVATE("deactivate"),
         /** speech was recognized. */
         RECOGNIZE("recognize"),
+        /** the activation timeout expired. */
+        TIMEOUT("timeout"),
         /** a speech error occurred. */
         ERROR("error"),
         /** a trace event occurred. */
