@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>com.pylon</groupId>
    <artifactId>spokestack</artifactId>
-   <version>0.2.2-SNAPSHOT</version>
+   <version>0.2.3-SNAPSHOT</version>
    <packaging>aar</packaging>
    <name>Pylon SpokeStack Library for Android</name>
    <description>Core library of the SpokeStack framework for android</description>
