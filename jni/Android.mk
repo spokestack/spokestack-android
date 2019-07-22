@@ -5,6 +5,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := spokestack
 LOCAL_SRC_FILES := \
 	agc.cpp \
+	ans.cpp \
 	vad.cpp \
 	filter_audio/other/complex_bit_reverse.c \
 	filter_audio/other/complex_fft.c \
@@ -23,6 +24,7 @@ LOCAL_SRC_FILES := \
 	filter_audio/other/resample_48khz.c \
 	filter_audio/other/spl_init.c \
 	filter_audio/other/spl_sqrt.c \
+	filter_audio/other/spl_sqrt_floor.c \
 	filter_audio/other/vector_scaling_operations.c \
 	filter_audio/vad/vad_core.c \
 	filter_audio/vad/vad_filterbank.c \
@@ -30,7 +32,10 @@ LOCAL_SRC_FILES := \
 	filter_audio/vad/vad_sp.c \
 	filter_audio/vad/webrtc_vad.c \
 	filter_audio/agc/analog_agc.c \
-	filter_audio/agc/digital_agc.c
+	filter_audio/agc/digital_agc.c \
+	filter_audio/ns/nsx_core.c \
+	filter_audio/ns/nsx_core_c.c \
+	filter_audio/ns/noise_suppression_x.c
 
 include $(BUILD_SHARED_LIBRARY)
 
