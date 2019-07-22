@@ -96,7 +96,7 @@
       <dependency>
          <groupId>org.tensorflow</groupId>
          <artifactId>tensorflow-lite</artifactId>
-         <version>1.10.0</version>
+         <version>1.12.0</version>
          <type>aar</type>
          <scope>provided</scope>
       </dependency>

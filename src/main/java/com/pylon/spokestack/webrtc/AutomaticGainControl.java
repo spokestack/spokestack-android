@@ -139,7 +139,7 @@ public class AutomaticGainControl implements SpeechProcessor {
             count++;
         }
 
-        return 20 * Math.log10(Math.max(Math.sqrt(sum / count), 1e-5));
+        return 20 * Math.log10(Math.max(Math.sqrt(sum / count), 2e-5) / 2e-5);
     }
 
     //-----------------------------------------------------------------------

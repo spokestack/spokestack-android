@@ -3,6 +3,8 @@ package com.pylon.spokestack.tensorflow;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.tensorflow.lite.Interpreter;
 
@@ -20,6 +22,11 @@ public class TensorflowModel implements AutoCloseable {
     private final Interpreter interpreter;
     private final ByteBuffer inputBuffer;
     private final ByteBuffer outputBuffer;
+    private ByteBuffer stateInputBuffer;
+    private ByteBuffer stateOutputBuffer;
+
+    private final Object[] inputArray;
+    private final Map<Integer, Object> outputMap;
 
     /**
      * constructs a new tensorflow model.
@@ -37,6 +44,19 @@ public class TensorflowModel implements AutoCloseable {
                 .allocateDirect(loader.outputShape * loader.outputSize)
                 .order(ByteOrder.nativeOrder())
             : null;
+        this.stateInputBuffer = loader.stateShape != 0
+            ? ByteBuffer
+                .allocateDirect(loader.stateShape * loader.stateSize)
+                .order(ByteOrder.nativeOrder())
+            : null;
+        this.stateOutputBuffer = loader.stateShape != 0
+            ? ByteBuffer
+                .allocateDirect(loader.stateShape * loader.stateSize)
+                .order(ByteOrder.nativeOrder())
+            : null;
+
+        this.inputArray = new Object[this.stateInputBuffer != null ? 2 : 1];
+        this.outputMap = new HashMap<>();
     }
 
     /**
@@ -54,6 +74,13 @@ public class TensorflowModel implements AutoCloseable {
     }
 
     /**
+     * @return the state tensor buffer
+     */
+    public ByteBuffer states() {
+        return this.stateInputBuffer;
+    }
+
+    /**
      * @return the output tensor buffer
      */
     public ByteBuffer outputs() {
@@ -64,22 +91,33 @@ public class TensorflowModel implements AutoCloseable {
      * executes the model using the attached buffers.
      */
     public void run() {
-        run(this.inputs(), this.outputs());
-    }
+        this.inputBuffer.rewind();
+        this.outputBuffer.rewind();
+        if (this.stateInputBuffer != null) {
+            this.stateInputBuffer.rewind();
+            this.stateOutputBuffer.rewind();
+        }
 
-    /**
-     * executes the model using specified buffers.
-     * @param inputs input tensor buffer
-     * @param outputs output tensor buffer
-     */
-    public void run(ByteBuffer inputs, ByteBuffer outputs) {
-        inputs.rewind();
-        outputs.rewind();
+        this.inputArray[0] = this.inputBuffer;
+        this.outputMap.put(0, this.outputBuffer);
+        if (this.stateInputBuffer != null) {
+            this.inputArray[1] = this.stateInputBuffer;
+            this.outputMap.put(1, this.stateOutputBuffer);
+        }
 
-        this.interpreter.run(inputs, outputs);
+        this.interpreter.runForMultipleInputsOutputs(
+            this.inputArray,
+            this.outputMap);
 
-        inputs.rewind();
-        outputs.rewind();
+        this.inputBuffer.rewind();
+        this.outputBuffer.rewind();
+        if (this.stateInputBuffer != null) {
+            ByteBuffer temp = this.stateInputBuffer;
+            this.stateInputBuffer = this.stateOutputBuffer;
+            this.stateOutputBuffer = temp;
+            this.stateInputBuffer.rewind();
+            this.stateOutputBuffer.rewind();
+        }
     }
 
     /**
@@ -93,10 +131,34 @@ public class TensorflowModel implements AutoCloseable {
         }
 
         private String path;
-        private int inputShape = 0;
-        private int inputSize = 4;
-        private int outputShape = 0;
-        private int outputSize = 4;
+        private int inputShape;
+        private int inputSize;
+        private int outputShape;
+        private int outputSize;
+        private int stateShape;
+        private int stateSize;
+
+        /**
+         * initializes a new loader instance.
+         */
+        public Loader() {
+            this.reset();
+        }
+
+        /**
+         * resets the loader to the default state.
+         * @return this
+         */
+        public Loader reset() {
+            this.path = null;
+            this.inputShape = 0;
+            this.inputSize = 4;
+            this.outputShape = 0;
+            this.outputSize = 4;
+            this.stateShape = 0;
+            this.stateSize = 4;
+            return this;
+        }
 
         /**
          * sets the file system path to the TF-Lite model.
@@ -132,6 +194,29 @@ public class TensorflowModel implements AutoCloseable {
         }
 
         /**
+         * sets the shape (product of shape dimensions) of the state tensor.
+         * @param value value to assign
+         * @return this
+         */
+        public Loader setStateShape(int value) {
+            this.stateShape = value;
+            return this;
+        }
+
+        /**
+         * sets the data type of the state tensor.
+         * @param value value to assign
+         * @return this
+         */
+        public Loader setStateType(DType value) {
+            if (value == DType.FLOAT)
+                this.stateSize = 4;
+            else
+                throw new IllegalArgumentException("value");
+            return this;
+        }
+
+        /**
          * sets the shape (product of shape dimensions) of the output tensor.
          * @param value value to assign
          * @return this
@@ -159,7 +244,9 @@ public class TensorflowModel implements AutoCloseable {
          * @return the new tensorflow model
          */
         public TensorflowModel load() {
-            return new TensorflowModel(this);
+            TensorflowModel model = new TensorflowModel(this);
+            this.reset();
+            return model;
         }
     }
 }

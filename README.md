@@ -65,9 +65,8 @@ SpeechPipeline pipeline = new SpeechPipeline.Builder()
     .addStageClass("com.pylon.spokestack.google.GoogleSpeechRecognizer")
     .setProperty("vad-fall-delay", 200)
     .setProperty("pre-emphasis", 0.97)
-    .setProperty("wake-words", "up,dog")
-    .setProperty("wake-phrases", "up dog")
     .setProperty("wake-filter-path", "<tensorflow-lite-filter-path>")
+    .setProperty("wake-encode-path", "<tensorflow-lite-encode-path>")
     .setProperty("wake-detect-path", "<tensorflow-lite-detect-path>")
     .setProperty("wake-smooth-length", 50)
     .setProperty("google-credentials", "<google-credentials>")
@@ -75,12 +74,13 @@ SpeechPipeline pipeline = new SpeechPipeline.Builder()
     .build();
 ```
 
-This example creates a wakeword-triggered pipeline that uses the phrase
-"up dog" to activate the pipeline for the google speech recognizer. The
-wakeword trigger uses two pretrained [Tensorflow-Lite](https://www.tensorflow.org/lite/)
-models: a *filter* model for spectrum preprocessing and a *detect* model
-for keyword classification. For more information on the wakeword detector
-and its configuration parameters, click [here](https://github.com/pylon/spokestack-android/wiki/wakeword).
+This example creates a wakeword-triggered pipeline with the google speech
+recognizer. The wakeword trigger uses three trained
+[Tensorflow-Lite](https://www.tensorflow.org/lite/) models: a *filter* model
+for spectrum preprocessing, an autoregressive encoder *encode* model, and a
+*detect* decoder model for keyword classification. For more information on
+the wakeword detector and its configuration parameters, click
+[here](https://github.com/pylon/spokestack-android/wiki/wakeword).
 
 ## Development
 Maven is used for building/deployment, and the package is hosted at Maven
