@@ -14,7 +14,7 @@
 /*-------------------[        Global Variables         ]-------------------*/
 /*-------------------[        Global Prototypes        ]-------------------*/
 /*-------------------[        Module Variables         ]-------------------*/
-static int32_t miclevel = 0;
+static int32_t miclevel = 128;
 /*-------------------[        Module Prototypes        ]-------------------*/
 /*-------------------[         Implementation          ]-------------------*/
 /*-----------< FUNCTION: AutomaticGainControl_create >-----------------------
