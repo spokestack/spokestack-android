@@ -149,6 +149,7 @@ public class WakewordTriggerTest {
 
         env.detect.setOutputs(1);
         env.process();
+        env.process();
 
         env.process();
         env.process();
@@ -187,6 +188,7 @@ public class WakewordTriggerTest {
         env.process();
 
         env.detect.setOutputs(1);
+        env.process();
         env.process();
         env.process();
 

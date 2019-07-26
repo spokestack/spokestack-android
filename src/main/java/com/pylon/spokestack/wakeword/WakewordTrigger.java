@@ -349,6 +349,7 @@ public final class WakewordTrigger implements SpeechProcessor {
         if (!context.isActive()) {
             // run the current frame through the detector pipeline
             // activate if a keyword phrase was detected
+            this.activeLength = 0;
             sample(context, buffer);
         } else {
             // continue this wakeword (or external) activation
@@ -477,7 +478,6 @@ public final class WakewordTrigger implements SpeechProcessor {
 
     private void activate(SpeechContext context) {
         trace(context);
-        this.activeLength = 1;
         context.setActive(true);
         context.dispatch(SpeechContext.Event.ACTIVATE);
     }
@@ -486,7 +486,6 @@ public final class WakewordTrigger implements SpeechProcessor {
         reset(context);
         context.setActive(false);
         context.dispatch(SpeechContext.Event.DEACTIVATE);
-        this.activeLength = 0;
     }
 
     private void reset(SpeechContext context) {
