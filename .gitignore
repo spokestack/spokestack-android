@@ -9,3 +9,7 @@
 
 # crash logs
 hs_err_pid*
+
+# android studio/intellij
+.idea/
+*.iml

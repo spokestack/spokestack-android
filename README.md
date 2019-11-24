@@ -7,10 +7,10 @@ speech recognition services, such as the Google Speech API and Bing Speech
 API.
 
 ## Status
-[![CircleCI](https://circleci.com/gh/pylon/spokestack-android.svg?style=shield)](https://circleci.com/gh/pylon/spokestack-android)
-[![Coverage](https://coveralls.io/repos/github/pylon/spokestack-android/badge.svg)](https://coveralls.io/github/pylon/spokestack-android)
+[![CircleCI](https://circleci.com/gh/spokestack/spokestack-android.svg?style=shield)](https://circleci.com/gh/spokestack/spokestack-android)
+[![Coverage](https://coveralls.io/repos/github/spokestack/spokestack-android/badge.svg)](https://coveralls.io/github/spokestack/spokestack-android)
 [![Maven](https://maven-badges.herokuapp.com/maven-central/com.pylon/spokestack/badge.svg)](https://search.maven.org/#search%7Cga%7C1%7Ccom.pylon.spokestack)
-[![Javadocs](https://www.javadoc.io/badge/com.pylon/spokestack.svg)](https://www.javadoc.io/doc/com.pylon/spokestack)
+[![Javadocs](https://www.javadoc.io/badge/io.spokestack/spokestack.svg)](https://www.javadoc.io/doc/io.spokestack/spokestack)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Configuration
@@ -19,9 +19,9 @@ API.
 
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
-    .setInputClass("com.pylon.spokestack.android.MicrophoneInput")
-    .addStageClass("com.pylon.spokestack.libfvad.VADTrigger")
-    .addStageClass("com.pylon.spokestack.google.GoogleSpeechRecognizer")
+    .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
+    .addStageClass("io.spokestack.spokestack.libfvad.VADTrigger")
+    .addStageClass("io.spokestack.spokestack.google.GoogleSpeechRecognizer")
     .setProperty("google-credentials", "<google-credentials>")
     .setProperty("locale", "en-US")
     .build();
@@ -31,16 +31,16 @@ This example creates an active speech recognition pipeline using the Google
 Speech API that is triggered by VAD. The `google-credentials` parameter should
 be the contents of a Google Cloud service account credentials file, in JSON
 format. For more information, see the [documentation](https://cloud.google.com/speech/docs/streaming-recognize).
-See the [javadoc](https://www.javadoc.io/doc/com.pylon/spokestack) for
+See the [javadoc](https://www.javadoc.io/doc/io.spokestack/spokestack) for
 other component-specific configuration parameters.
 
 ### Microsoft Bing Speech API
 
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
-    .setInputClass("com.pylon.spokestack.android.MicrophoneInput")
-    .addStageClass("com.pylon.spokestack.libfvad.VADTrigger")
-    .addStageClass("com.pylon.spokestack.microsoft.BingSpeechRecognizer")
+    .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
+    .addStageClass("io.spokestack.spokestack.libfvad.VADTrigger")
+    .addStageClass("io.spokestack.spokestack.microsoft.BingSpeechRecognizer")
     .setProperty("sample-rate", 16000)
     .setProperty("frame-width", 20)
     .setProperty("buffer-width", 300)
@@ -58,11 +58,11 @@ out the [documentation](https://azure.microsoft.com/en-us/services/cognitive-ser
 ### Wakeword Detection
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
-    .setInputClass("com.pylon.spokestack.android.MicrophoneInput")
-    .addStageClass("com.pylon.spokestack.webrtc.AutomaticGainControl")
-    .addStageClass("com.pylon.spokestack.webrtc.VoiceActivityDetector")
-    .addStageClass("com.pylon.spokestack.wakeword.WakewordTrigger")
-    .addStageClass("com.pylon.spokestack.google.GoogleSpeechRecognizer")
+    .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
+    .addStageClass("io.spokestack.spokestack.webrtc.AutomaticGainControl")
+    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityDetector")
+    .addStageClass("io.spokestack.spokestack.wakeword.WakewordTrigger")
+    .addStageClass("io.spokestack.spokestack.google.GoogleSpeechRecognizer")
     .setProperty("vad-fall-delay", 200)
     .setProperty("pre-emphasis", 0.97)
     .setProperty("wake-filter-path", "<tensorflow-lite-filter-path>")
@@ -80,7 +80,7 @@ recognizer. The wakeword trigger uses three trained
 for spectrum preprocessing, an autoregressive encoder *encode* model, and a
 *detect* decoder model for keyword classification. For more information on
 the wakeword detector and its configuration parameters, click
-[here](https://github.com/pylon/spokestack-android/wiki/wakeword).
+[here](https://github.com/spokestack/spokestack-android/wiki/wakeword).
 
 ## Development
 Maven is used for building/deployment, and the package is hosted at Maven
@@ -89,7 +89,7 @@ Central.
 This package requires the [Android NDK](https://developer.android.com/ndk/guides/index.html)
 to be installed and the `ANDROID_HOME` and `ANDROID_NDK_HOME` variables to be
 set. On OSX, ANDROID_HOME is usually set to `~/Library/Android/sdk` and
-ANDROID_NDK_HOME is usually set to `~/Library/Android/sdk/ndk-bundle`.
+ANDROID_NDK_HOME is usually set to `~/Library/Android/sdk/ndk/<version>`.
 
 ### Testing/Coverage
 

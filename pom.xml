@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
    <modelVersion>4.0.0</modelVersion>
-   <groupId>com.pylon</groupId>
+   <groupId>io.spokestack</groupId>
    <artifactId>spokestack</artifactId>
    <version>2.0.2-SNAPSHOT</version>
    <packaging>aar</packaging>
-   <name>Pylon SpokeStack Library for Android</name>
-   <description>Core library of the SpokeStack framework for android</description>
+   <name>Spokestack Library for Android</name>
+   <description>Core library of the Spokestack framework for android</description>
    <url>https://github.com/pylon/spokestack-android</url>
    <licenses>
       <license>
@@ -16,15 +16,21 @@
    <developers>
       <developer>
          <name>Brent M. Spell</name>
-         <email>brent@pylon.com</email>
-         <organization>Pylon</organization>
-         <organizationUrl>http://pylon.com/</organizationUrl>
+         <email>brent@spokestack.io</email>
+         <organization>Spokestack</organization>
+         <organizationUrl>http://spokestack.io/</organizationUrl>
+      </developer>
+      <developer>
+         <name>Josh Ziegler</name>
+         <email>josh@spokestack.io</email>
+         <organization>Spokestack</organization>
+         <organizationUrl>http://spokestack.io/</organizationUrl>
       </developer>
    </developers>
    <scm>
-      <connection>scm:git:git://github.com/pylon/spokestack-android.git</connection>
-      <developerConnection>scm:git:git@github.com:pylon/spokestack-android.git</developerConnection>
-      <url>https://github.com/pylon/spokestack-android</url>
+      <connection>scm:git:git://github.com/spokestack/spokestack-android.git</connection>
+      <developerConnection>scm:git:git@github.com:spokestack/spokestack-android.git</developerConnection>
+      <url>https://github.com/spokestack/spokestack-android</url>
       <tag>HEAD</tag>
    </scm>
 
@@ -41,12 +47,14 @@
 
    <distributionManagement>
       <snapshotRepository>
-         <id>ossrh</id>
-         <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <id>bintray-spokestack-io.spokestack</id>
+        <name>spokestack-io.spokestack</name>
+        <url>https://api.bintray.com/maven/spokestack/io.spokestack/spokestack-android/;publish=1</url>
       </snapshotRepository>
       <repository>
-         <id>ossrh</id>
-         <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        <id>bintray-spokestack-io.spokestack</id>
+        <name>spokestack-io.spokestack</name>
+        <url>https://api.bintray.com/maven/spokestack/io.spokestack/spokestack-android/;publish=1</url>
       </repository>
    </distributionManagement>
 
@@ -138,7 +146,7 @@
          <plugin>
             <groupId>com.simpligility.maven.plugins</groupId>
             <artifactId>android-maven-plugin</artifactId>
-            <version>4.5.0</version>
+            <version>4.6.0</version>
             <extensions>true</extensions>
             <configuration>
                <sdk>
