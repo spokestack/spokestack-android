@@ -24,7 +24,7 @@
 //             null otherwise
 ---------------------------------------------------------------------------*/
 extern "C" JNIEXPORT
-jlong JNICALL Java_com_pylon_spokestack_webrtc_AcousticNoiseSuppressor_create(
+jlong JNICALL Java_io_spokestack_spokestack_webrtc_AcousticNoiseSuppressor_create(
       JNIEnv* env,
       jobject self,
       jint    sampleRate,
@@ -53,7 +53,7 @@ jlong JNICALL Java_com_pylon_spokestack_webrtc_AcousticNoiseSuppressor_create(
 // Returns:    none
 ---------------------------------------------------------------------------*/
 extern "C" JNIEXPORT
-void JNICALL Java_com_pylon_spokestack_webrtc_AcousticNoiseSuppressor_destroy(
+void JNICALL Java_io_spokestack_spokestack_webrtc_AcousticNoiseSuppressor_destroy(
       JNIEnv* env,
       jobject self,
       jlong   ans) {
@@ -70,7 +70,7 @@ void JNICALL Java_com_pylon_spokestack_webrtc_AcousticNoiseSuppressor_destroy(
 //             -1 on error
 ---------------------------------------------------------------------------*/
 extern "C" JNIEXPORT
-jint JNICALL Java_com_pylon_spokestack_webrtc_AcousticNoiseSuppressor_process(
+jint JNICALL Java_io_spokestack_spokestack_webrtc_AcousticNoiseSuppressor_process(
       JNIEnv* env,
       jobject self,
       jlong   ans,

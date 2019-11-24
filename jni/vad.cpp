@@ -24,7 +24,7 @@
 //             null otherwise
 ---------------------------------------------------------------------------*/
 extern "C" JNIEXPORT
-jlong JNICALL Java_com_pylon_spokestack_webrtc_VoiceActivityDetector_create(
+jlong JNICALL Java_io_spokestack_spokestack_webrtc_VoiceActivityDetector_create(
       JNIEnv* env,
       jobject self,
       jint    mode) {
@@ -52,7 +52,7 @@ jlong JNICALL Java_com_pylon_spokestack_webrtc_VoiceActivityDetector_create(
 // Returns:    none
 ---------------------------------------------------------------------------*/
 extern "C" JNIEXPORT
-void JNICALL Java_com_pylon_spokestack_webrtc_VoiceActivityDetector_destroy(
+void JNICALL Java_io_spokestack_spokestack_webrtc_VoiceActivityDetector_destroy(
       JNIEnv* env,
       jobject self,
       jlong   vad) {
@@ -71,7 +71,7 @@ void JNICALL Java_com_pylon_spokestack_webrtc_VoiceActivityDetector_destroy(
 //             -1 on error
 ---------------------------------------------------------------------------*/
 extern "C" JNIEXPORT
-jint JNICALL Java_com_pylon_spokestack_webrtc_VoiceActivityDetector_process(
+jint JNICALL Java_io_spokestack_spokestack_webrtc_VoiceActivityDetector_process(
       JNIEnv* env,
       jobject self,
       jlong   vad,
