@@ -9,8 +9,8 @@ API.
 ## Status
 [![CircleCI](https://circleci.com/gh/spokestack/spokestack-android.svg?style=shield)](https://circleci.com/gh/spokestack/spokestack-android)
 [![Coverage](https://coveralls.io/repos/github/spokestack/spokestack-android/badge.svg)](https://coveralls.io/github/spokestack/spokestack-android)
-[![Maven](https://maven-badges.herokuapp.com/maven-central/com.pylon/spokestack/badge.svg)](https://search.maven.org/#search%7Cga%7C1%7Ccom.pylon.spokestack)
-[![Javadocs](https://www.javadoc.io/badge/io.spokestack/spokestack.svg)](https://www.javadoc.io/doc/io.spokestack/spokestack)
+[ ![JCenter](https://api.bintray.com/packages/spokestack/io.spokestack/spokestack-android/images/download.svg) ](https://bintray.com/spokestack/io.spokestack/spokestack-android/_latestVersion)
+[![Javadocs](https://www.javadoc.io/badge2/io.spokestack/spokestack-android/javadoc.svg)](https://www.javadoc.io/doc/io.spokestack/spokestack-android)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Configuration
@@ -83,8 +83,7 @@ the wakeword detector and its configuration parameters, click
 [here](https://github.com/spokestack/spokestack-android/wiki/wakeword).
 
 ## Development
-Maven is used for building/deployment, and the package is hosted at Maven
-Central.
+Maven is used for building/deployment, and the package is hosted at JCenter.
 
 This package requires the [Android NDK](https://developer.android.com/ndk/guides/index.html)
 to be installed and the `ANDROID_HOME` and `ANDROID_NDK_HOME` variables to be
@@ -105,7 +104,7 @@ mvn checkstyle:check
 
 ### Release
 On a non-master branch, remove the -SNAPSHOT suffix from the version in `pom.xml`, then run the
-following command. This will deploy the package to Maven Central.
+following command. This will deploy the package to Bintray and JCenter.
 
 ```bash
 mvn deploy
@@ -118,9 +117,10 @@ mvn release:clean release:prepare release:perform
 ```
 
 For additional information about releasing see http://maven.apache.org/maven-release/maven-release-plugin/
+
 ## License
 
-Copyright 2018 Pylon, Inc.
+Copyright 2019 Pylon, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.

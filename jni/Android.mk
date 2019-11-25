@@ -2,7 +2,7 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_MODULE    := spokestack
+LOCAL_MODULE    := spokestack-android
 LOCAL_SRC_FILES := \
 	agc.cpp \
 	ans.cpp \
