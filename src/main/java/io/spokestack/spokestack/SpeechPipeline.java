@@ -7,10 +7,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * SpokeStack speech pipeline.
+ * Spokestack speech pipeline.
  *
  * <p>
- * This is the primary client entry point to the SpokeStack framework. It
+ * This is the primary client entry point to the Spokestack framework. It
  * dynamically binds to configured components that implement the pipeline
  * interfaces for reading audio frames and performing speech recognition tasks.
  * </p>

@@ -3,7 +3,7 @@ package io.spokestack.spokestack;
 /**
  * speech event callback interface.
  *
- * This is the primary event interface in SpokeStack. The speech pipeline
+ * This is the primary event interface in Spokestack. The speech pipeline
  * routes events/errors asynchronously through it as they occur.
  */
 public interface OnSpeechEventListener {

@@ -4,15 +4,15 @@ CFLAGS = -shared -Wall -O3 -fpic \
          -I$(JAVA_HOME)/include/$(shell uname | tr A-Z a-z)
 OUTDIR = ../target
 
-all: $(OUTDIR)/libspokestack.jnilib
+all: $(OUTDIR)/libspokestack-android.jnilib
 
 clean:
-	$(RM) $(OUTDIR)/libspokestack.jnilib
-	$(RM) $(OUTDIR)/libspokestack.so
+	$(RM) $(OUTDIR)/libspokestack-android.jnilib
+	$(RM) $(OUTDIR)/libspokestack-android.so
 
 rebuild: clean all
 
-$(OUTDIR)/libspokestack.so: \
+$(OUTDIR)/libspokestack-android.so: \
 	agc.cpp \
 	vad.cpp \
 	ans.cpp \
