@@ -146,7 +146,7 @@ public class AutomaticGainControl implements SpeechProcessor {
     // native interface
     //-----------------------------------------------------------------------
     static {
-        System.loadLibrary("spokestack");
+        System.loadLibrary("spokestack-android");
     }
 
     native long create(

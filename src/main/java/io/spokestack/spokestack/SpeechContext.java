@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.nio.ByteBuffer;
 
 /**
- * SpokeStack speech recognition context
+ * Spokestack speech recognition context
  *
  * <p>
  * This class maintains global state for the speech pipeline, allowing

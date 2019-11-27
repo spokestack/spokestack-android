@@ -55,7 +55,7 @@ public final class BingSpeechRecognizer implements SpeechProcessor {
 
     /**
      * initializes a new recognizer instance.
-     * @param speechConfig SpokeStack speech configuration
+     * @param speechConfig Spokestack speech configuration
      * @throws Exception on error
      */
     public BingSpeechRecognizer(SpeechConfig speechConfig) throws Exception {
@@ -64,7 +64,7 @@ public final class BingSpeechRecognizer implements SpeechProcessor {
 
     /**
      * initializes a new recognizer instance, useful for testing.
-     * @param speechConfig SpokeStack speech configuration
+     * @param speechConfig Spokestack speech configuration
      * @param builder      speech client builder
      * @throws Exception on error
      */

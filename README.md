@@ -103,6 +103,18 @@ mvn checkstyle:check
 ```
 
 ### Release
+Ensure that your Bintray credentials are in your user Maven `settings.xml`:
+
+```xml
+<servers>
+    <server>
+        <id>bintray-spokestack-io.spokestack</id>
+        <username>username</username>
+        <password>bintray_api_key</password>
+    </server>
+</servers>
+```
+
 On a non-master branch, remove the -SNAPSHOT suffix from the version in `pom.xml`, then run the
 following command. This will deploy the package to Bintray and JCenter.
 

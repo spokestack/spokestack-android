@@ -126,7 +126,7 @@ public class AcousticNoiseSuppressor implements SpeechProcessor {
     // native interface
     //-----------------------------------------------------------------------
     static {
-        System.loadLibrary("spokestack");
+        System.loadLibrary("spokestack-android");
     }
 
     native long create(int rate, int policy);
