@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * speech input interface.
  *
  * <p>
- * This is the audio input interface to the Spokestack framework. Implementors
+ * This is the audio input interface to the Spokestack framework. Implementers
  * must fill the specified audio frame buffer to capacity, based on the
  * configured sample size and frame size.
  * </p>
