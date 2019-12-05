@@ -83,8 +83,8 @@ public final class SpokestackTTSClient {
      *
      * @param text The text to synthesize.
      */
-    public void speak(String text) {
-        speak(text, "demo-male");
+    public void synthesize(String text) {
+        synthesize(text, "demo-male");
     }
 
     /**
@@ -95,8 +95,8 @@ public final class SpokestackTTSClient {
      *
      * @param ssml The SSML to synthesize.
      */
-    public void speak(SSML ssml) {
-        speak(ssml, "demo-male");
+    public void synthesize(SSML ssml) {
+        synthesize(ssml, "demo-male");
     }
 
     /**
@@ -107,7 +107,7 @@ public final class SpokestackTTSClient {
      * @param text  The text to synthesize.
      * @param voice The voice to use for synthesis.
      */
-    public void speak(String text, String voice) {
+    public void synthesize(String text, String voice) {
         HashMap<String, String> body = new HashMap<>();
         body.put("text", text);
         body.put("voice", voice);
@@ -122,7 +122,7 @@ public final class SpokestackTTSClient {
      * @param ssml  The SSML to synthesize.
      * @param voice The voice to use for synthesis.
      */
-    public void speak(SSML ssml, String voice) {
+    public void synthesize(SSML ssml, String voice) {
         HashMap<String, String> body = new HashMap<>();
         body.put("ssml", ssml.getText());
         body.put("voice", voice);

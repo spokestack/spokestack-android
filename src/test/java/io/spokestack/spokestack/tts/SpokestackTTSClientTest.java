@@ -85,14 +85,14 @@ public class SpokestackTTSClientTest {
         client.setApiKey("invalid");
 
         // assertions are handled in the callback
-        client.speak("text");
+        client.synthesize("text");
 
         // invalid api key
         client = new SpokestackTTSClient(
               new TestCallback("Invalid API key"),
               httpClient);
         client.setApiKey("invalid");
-        client.speak("text");
+        client.synthesize("text");
 
         // invalid ssml
         client = new SpokestackTTSClient(
@@ -100,7 +100,7 @@ public class SpokestackTTSClientTest {
               httpClient);
         client.setApiKey("key");
         SSML invalidSsml = new SSML("just text");
-        client.speak(invalidSsml);
+        client.synthesize(invalidSsml);
 
 
         // no TTS URL
@@ -109,7 +109,7 @@ public class SpokestackTTSClientTest {
               httpClient);
         client.setApiKey("key");
         client.setTtsUrl(null);
-        client.speak("text");
+        client.synthesize("text");
 
         // valid text request
         client = new SpokestackTTSClient(
@@ -117,11 +117,11 @@ public class SpokestackTTSClientTest {
               httpClient);
         client.setApiKey("key");
 
-        client.speak("text");
+        client.synthesize("text");
 
         // valid ssml request
         SSML validSSML = new SSML("<speak>aloha</speak>");
-        client.speak(validSSML);
+        client.synthesize(validSSML);
     }
 
     class ApiKeyedCall implements Answer<Call> {
