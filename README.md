@@ -6,6 +6,9 @@ Activity Detection (VAD) and Automatic Speech Recognition (ASR) via popular
 speech recognition services, such as the Google Speech API and Bing Speech
 API.
 
+See the [documentation](https://spokestack.io/docs) for a lot more information
+than is in this brief introduction.
+
 ## Status
 [![CircleCI](https://circleci.com/gh/spokestack/spokestack-android.svg?style=shield)](https://circleci.com/gh/spokestack/spokestack-android)
 [![Coverage](https://coveralls.io/repos/github/spokestack/spokestack-android/badge.svg)](https://coveralls.io/github/spokestack/spokestack-android)
@@ -20,7 +23,9 @@ API.
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
     .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
-    .addStageClass("io.spokestack.spokestack.libfvad.VADTrigger")
+    .addStageClass("io.spokestack.spokestack.webrtc.AutomaticGainControl")
+    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityDetector")
+    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityTrigger")
     .addStageClass("io.spokestack.spokestack.google.GoogleSpeechRecognizer")
     .setProperty("google-credentials", "<google-credentials>")
     .setProperty("locale", "en-US")
@@ -39,7 +44,9 @@ other component-specific configuration parameters.
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
     .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
-    .addStageClass("io.spokestack.spokestack.libfvad.VADTrigger")
+    .addStageClass("io.spokestack.spokestack.webrtc.AutomaticGainControl")
+    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityDetector")
+    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityTrigger")
     .addStageClass("io.spokestack.spokestack.microsoft.BingSpeechRecognizer")
     .setProperty("sample-rate", 16000)
     .setProperty("frame-width", 20)
@@ -76,7 +83,7 @@ SpeechPipeline pipeline = new SpeechPipeline.Builder()
 
 This example creates a wakeword-triggered pipeline with the google speech
 recognizer. The wakeword trigger uses three trained
-[Tensorflow-Lite](https://www.tensorflow.org/lite/) models: a *filter* model
+[TensorFlow Lite](https://www.tensorflow.org/lite/) models: a *filter* model
 for spectrum preprocessing, an autoregressive encoder *encode* model, and a
 *detect* decoder model for keyword classification. For more information on
 the wakeword detector and its configuration parameters, click
@@ -87,8 +94,8 @@ Maven is used for building/deployment, and the package is hosted at JCenter.
 
 This package requires the [Android NDK](https://developer.android.com/ndk/guides/index.html)
 to be installed and the `ANDROID_HOME` and `ANDROID_NDK_HOME` variables to be
-set. On OSX, ANDROID_HOME is usually set to `~/Library/Android/sdk` and
-ANDROID_NDK_HOME is usually set to `~/Library/Android/sdk/ndk/<version>`.
+set. On OSX, `ANDROID_HOME` is usually set to `~/Library/Android/sdk` and
+`ANDROID_NDK_HOME` is usually set to `~/Library/Android/sdk/ndk/<version>`.
 
 ### Testing/Coverage
 
@@ -132,7 +139,7 @@ For additional information about releasing see http://maven.apache.org/maven-rel
 
 ## License
 
-Copyright 2019 Pylon, Inc.
+Copyright 2019 Spokestack, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
