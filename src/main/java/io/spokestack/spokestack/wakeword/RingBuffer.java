@@ -107,6 +107,10 @@ final class RingBuffer {
     }
 
     private int pos(int x) {
-        return Math.floorMod(x, this.data.length);
+        int mod = x % this.data.length;
+        if (x < 0) {
+            return -mod;
+        }
+        return mod;
     }
 }
