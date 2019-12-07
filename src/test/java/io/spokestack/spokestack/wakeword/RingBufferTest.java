@@ -98,15 +98,17 @@ public class RingBufferTest {
         for (int i = 0; i < buffer.capacity(); i++)
             buffer.write(i + 1);
 
+        // negative seek wraps around --
+        // position 5 in the buffer contains 0;
+        // we'll end up at position 5, which contains 5
+        buffer.seek(-2);
+        assertEquals(buffer.read(), buffer.capacity());
+
+        buffer.rewind();
+
         buffer.seek(1);
         for (int i = 1; i < buffer.capacity(); i++)
             assertEquals(buffer.read(), i + 1);
-        buffer.rewind();
-
-        // negative seek wraps around
-        buffer.seek(-2);
-        assertEquals(buffer.read(), buffer.capacity() - 2);
-
         buffer.rewind();
 
         buffer.seek(buffer.capacity() - 1);

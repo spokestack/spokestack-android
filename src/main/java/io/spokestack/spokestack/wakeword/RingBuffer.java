@@ -107,9 +107,12 @@ final class RingBuffer {
     }
 
     private int pos(int x) {
+        // equivalent to Math.floorMod;
+        // we only have to check x's sign because
+        // this.data.length is guaranteed to be positive
         int mod = x % this.data.length;
-        if (x < 0) {
-            return -mod;
+        if (x < 0 && mod != 0) {
+            return mod + this.data.length;
         }
         return mod;
     }
