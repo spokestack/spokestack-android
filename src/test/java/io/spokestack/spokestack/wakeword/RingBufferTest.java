@@ -106,6 +106,11 @@ public class RingBufferTest {
         buffer.seek(buffer.capacity() - 1);
         for (int i = buffer.capacity() - 1; i < buffer.capacity(); i++)
             assertEquals(buffer.read(), i + 1);
+
+        // negative seek wraps around --
+        // the read head here starts at position 5 and will end up at 4
+        buffer.seek(-7);
+        assertEquals(buffer.read(), buffer.capacity());
     }
 
     @Test

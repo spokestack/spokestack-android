@@ -107,6 +107,14 @@ final class RingBuffer {
     }
 
     private int pos(int x) {
-        return Math.floorMod(x, this.data.length);
+        // Math.floorMod from OpenJDK;
+        // reproduced here because relying on the JDK
+        // method unnecessarily limits Android API compatibility
+        // to level 26 or newer
+        int mod = x % this.data.length;
+        if ((mod ^ this.data.length) < 0 && mod != 0) {
+            mod += this.data.length;
+        }
+        return mod;
     }
 }
