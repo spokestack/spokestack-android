@@ -107,12 +107,13 @@ final class RingBuffer {
     }
 
     private int pos(int x) {
-        // equivalent to Math.floorMod;
-        // we only have to check x's sign because
-        // this.data.length is guaranteed to be positive
+        // Math.floorMod from OpenJDK;
+        // reproduced here because relying on the JDK
+        // method unnecessarily limits Android API compatibility
+        // to level 26 or newer
         int mod = x % this.data.length;
-        if (x < 0 && mod != 0) {
-            return mod + this.data.length;
+        if ((mod ^ this.data.length) < 0 && mod != 0) {
+            mod += this.data.length;
         }
         return mod;
     }
