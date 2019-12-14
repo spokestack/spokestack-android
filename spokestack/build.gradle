@@ -1,0 +1,78 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
+    ndkVersion "20.1.5948944"
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 29
+        versionCode 4
+        versionName "4.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+    externalNativeBuild {
+        ndkBuild {
+            path 'jni/Android.mk'
+        }
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    testOptions {
+        unitTests {
+            all {
+                environment 'LD_LIBRARY_PATH', 'target'
+                systemProperty 'java.library.path', 'target'
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    implementation 'com.github.wendykierp:JTransforms:3.1'
+
+    compileOnly 'androidx.appcompat:appcompat:1.1.0'
+    compileOnly 'com.google.cloud:google-cloud-speech:0.61.0-beta'
+//    compileOnly 'com.google.cloud:google-cloud-speech:1.22.1'
+//    constraints {
+//        compile('com.google.protobuf:protobuf-java:3.11.0')
+//    }
+    compileOnly 'io.grpc:grpc-okhttp:1.25.0'
+    compileOnly 'com.squareup.okhttp3:okhttp:4.2.2'
+    compileOnly 'com.google.code.gson:gson:2.8.6'
+    compileOnly 'org.tensorflow:tensorflow-lite:1.12.0'
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.2'
+    testImplementation 'org.mockito:mockito-core:2.22.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+}
+
+configurations {
+    testImplementation.extendsFrom compileOnly
+}
+
+// TODO: probably put this somewhere cleaner -- it's for the externalNativeBuild block
+afterEvaluate {
+    mkdir 'target'
+}

@@ -1,3 +1,18 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
 # output path
 /target/
 
@@ -9,7 +24,3 @@
 
 # crash logs
 hs_err_pid*
-
-# android studio/intellij
-.idea/
-*.iml
