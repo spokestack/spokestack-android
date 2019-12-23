@@ -37,25 +37,31 @@ import java.nio.ByteOrder;
  *
  * <p>
  * The pipeline may be stopped/restarted any number of times during its
- * lifecycle. While stopped, the pipeline consumes as few resources as
- * possible. The pipeline runs asynchronously on a dedicated thread, so
- * it does not block the caller to perform I/O or speech processing.
+ * lifecycle. While stopped, the pipeline consumes as few resources as possible.
+ * The pipeline runs asynchronously on a dedicated thread, so it does not block
+ * the caller to perform I/O or speech processing.
  * </p>
  *
  * <p>
  * When running, the pipeline communicates with the client via the event
- * interface on the speech context. All calls to event handlers are made
- * in the context of the pipeline's thread, so event handlers should not
- * perform blocking operations, and should use message passing when
- * communicating with UI components, etc.
+ * interface on the speech context. All calls to event handlers are made in the
+ * context of the pipeline's thread, so event handlers should not perform
+ * blocking operations, and should use message passing when communicating with
+ * UI components, etc.
  * </p>
  */
 public final class SpeechPipeline implements AutoCloseable {
-    /** audio sample rate default, in samples/sec. */
+    /**
+     * audio sample rate default, in samples/sec.
+     */
     public static final int DEFAULT_SAMPLE_RATE = 16000;
-    /** audio frame width, in ms. */
+    /**
+     * audio frame width, in ms.
+     */
     public static final int DEFAULT_FRAME_WIDTH = 20;
-    /** audio frame buffer width, in ms. */
+    /**
+     * audio frame buffer width, in ms.
+     */
     public static final int DEFAULT_BUFFER_WIDTH = 20;
 
     private final String inputClass;
@@ -69,6 +75,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
     /**
      * initializes a new speech pipeline instance.
+     *
      * @param builder pipeline builder with configuration parameters
      */
     private SpeechPipeline(Builder builder) {
@@ -78,8 +85,9 @@ public final class SpeechPipeline implements AutoCloseable {
         this.context = new SpeechContext(this.config);
         this.stages = new ArrayList<>();
 
-        for (OnSpeechEventListener l: builder.listeners)
+        for (OnSpeechEventListener l : builder.listeners) {
             this.context.addOnSpeechEventListener(l);
+        }
     }
 
     /**
@@ -89,28 +97,36 @@ public final class SpeechPipeline implements AutoCloseable {
         stop();
     }
 
-    /** @return current pipeline configuration. */
+    /**
+     * @return current pipeline configuration.
+     */
     public SpeechConfig getConfig() {
         return this.config;
     }
 
-    /** @return current pipeline configuration. */
+    /**
+     * @return current pipeline configuration.
+     */
     public SpeechContext getContext() {
         return this.context;
     }
 
-    /** @return true if the pipeline is listening, false otherwise. */
+    /**
+     * @return true if the pipeline is listening, false otherwise.
+     */
     public boolean isRunning() {
         return this.running;
     }
 
     /**
      * starts up the speech pipeline.
+     *
      * @throws Exception on configuration/startup error
      */
     public void start() throws Exception {
-        if (this.running)
+        if (this.running) {
             throw new IllegalStateException("already running");
+        }
 
         try {
             createComponents();
@@ -125,17 +141,18 @@ public final class SpeechPipeline implements AutoCloseable {
     private void createComponents() throws Exception {
         // create the audio input component
         this.input = (SpeechInput) Class
-            .forName(this.inputClass)
-            .getConstructor(SpeechConfig.class)
-            .newInstance(new Object[] {this.config});
+              .forName(this.inputClass)
+              .getConstructor(SpeechConfig.class)
+              .newInstance(new Object[]{this.config});
 
         // create the pipeline stage components
-        for (String name: this.stageClasses)
+        for (String name : this.stageClasses) {
             this.stages.add((SpeechProcessor) Class
-                .forName(name)
-                .getConstructor(SpeechConfig.class)
-                .newInstance(new Object[] {this.config})
+                  .forName(name)
+                  .getConstructor(SpeechConfig.class)
+                  .newInstance(new Object[]{this.config})
             );
+        }
     }
 
     private void attachBuffer() throws Exception {
@@ -149,21 +166,18 @@ public final class SpeechPipeline implements AutoCloseable {
 
         // allocate the deque of frame buffers
         LinkedList<ByteBuffer> buffer = new LinkedList<>();
-        for (int i = 0; i < frameCount; i++)
+        for (int i = 0; i < frameCount; i++) {
             buffer.addLast(ByteBuffer
-                .allocateDirect(frameSize)
-                .order(ByteOrder.nativeOrder()));
+                  .allocateDirect(frameSize)
+                  .order(ByteOrder.nativeOrder()));
+        }
 
         // attach the buffers to the speech context
         this.context.attachBuffer(buffer);
     }
 
     private void startThread() throws Exception {
-        this.thread = new Thread(new Runnable() {
-            public void run() {
-                SpeechPipeline.this.run();
-            }
-        });
+        this.thread = new Thread(this::run);
         this.running = true;
         this.thread.start();
     }
@@ -176,7 +190,9 @@ public final class SpeechPipeline implements AutoCloseable {
             this.running = false;
             try {
                 this.thread.join();
-            } catch (InterruptedException e) { }
+            } catch (InterruptedException e) {
+                // ignore
+            }
             this.thread = null;
         }
     }
@@ -197,7 +213,7 @@ public final class SpeechPipeline implements AutoCloseable {
             this.input.read(frame);
 
             // dispatch the frame to the stages
-            for (SpeechProcessor stage: this.stages) {
+            for (SpeechProcessor stage : this.stages) {
                 frame.rewind();
                 stage.process(this.context, frame);
             }
@@ -207,7 +223,7 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     private void cleanup() {
-        for (SpeechProcessor stage: this.stages) {
+        for (SpeechProcessor stage : this.stages) {
             try {
                 stage.close();
             } catch (Exception e) {
@@ -252,6 +268,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * sets the class name of the audio input component.
+         *
          * @param value input component class name
          * @return this
          */
@@ -262,6 +279,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * sets the class names of the pipeline stage components in bulk.
+         *
          * @param value list of pipeline component names
          * @return this
          */
@@ -272,6 +290,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * adds a single pipeline stage component class name.
+         *
          * @param value stage component class name
          * @return this
          */
@@ -282,6 +301,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * attaches a pipeline configuration object.
+         *
          * @param value configuration to attach
          * @return this
          */
@@ -292,6 +312,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * sets a pipeline configuration value.
+         *
          * @param key   configuration property name
          * @param value property value
          * @return this
@@ -303,6 +324,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * adds a pipeline event listener.
+         *
          * @param listen listener callback
          * @return this
          */
@@ -313,6 +335,7 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * creates and initializes the speech pipeline.
+         *
          * @return configured pipeline instance
          */
         public SpeechPipeline build() {

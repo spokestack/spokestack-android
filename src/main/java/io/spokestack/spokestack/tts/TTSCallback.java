@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.tts;
 
+import androidx.annotation.NonNull;
 import com.google.gson.Gson;
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -16,17 +17,19 @@ public abstract class TTSCallback implements Callback {
     private final Gson gson = new Gson();
 
     @Override
-    public void onFailure(Call call, IOException e) {
+    public void onFailure(@NonNull Call call, IOException e) {
         onError("Unknown synthesis error: " + e.getMessage());
     }
 
     @Override
-    public void onResponse(Call call, Response response) throws IOException {
+    public void onResponse(@NonNull Call call, Response response)
+          throws IOException {
         if (!response.isSuccessful()) {
             if (response.code() == 403) {
                 onError("Invalid API key");
+            } else {
+                onError("Synthesis error: HTTP " + response.code());
             }
-            onError("Synthesis error: HTTP " + response.code());
         } else {
             String responseJson = response.body().string();
             Map result = gson.fromJson(responseJson, Map.class);

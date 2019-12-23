@@ -1,10 +1,7 @@
 package io.spokestack.spokestack.wakeword;
 
-import java.util.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
-import org.tensorflow.lite.Interpreter;
 
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -15,7 +12,6 @@ import static org.mockito.Mockito.*;
 import io.spokestack.spokestack.OnSpeechEventListener;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
-import io.spokestack.spokestack.SpeechProcessor;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
 
 public class WakewordTriggerTest {

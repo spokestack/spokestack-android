@@ -6,8 +6,6 @@ import java.nio.ByteBuffer;
 import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.spokestack.spokestack.SpeechConfig;
-import io.spokestack.spokestack.SpeechContext;
 import io.spokestack.spokestack.SpeechContext.Event;
 import io.spokestack.spokestack.SpeechContext.TraceLevel;
 

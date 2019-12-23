@@ -8,13 +8,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.spokestack.spokestack.OnSpeechEventListener;
-import io.spokestack.spokestack.SpeechInput;
-import io.spokestack.spokestack.SpeechConfig;
-import io.spokestack.spokestack.SpeechProcessor;
-import io.spokestack.spokestack.SpeechContext;
-import io.spokestack.spokestack.SpeechPipeline;
-
 public class SpeechPipelineTest implements OnSpeechEventListener {
     private SpeechContext.Event event;
 

@@ -23,7 +23,7 @@ public final class SpokestackTTSClient {
     private static final MediaType APPLICATION_JSON =
           MediaType.parse("application/json; charset=utf-8");
     private final OkHttpClient httpClient;
-    private final TTSCallback ttsCallback;
+    private TTSCallback ttsCallback;
     private final Gson gson;
     private String ttsApiKey;
 
@@ -60,7 +60,17 @@ public final class SpokestackTTSClient {
     }
 
     /**
+     * Set the callback that should receive TTS responses.
+     *
+     * @param callback The TTS callback.
+     */
+    public void setTtsCallback(TTSCallback callback) {
+        this.ttsCallback = callback;
+    }
+
+    /**
      * Set the URL used to synthesize text.
+     *
      * @param url The URL to which synthesis requests should be sent.
      */
     public void setTtsUrl(String url) {
@@ -69,6 +79,7 @@ public final class SpokestackTTSClient {
 
     /**
      * Set the API key used for synthesis requests.
+     *
      * @param apiKey The API key to use for synthesis requests.
      */
     public void setApiKey(String apiKey) {
@@ -139,8 +150,8 @@ public final class SpokestackTTSClient {
             return;
         }
 
-        RequestBody postBody = RequestBody.create(APPLICATION_JSON,
-              gson.toJson(speechBody));
+        RequestBody postBody = RequestBody.create(
+              gson.toJson(speechBody), APPLICATION_JSON);
 
         Request request = new Request.Builder()
               .url(ttsUrl)
