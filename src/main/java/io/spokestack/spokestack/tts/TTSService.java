@@ -18,21 +18,12 @@ package io.spokestack.spokestack.tts;
  * @see TTSComponent
  */
 public interface TTSService extends AutoCloseable, TTSComponent {
-    /**
-     * Synthesizes a piece of text, dispatching the synthesis request's result
-     * to any registered listeners.
-     *
-     * @param text the text to synthesize
-     * @throws Exception on error
-     */
-    void synthesize(CharSequence text) throws Exception;
 
     /**
-     * Synthesizes a piece of SSML, dispatching the synthesis request's result
-     * to any registered listeners.
+     * Synthesizes a piece of text or SSML, dispatching the result to any
+     * registered listeners.
      *
-     * @param ssml the SSML to synthesize
-     * @throws Exception on error
+     * @param request The synthesis request data.
      */
-    void synthesize(SSML ssml) throws Exception;
+    void synthesize(SynthesisRequest request);
 }

@@ -31,8 +31,8 @@ import java.util.List;
  * {@code
  * TTSManager ttsManager = new TTSManager.Builder()
  *     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
- *     .setOutputClass("io.spokestack.spokestack.tts.SpokestackAudioPlayer")
- *     .setProperty("api-key", "f854fbf30a5f40c189ecb1b38bc78059")
+ *     .setOutputClass("io.spokestack.spokestack.tts.SpokestackTTSOutput")
+ *     .setProperty("spokestack-key", "f854fbf30a5f40c189ecb1b38bc78059")
  *     .build();
  * }
  * </pre>
@@ -94,6 +94,16 @@ public final class TTSManager implements AutoCloseable {
     }
 
     /**
+     * Synthesizes a piece of text or SSML, dispatching the result to any
+     * registered listeners.
+     *
+     * @param request The synthesis request data.
+     */
+    public void synthesize(SynthesisRequest request) {
+        this.ttsService.synthesize(request);
+    }
+
+    /**
      * Registers the currently active lifecycle with the manager, allowing any
      * output classes to handle media player components based on system
      * lifecycle events.
@@ -129,8 +139,15 @@ public final class TTSManager implements AutoCloseable {
      * @throws Exception If there is an error constructing TTS components.
      */
     public void prepare() throws Exception {
+        if (this.ttsService != null) {
+            throw new IllegalStateException("already prepared");
+        }
+
         this.ttsService =
               createComponent(this.ttsServiceClass, TTSService.class);
+        for (TTSListener listener : this.listeners) {
+           this.ttsService.addListener(listener);
+        }
         if (this.outputClass != null) {
             this.output = createComponent(this.outputClass, SpeechOutput.class);
             this.ttsService.addListener(this.output);

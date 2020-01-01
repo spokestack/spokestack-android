@@ -47,7 +47,7 @@ public final class SpokestackTTSService extends TTSCallback
      * Create a TTS service component that uses the provided TTS client. Used
      * for testing.
      *
-     * @param config The component configuration.
+     * @param config           The component configuration.
      * @param spokestackClient The TTS client.
      */
     SpokestackTTSService(SpeechConfig config,
@@ -71,13 +71,8 @@ public final class SpokestackTTSService extends TTSCallback
     }
 
     @Override
-    public void synthesize(CharSequence text) {
-        this.client.synthesize(String.valueOf(text));
-    }
-
-    @Override
-    public void synthesize(SSML ssml) {
-        this.client.synthesize(String.valueOf(ssml));
+    public void synthesize(SynthesisRequest request) {
+        this.client.synthesize(request);
     }
 
     @Override

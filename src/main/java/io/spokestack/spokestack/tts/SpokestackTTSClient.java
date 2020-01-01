@@ -7,6 +7,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -93,7 +94,10 @@ public final class SpokestackTTSClient {
      * callback when it is available.
      *
      * @param text The text to synthesize.
+     * @deprecated As of version 3.2.1, {@link #synthesize(SynthesisRequest)}
+     * should be used instead.
      */
+    @Deprecated
     public void synthesize(String text) {
         synthesize(text, "demo-male");
     }
@@ -105,7 +109,10 @@ public final class SpokestackTTSClient {
      * callback when it is available.
      *
      * @param ssml The SSML to synthesize.
+     * @deprecated As of version 3.2.1, {@link #synthesize(SynthesisRequest)}
+     * should be used instead.
      */
+    @Deprecated
     public void synthesize(SSML ssml) {
         synthesize(ssml, "demo-male");
     }
@@ -117,12 +124,15 @@ public final class SpokestackTTSClient {
      *
      * @param text  The text to synthesize.
      * @param voice The voice to use for synthesis.
+     * @deprecated As of version 3.2.1, {@link #synthesize(SynthesisRequest)}
+     * should be used instead.
      */
+    @Deprecated
     public void synthesize(String text, String voice) {
         HashMap<String, String> body = new HashMap<>();
         body.put("text", text);
         body.put("voice", voice);
-        postSpeech(body);
+        postSpeech(new HashMap<>(), body);
     }
 
     /**
@@ -132,15 +142,47 @@ public final class SpokestackTTSClient {
      *
      * @param ssml  The SSML to synthesize.
      * @param voice The voice to use for synthesis.
+     * @deprecated As of version 3.2.1, {@link #synthesize(SynthesisRequest)}
+     * should be used instead.
      */
+    @Deprecated
     public void synthesize(SSML ssml, String voice) {
         HashMap<String, String> body = new HashMap<>();
         body.put("ssml", ssml.getText());
         body.put("voice", voice);
-        postSpeech(body);
+        postSpeech(new HashMap<>(), body);
     }
 
-    private void postSpeech(HashMap<String, String> speechBody) {
+    /**
+     * Synthesize speech via the Spokestack TTS API. The synthesis request is
+     * asynchronous; the resulting audio URL for playing back the synthesized
+     * speech is delivered to this object's callback when it is available.
+     *
+     * @param request The request object representing the text to be synthesized
+     *                and any additional metadata.
+     */
+    public void synthesize(SynthesisRequest request) {
+        HashMap<String, String> headers = new HashMap<>();
+        String requestId = request.metadata.get("x-request-id");
+        if (requestId != null) {
+            headers.put("x-request-id", requestId);
+        }
+
+        HashMap<String, String> body = new HashMap<>();
+        switch (request.mode) {
+            case TEXT:
+                body.put("text", String.valueOf(request.text));
+            case SSML:
+                body.put("ssml", String.valueOf(request.text));
+            default:
+                break;
+        }
+        body.put("voice", request.voice);
+        postSpeech(headers, body);
+    }
+
+    private void postSpeech(Map<String, String> headers,
+                            Map<String, String> speechBody) {
         if (this.ttsApiKey == null) {
             ttsCallback.onError("API key not provided");
             return;
@@ -153,7 +195,13 @@ public final class SpokestackTTSClient {
         RequestBody postBody = RequestBody.create(
               gson.toJson(speechBody), APPLICATION_JSON);
 
-        Request request = new Request.Builder()
+        Request.Builder builder = new Request.Builder();
+
+        for (Map.Entry<String, String> header : headers.entrySet()) {
+            builder = builder.addHeader(header.getKey(), header.getValue());
+        }
+
+        Request request = builder
               .url(ttsUrl)
               .header("content-type", "application/json")
               .header("Authorization", "Key " + this.ttsApiKey)

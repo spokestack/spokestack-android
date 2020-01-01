@@ -82,7 +82,11 @@ public class SpokestackTTSServiceTest {
               this.client);
         ttsService.close();
         assertThrows(NullPointerException.class,
-              () -> ttsService.synthesize("test"));
+              () -> {
+                  SynthesisRequest request =
+                        new SynthesisRequest.Builder("test").build();
+                  ttsService.synthesize(request);
+              });
     }
 
     @Test
@@ -109,15 +113,21 @@ public class SpokestackTTSServiceTest {
             }
         });
 
-        ttsService.synthesize("text");
+        SynthesisRequest request =
+              new SynthesisRequest.Builder("test").build();
+        ttsService.synthesize(request);
         Uri uri = uriQueue.poll(1, TimeUnit.SECONDS);
         assertNotNull(uri);
 
-        ttsService.synthesize(new SSML("<speak>ssml test</speak>"));
+        request = new SynthesisRequest.Builder("<speak>ssml test</speak>")
+              .withMode(SynthesisRequest.Mode.SSML)
+              .build();
+        ttsService.synthesize(request);
         uri = uriQueue.poll(1, TimeUnit.SECONDS);
         assertNotNull(uri);
 
-        ttsService.synthesize("error");
+        request = new SynthesisRequest.Builder("error") .build();
+        ttsService.synthesize(request);
         Throwable error = errorQueue.poll(1, TimeUnit.SECONDS);
         assertNotNull(error);
     }

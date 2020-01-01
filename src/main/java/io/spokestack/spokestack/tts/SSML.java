@@ -66,7 +66,11 @@ package io.spokestack.spokestack.tts;
  * Failing to enclose SSML text in {@code speak} tags <em>will</em>
  * cause an error, but not until the request reaches the synthesis server.
  * </p>
+ *
+ * @deprecated As of version 3.2.1, when SSML is represented as an option in a
+ * {@link io.spokestack.spokestack.tts.SynthesisRequest SynthesisRequest}.
  */
+@Deprecated
 public class SSML {
     private final String text;
 

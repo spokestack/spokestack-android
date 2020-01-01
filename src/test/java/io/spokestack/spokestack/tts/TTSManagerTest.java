@@ -2,6 +2,7 @@ package io.spokestack.spokestack.tts;
 
 
 import android.content.Context;
+import android.net.Uri;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
@@ -28,12 +29,12 @@ public class TTSManagerTest implements TTSListener {
     private Context context = mock(Context.class);
 
     private TTSEvent lastEvent;
-    private static LinkedBlockingQueue<String> lifecycleEvents;
+    private static LinkedBlockingQueue<String> events;
 
     @Before
     public void before() {
         lastEvent = null;
-        lifecycleEvents = new LinkedBlockingQueue<>();
+        events = new LinkedBlockingQueue<>();
     }
 
     @Test
@@ -54,9 +55,8 @@ public class TTSManagerTest implements TTSListener {
 
         // valid config
         TTSManager manager = new TTSManager.Builder(context)
-              .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
+              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
               .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
-              .setProperty("spokestack-key", "test")
               .addTTSListener(this)
               .build();
 
@@ -64,13 +64,22 @@ public class TTSManagerTest implements TTSListener {
               new LifecycleRegistry(mock(LifecycleOwner.class));
         manager.registerLifecycle(lifecycleRegistry);
 
-        manager.prepare();
+        assertThrows(IllegalStateException.class, manager::prepare);
         assertNotNull(manager.getTtsService());
         assertNotNull(manager.getOutput());
 
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
-        String event = lifecycleEvents.poll(1, TimeUnit.SECONDS);
+        String event = events.poll(1, TimeUnit.SECONDS);
         assertEquals("onResume", event, "onResume not called");
+
+        // synthesis
+        SynthesisRequest request =
+              new SynthesisRequest.Builder("test").build();
+        manager.synthesize(request);
+        event = events.poll(1, TimeUnit.SECONDS);
+        assertEquals("audioReceived", event, "audioReceived not called");
+        assertEquals(TTSEvent.Type.AUDIO_AVAILABLE, lastEvent.type);
+        assertEquals(Uri.EMPTY, lastEvent.getTtsResponse().getAudioUri());
 
         manager.close();
         assertNull(manager.getTtsService());
@@ -82,7 +91,7 @@ public class TTSManagerTest implements TTSListener {
         assertNotNull(manager.getOutput());
 
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
-        event = lifecycleEvents.poll(1, TimeUnit.SECONDS);
+        event = events.poll(1, TimeUnit.SECONDS);
         assertEquals("onResume", event, "onResume not called");
 
         String errorMsg = "can't close won't close";
@@ -96,20 +105,45 @@ public class TTSManagerTest implements TTSListener {
         lastEvent = event;
     }
 
-    public static class Output implements SpeechOutput, DefaultLifecycleObserver {
+    public static class Input implements TTSService {
 
-        public Output(SpeechConfig config) { }
+        public Input(SpeechConfig config) { }
 
         @Override
-        public void onResume(@NotNull LifecycleOwner owner) {
-            lifecycleEvents.add("onResume");
+        public void synthesize(SynthesisRequest request) {
+            TTSEvent synthesisComplete =
+                  new TTSEvent(TTSEvent.Type.AUDIO_AVAILABLE);
+            AudioResponse response = new AudioResponse(Uri.EMPTY);
+            synthesisComplete.setTtsResponse(response);
+            dispatch(synthesisComplete);
         }
 
         @Override
-        public void audioReceived(AudioResponse response) { }
+        public void close() {
+        }
+    }
+
+    public static class Output implements SpeechOutput, DefaultLifecycleObserver {
+
+        public Output(SpeechConfig config) {
+        }
 
         @Override
-        public void setAppContext(Context appContext) { }
+        public void onResume(@NotNull LifecycleOwner owner) {
+            // protect against multiple calls by the registry during tests
+            if (events.isEmpty()) {
+                events.add("onResume");
+            }
+        }
+
+        @Override
+        public void audioReceived(AudioResponse response) {
+            events.add("audioReceived");
+        }
+
+        @Override
+        public void setAppContext(Context appContext) {
+        }
 
         @Override
         public void close() {
