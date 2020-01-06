@@ -52,6 +52,7 @@ public class TTSManagerTest implements TTSListener {
               () -> new TTSManager.Builder(context)
                     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
                     .setProperty("spokestack-key", "test")
+                    .setProperty("spokestack-secret", "test")
                     .setOutputClass("invalid")
                     .build());
 

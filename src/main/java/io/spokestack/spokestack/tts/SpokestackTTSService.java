@@ -1,6 +1,5 @@
 package io.spokestack.spokestack.tts;
 
-import android.net.Uri;
 import androidx.annotation.NonNull;
 import io.spokestack.spokestack.SpeechConfig;
 import okhttp3.Call;
@@ -63,7 +62,8 @@ public final class SpokestackTTSService extends TTSService {
 
     private void configure(SpeechConfig config) {
         String apiKey = config.getString("spokestack-key");
-        this.client.setApiKey(apiKey);
+        String clientSecret = config.getString("spokestack-secret");
+        this.client.setCredentials(apiKey, clientSecret);
         String ttsUrl = config.getString("spokestack-url", null);
         if (ttsUrl != null) {
             this.client.setTtsUrl(ttsUrl);
@@ -98,10 +98,8 @@ public final class SpokestackTTSService extends TTSService {
         }
 
         @Override
-        public void onUrlReceived(String url) {
+        public void onSynthesisResponse(AudioResponse response) {
             TTSEvent event = new TTSEvent(TTSEvent.Type.AUDIO_AVAILABLE);
-            Uri audioUri = Uri.parse(url);
-            AudioResponse response = new AudioResponse(audioUri);
             event.setTtsResponse(response);
             dispatch(event);
         }

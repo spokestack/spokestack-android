@@ -1,5 +1,8 @@
 package io.spokestack.spokestack.tts;
 
+import android.net.Uri;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.gson.Gson;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -15,8 +18,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -77,21 +80,22 @@ public class SpokestackTTSClientTest {
     }
 
     @Test
-    public void testSpeak() throws InterruptedException {
+    public void testSpeak() throws Exception {
         // no api key
         TestCallback callback = new TestCallback("API key not provided");
         SpokestackTTSClient client =
               new SpokestackTTSClient(callback, httpClient);
 
-        client.synthesize("text");
+        SynthesisRequest request = new SynthesisRequest.Builder("text").build();
+        client.synthesize(request);
         assertTrue(callback.errorReceived);
 
         // invalid api key
         CountDownLatch latch = new CountDownLatch(1);
         callback = new TestCallback("Invalid API key", latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setApiKey("invalid");
-        client.synthesize("text");
+        client.setCredentials("invalid", "invalider");
+        client.synthesize(request);
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.errorReceived);
 
@@ -99,9 +103,10 @@ public class SpokestackTTSClientTest {
         latch = new CountDownLatch(1);
         callback = new TestCallback("Synthesis error: HTTP 419", latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setApiKey("key");
-        SSML invalidSsml = new SSML("just text");
-        client.synthesize(invalidSsml);
+        client.setCredentials("key", "secret");
+        SynthesisRequest invalidSSML = new SynthesisRequest.Builder("just text")
+              .withMode(SynthesisRequest.Mode.SSML).build();
+        client.synthesize(invalidSSML);
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.errorReceived);
 
@@ -110,9 +115,9 @@ public class SpokestackTTSClientTest {
         latch = new CountDownLatch(1);
         callback = new TestCallback("TTS URL not provided", latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setApiKey("key");
+        client.setCredentials("key", "secret");
         client.setTtsUrl(null);
-        client.synthesize("text");
+        client.synthesize(request);
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.errorReceived);
 
@@ -120,9 +125,9 @@ public class SpokestackTTSClientTest {
         latch = new CountDownLatch(1);
         callback = new TestCallback(null, latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setApiKey("key");
+        client.setCredentials("key", "secret");
 
-        client.synthesize("text");
+        client.synthesize(request);
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.urlReceived);
 
@@ -130,9 +135,11 @@ public class SpokestackTTSClientTest {
         latch = new CountDownLatch(1);
         callback = new TestCallback(null, latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setApiKey("key");
+        client.setCredentials("key", "secret");
 
-        SSML validSSML = new SSML("<speak>aloha</speak>");
+        SynthesisRequest validSSML =
+              new SynthesisRequest.Builder("<speak>aloha</speak>")
+                    .withMode(SynthesisRequest.Mode.SSML).build();
         client.synthesize(validSSML);
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.urlReceived);
@@ -163,7 +170,15 @@ public class SpokestackTTSClientTest {
         }
 
         @Override
-        public void onUrlReceived(String url) {
+        protected AudioResponse createAudioResponse(
+              @NonNull String responseJson, @Nullable  String requestId) {
+            HashMap<String, Object> metadata = new HashMap<>();
+            metadata.put("id", requestId);
+            return new AudioResponse(metadata, Uri.EMPTY);
+        }
+
+        @Override
+        public void onSynthesisResponse(AudioResponse response) {
             if (this.errorMessage != null) {
                 fail("Error expected");
             }
@@ -193,16 +208,18 @@ public class SpokestackTTSClientTest {
         }
 
         private boolean hasInvalidKey(Request request) {
-            return Objects.equals(request.header("Authorization"),
-                  "Key " + "invalid");
+            String authHeader = request.header("Authorization");
+            return authHeader != null && authHeader.contains("invalid:");
         }
 
         private boolean hasInvalidBody(Request request) throws IOException {
             RequestBody body = request.body();
             Buffer buffer = new Buffer();
             body.writeTo(buffer);
-            Map json = gson.fromJson(buffer.readUtf8(), Map.class);
-            String ssml = (String) json.get("ssml");
+            String bodyText = buffer.readUtf8();
+            Map json = gson.fromJson(bodyText, Map.class);
+            Map variables = (Map) json.get("variables");
+            String ssml = (String) variables.get("ssml");
             return ssml != null && !ssml.startsWith("<speak>");
         }
     }

@@ -34,7 +34,7 @@ import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Call.class, Uri.class})
-@PowerMockIgnore("javax.net.ssl.*")
+@PowerMockIgnore({"javax.net.ssl.*","javax.crypto.*"})
 public class SpokestackTTSServiceTest {
 
     private static final String AUDIO_URL =
@@ -77,6 +77,7 @@ public class SpokestackTTSServiceTest {
     public void testCleanup() {
         SpeechConfig config = new SpeechConfig();
         config.put("spokestack-key", "test");
+        config.put("spokestack-secret", "test");
         config.put("spokestack-url", "https://api.spokestack.io");
         SpokestackTTSService ttsService = new SpokestackTTSService(config,
               this.client);
@@ -93,6 +94,7 @@ public class SpokestackTTSServiceTest {
     public void testSynthesize() throws InterruptedException {
         SpeechConfig config = new SpeechConfig();
         config.put("spokestack-key", "test");
+        config.put("spokestack-secret", "test");
         config.put("spokestack-url", "https://api.spokestack.io");
         SpokestackTTSService ttsService =
               new SpokestackTTSService(config, this.client);
@@ -151,8 +153,8 @@ public class SpokestackTTSServiceTest {
         }
 
         @Override
-        public void onUrlReceived(String url) {
-            ttsService.callback.onUrlReceived(url);
+        public void onSynthesisResponse(AudioResponse response) {
+            ttsService.callback.onSynthesisResponse(response);
         }
     }
 
@@ -170,8 +172,9 @@ public class SpokestackTTSServiceTest {
             Buffer buffer = new Buffer();
             body.writeTo(buffer);
             Map json = gson.fromJson(buffer.readUtf8(), Map.class);
-
-            if (Objects.equal(json.get("text"), "error")) {
+            Map variables = (Map) json.get("variables");
+            String text = (String) variables.get("text");
+            if (Objects.equal(text, "error")) {
                 throw new IOException("test exc");
             }
 
