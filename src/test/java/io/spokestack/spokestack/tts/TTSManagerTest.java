@@ -16,6 +16,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -73,8 +75,10 @@ public class TTSManagerTest implements TTSListener {
         assertEquals("onResume", event, "onResume not called");
 
         // synthesis
-        SynthesisRequest request =
-              new SynthesisRequest.Builder("test").build();
+        SynthesisRequest request = new SynthesisRequest.Builder("test")
+              .withVoice("voice-2")
+              .withData(Collections.singletonMap("key", "value"))
+              .build();
         manager.synthesize(request);
         event = events.poll(1, TimeUnit.SECONDS);
         assertEquals("audioReceived", event, "audioReceived not called");

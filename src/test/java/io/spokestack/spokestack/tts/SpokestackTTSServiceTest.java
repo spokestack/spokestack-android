@@ -1,7 +1,6 @@
 package io.spokestack.spokestack.tts;
 
 import android.net.Uri;
-import androidx.annotation.NonNull;
 import com.google.common.base.Objects;
 import com.google.gson.Gson;
 import io.spokestack.spokestack.SpeechConfig;
@@ -28,7 +27,8 @@ import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.*;
 
@@ -146,13 +146,8 @@ public class SpokestackTTSServiceTest {
         }
 
         @Override
-        public void onFailure(@NonNull Call call, IOException e) {
-            ttsService.onFailure(call, e);
-        }
-
-        @Override
         public void onError(String message) {
-            fail("mocked onError should never be reached");
+            ttsService.onFailure(null, new IOException(message));
         }
 
         @Override
