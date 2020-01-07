@@ -172,8 +172,10 @@ public final class SpokestackTTSClient {
         switch (request.mode) {
             case TEXT:
                 body.put("text", String.valueOf(request.text));
+                break;
             case SSML:
                 body.put("ssml", String.valueOf(request.text));
+                break;
             default:
                 break;
         }

@@ -32,11 +32,11 @@ import io.spokestack.spokestack.tts.TTSListener;
  *
  * @see TTSComponent
  */
-public interface SpeechOutput extends AutoCloseable, LifecycleObserver,
-      TTSComponent, TTSListener {
+public abstract class SpeechOutput extends TTSComponent
+      implements AutoCloseable, LifecycleObserver, TTSListener {
 
     @Override
-    default void eventReceived(TTSEvent event) {
+    public void eventReceived(TTSEvent event) {
         if (event.type == TTSEvent.Type.AUDIO_AVAILABLE) {
             audioReceived(event.getTtsResponse());
         }
@@ -49,12 +49,12 @@ public interface SpeechOutput extends AutoCloseable, LifecycleObserver,
      * @param response The TTS response containing the URI of the synthesized
      *                 audio.
      */
-    void audioReceived(AudioResponse response);
+    public abstract void audioReceived(AudioResponse response);
 
-                       /**
+    /**
      * Sets the output's application context.
      *
      * @param appContext The application context.
      */
-    void setAppContext(Context appContext);
+    public abstract void setAppContext(Context appContext);
 }

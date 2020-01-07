@@ -28,9 +28,14 @@ import java.io.IOException;
  *     </li>
  * </ul>
  */
-public final class SpokestackTTSService extends TTSCallback
-      implements TTSService {
+public final class SpokestackTTSService extends TTSService {
     private SpokestackTTSClient client;
+
+    /**
+     * The callback used to process asynchronous responses from the underlying
+     * HTTP client.
+     */
+    protected final TTSCallback callback = new SpokestackCallback();
 
     /**
      * Creates a new TTS service component.
@@ -39,7 +44,7 @@ public final class SpokestackTTSService extends TTSCallback
      *               information and the location of the TTS endpoint.
      */
     public SpokestackTTSService(SpeechConfig config) {
-        this.client = new SpokestackTTSClient(this);
+        this.client = new SpokestackTTSClient(callback);
         configure(config);
     }
 
@@ -75,24 +80,30 @@ public final class SpokestackTTSService extends TTSCallback
         this.client.synthesize(request);
     }
 
-    @Override
-    public void onFailure(@NonNull Call call, IOException e) {
-        TTSEvent event = new TTSEvent(TTSEvent.Type.ERROR);
-        event.setError(e);
-        dispatch(event);
-    }
+    /**
+     * An internal callback class used to handle responses from the synthesis
+     * service.
+     */
+    private class SpokestackCallback extends TTSCallback {
+        @Override
+        public void onFailure(@NonNull Call call, IOException e) {
+            TTSEvent event = new TTSEvent(TTSEvent.Type.ERROR);
+            event.setError(e);
+            dispatch(event);
+        }
 
-    @Override
-    public void onError(String message) {
-        // no-op; we're throwing the error directly
-    }
+        @Override
+        public void onError(String message) {
+            // no-op; we're throwing the error directly
+        }
 
-    @Override
-    public void onUrlReceived(String url) {
-        TTSEvent event = new TTSEvent(TTSEvent.Type.AUDIO_AVAILABLE);
-        Uri audioUri = Uri.parse(url);
-        AudioResponse response = new AudioResponse(audioUri);
-        event.setTtsResponse(response);
-        dispatch(event);
+        @Override
+        public void onUrlReceived(String url) {
+            TTSEvent event = new TTSEvent(TTSEvent.Type.AUDIO_AVAILABLE);
+            Uri audioUri = Uri.parse(url);
+            AudioResponse response = new AudioResponse(audioUri);
+            event.setTtsResponse(response);
+            dispatch(event);
+        }
     }
 }

@@ -8,20 +8,20 @@ import java.util.List;
  * subsystem, components must publish their events to any subscribed {@link
  * TTSListener}s.
  */
-public interface TTSComponent {
+public abstract class TTSComponent {
 
     /**
      * Listeners that receive TTS events dispatched by this component.
      */
-    List<TTSListener> LISTENERS = new ArrayList<>();
+    private List<TTSListener> listeners = new ArrayList<>();
 
     /**
      * Add a TTS listener to receive events from this component.
      *
      * @param listener The listener to add.
      */
-    default void addListener(TTSListener listener) {
-        LISTENERS.add(listener);
+    public void addListener(TTSListener listener) {
+        listeners.add(listener);
     }
 
     /**
@@ -29,8 +29,8 @@ public interface TTSComponent {
      *
      * @param event The event that has occurred.
      */
-    default void dispatch(TTSEvent event) {
-        for (TTSListener listener : LISTENERS) {
+    public void dispatch(TTSEvent event) {
+        for (TTSListener listener : listeners) {
             listener.eventReceived(event);
         }
     }

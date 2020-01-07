@@ -56,15 +56,15 @@ public class TTSManagerTest implements TTSListener {
                     .build());
 
         // valid config
+        LifecycleRegistry lifecycleRegistry =
+              new LifecycleRegistry(mock(LifecycleOwner.class));
+
         TTSManager manager = new TTSManager.Builder(context)
               .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
               .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
+              .setLifecycle(lifecycleRegistry)
               .addTTSListener(this)
               .build();
-
-        LifecycleRegistry lifecycleRegistry =
-              new LifecycleRegistry(mock(LifecycleOwner.class));
-        manager.registerLifecycle(lifecycleRegistry);
 
         assertThrows(IllegalStateException.class, manager::prepare);
         assertNotNull(manager.getTtsService());
@@ -109,9 +109,10 @@ public class TTSManagerTest implements TTSListener {
         lastEvent = event;
     }
 
-    public static class Input implements TTSService {
+    public static class Input extends TTSService {
 
-        public Input(SpeechConfig config) { }
+        public Input(SpeechConfig config) {
+        }
 
         @Override
         public void synthesize(SynthesisRequest request) {
@@ -127,7 +128,8 @@ public class TTSManagerTest implements TTSListener {
         }
     }
 
-    public static class Output implements SpeechOutput, DefaultLifecycleObserver {
+    public static class Output extends SpeechOutput
+          implements DefaultLifecycleObserver {
 
         public Output(SpeechConfig config) {
         }

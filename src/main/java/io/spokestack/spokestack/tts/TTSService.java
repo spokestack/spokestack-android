@@ -17,7 +17,8 @@ package io.spokestack.spokestack.tts;
  *
  * @see TTSComponent
  */
-public interface TTSService extends AutoCloseable, TTSComponent {
+public abstract class TTSService extends TTSComponent
+      implements AutoCloseable {
 
     /**
      * Synthesizes a piece of text or SSML, dispatching the result to any
@@ -25,5 +26,5 @@ public interface TTSService extends AutoCloseable, TTSComponent {
      *
      * @param request The synthesis request data.
      */
-    void synthesize(SynthesisRequest request);
+    public abstract void synthesize(SynthesisRequest request);
 }

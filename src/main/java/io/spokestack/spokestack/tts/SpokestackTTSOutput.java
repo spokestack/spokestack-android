@@ -4,7 +4,8 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-import androidx.annotation.MainThread;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.DefaultLifecycleObserver;
@@ -27,6 +28,8 @@ import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechOutput;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Consumer;
+
 /**
  * Audio player component for the TTS subsystem.
  *
@@ -46,16 +49,18 @@ import org.jetbrains.annotations.NotNull;
  * TTSManager} and managing audio via its methods.
  * </p>
  */
-public class SpokestackTTSOutput
-      implements SpeechOutput, Player.EventListener,
+public class SpokestackTTSOutput extends SpeechOutput
+      implements Player.EventListener,
       AudioManager.OnAudioFocusChangeListener, DefaultLifecycleObserver {
 
     private final int contentType;
     private final int usage;
-    private PlayerState playerState;
+    private Consumer<Runnable> taskHandler;
+    private Handler playerHandler;
     private PlayerFactory playerFactory;
     private ExoPlayer mediaPlayer;
     private Context appContext;
+    private PlayerState playerState;
 
     /**
      * Creates a new audio output component.
@@ -78,20 +83,31 @@ public class SpokestackTTSOutput
         } else {
             this.usage = C.USAGE_MEDIA;
         }
+        this.taskHandler = this::runOnPlayerThread;
         this.playerFactory = new PlayerFactory();
     }
 
+    private void runOnPlayerThread(Runnable task) {
+        if (playerHandler == null) {
+            playerHandler = new Handler(Looper.getMainLooper());
+        }
+        playerHandler.post(task);
+    }
+
     /**
-     * Creates a new instance of the audio player with a custom player factory.
-     * Used for testing.
+     * Creates a new instance of the audio player with a custom player factory
+     * and task handler. Used for testing.
      *
-     * @param config        A configuration object.
+     * @param config  A configuration object.
      * @param factory A media player factory.
+     * @param handler A task handler used to interact with the media player.
      */
     SpokestackTTSOutput(SpeechConfig config,
-                        PlayerFactory factory) {
+                        PlayerFactory factory,
+                        Consumer<Runnable> handler) {
         this(config);
         this.playerFactory = factory;
+        this.taskHandler = handler;
     }
 
     @Override
@@ -121,41 +137,44 @@ public class SpokestackTTSOutput
     /**
      * Establish the media player and allocate its internal resources.
      */
-    @MainThread
     public void prepare() {
-        ExoPlayer player = this.playerFactory.createPlayer(
-              this.usage,
-              this.contentType,
-              this.appContext);
-        player.addListener(this);
-        this.mediaPlayer = player;
+        this.taskHandler.accept(() -> {
+            ExoPlayer player = this.playerFactory.createPlayer(
+                  this.usage,
+                  this.contentType,
+                  this.appContext);
+            player.addListener(this);
+            this.mediaPlayer = player;
+        });
     }
 
     @Override
-    @MainThread
     public void close() {
-        savePlayerSettings();
-        this.mediaPlayer.release();
-        this.mediaPlayer = null;
-        this.playerState = new PlayerState();
+        this.taskHandler.accept(() -> {
+            savePlayerSettings();
+            this.mediaPlayer.release();
+            this.mediaPlayer = null;
+        });
     }
 
     @Override
-    @MainThread
     public void audioReceived(AudioResponse response) {
         if (this.mediaPlayer == null) {
             prepare();
         }
 
-        Uri audioUri = response.getAudioUri();
-        MediaSource mediaSource = createMediaSource(audioUri);
-        mediaPlayer.prepare(mediaSource);
-        this.playerState = new PlayerState(
-              true,
-              this.playerState.shouldPlay,
-              this.playerState.curPosition,
-              this.playerState.window
-        );
+        this.taskHandler.accept(() -> {
+            Uri audioUri = response.getAudioUri();
+            MediaSource mediaSource = createMediaSource(audioUri);
+            mediaPlayer.prepare(mediaSource);
+            this.playerState = new PlayerState(
+                  true,
+                  this.playerState.shouldPlay,
+                  this.playerState.curPosition,
+                  this.playerState.window
+            );
+        });
+
         playContent();
     }
 
@@ -169,16 +188,14 @@ public class SpokestackTTSOutput
     }
 
     @Override
-    @MainThread
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         if (playbackState == Player.STATE_ENDED) {
             this.playerState = new PlayerState(
                   false,
                   this.playerState.shouldPlay,
-                  this.playerState.curPosition,
+                  0,
                   this.playerState.window
             );
-            savePlayerSettings();
         }
     }
 
@@ -199,6 +216,7 @@ public class SpokestackTTSOutput
                 break;
             case AudioManager.AUDIOFOCUS_GAIN:
                 playContent();
+                break;
             default:
                 break;
         }
@@ -217,24 +235,25 @@ public class SpokestackTTSOutput
     /**
      * Start or resume playback of any TTS responses.
      */
-    @MainThread
     public void playContent() {
-        if (mediaPlayer == null) {
-            throw new IllegalStateException("player not prepared; cannot play");
-        }
+        this.taskHandler.accept(() -> {
+            if (!playerState.hasContent) {
+                return;
+            }
 
-        if (!playerState.hasContent) {
-            return;
-        }
+            if (mediaPlayer == null) {
+                prepare();
+            }
 
-        // restore player state
-        mediaPlayer.seekTo(playerState.window,
-              playerState.curPosition);
+            // restore player state
+            mediaPlayer.seekTo(playerState.window,
+                  playerState.curPosition);
 
-        // only play if focus is granted
-        if (requestFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            mediaPlayer.setPlayWhenReady(true);
-        }
+            // only play if focus is granted
+            if (requestFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                mediaPlayer.setPlayWhenReady(true);
+            }
+        });
     }
 
     int requestFocus() {
@@ -264,14 +283,14 @@ public class SpokestackTTSOutput
      * Pause playback of any current content, storing the player's state
      * internally for later resumption.
      */
-    @MainThread
     public void pauseContent() {
-        if (mediaPlayer == null) {
-            throw new IllegalStateException(
-                  "player not prepared; cannot pause");
-        }
-        mediaPlayer.setPlayWhenReady(false);
-        savePlayerSettings();
+        this.taskHandler.accept(() -> {
+            if (mediaPlayer == null) {
+                return;
+            }
+            mediaPlayer.setPlayWhenReady(false);
+            savePlayerSettings();
+        });
     }
 
     private void savePlayerSettings() {
@@ -305,6 +324,16 @@ public class SpokestackTTSOutput
             this.shouldPlay = playWhenReady;
             this.curPosition = playbackPosition;
             this.window = windowIndex;
+        }
+
+        @Override
+        public String toString() {
+            return "PlayerState{"
+                  + "shouldPlay=" + shouldPlay
+                  + ", hasContent=" + hasContent
+                  + ", window=" + window
+                  + ", curPosition=" + curPosition
+                  + '}';
         }
     }
 

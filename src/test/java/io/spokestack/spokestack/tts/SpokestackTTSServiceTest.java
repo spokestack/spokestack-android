@@ -147,12 +147,12 @@ public class SpokestackTTSServiceTest {
 
         @Override
         public void onError(String message) {
-            ttsService.onFailure(null, new IOException(message));
+            ttsService.callback.onFailure(null, new IOException(message));
         }
 
         @Override
         public void onUrlReceived(String url) {
-            ttsService.onUrlReceived(url);
+            ttsService.callback.onUrlReceived(url);
         }
     }
 

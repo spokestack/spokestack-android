@@ -61,15 +61,15 @@ public class SpokestackTTSOutputTest {
 
     @Test
     public void testConstruction() {
-        SpokestackTTSOutput ttsOutput = new SpokestackTTSOutput(null);
+        SpokestackTTSOutput ttsOutput =
+              new SpokestackTTSOutput(null, factory, this::simpleHandler);
         assertNull(ttsOutput.getMediaPlayer());
-        assertThrows(IllegalStateException.class, ttsOutput::playContent);
-        assertThrows(IllegalStateException.class, ttsOutput::pauseContent);
     }
 
     @Test
     public void testResourceManagement() {
-        SpokestackTTSOutput ttsOutput = new SpokestackTTSOutput(null, factory);
+        SpokestackTTSOutput ttsOutput =
+              new SpokestackTTSOutput(null, factory, this::simpleHandler);
         ttsOutput.setAppContext(mockContext);
         lifecycleRegistry.addObserver(ttsOutput);
         ttsOutput.prepare();
@@ -160,7 +160,7 @@ public class SpokestackTTSOutputTest {
 
     private SpokestackTTSOutput spiedOutput() {
         SpokestackTTSOutput ttsOutput =
-              spy(new SpokestackTTSOutput(null, factory));
+              spy(new SpokestackTTSOutput(null, factory, this::simpleHandler));
         // mocked because Android system methods called indirectly by the code
         // under test are all stubbed or absent from the android/androidx deps
         doReturn(mock(MediaSource.class))
@@ -169,6 +169,10 @@ public class SpokestackTTSOutputTest {
               .when(ttsOutput).requestFocus();
         ttsOutput.setAppContext(mockContext);
         return ttsOutput;
+    }
+
+    private void simpleHandler(Runnable task) {
+        task.run();
     }
 
     private class MockPlayerFactory

@@ -33,6 +33,7 @@ import java.util.List;
  *     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
  *     .setOutputClass("io.spokestack.spokestack.tts.SpokestackTTSOutput")
  *     .setProperty("spokestack-key", "f854fbf30a5f40c189ecb1b38bc78059")
+ *     .setLifecycle(getLifecycle())
  *     .build();
  * }
  * </pre>
@@ -89,6 +90,7 @@ public final class TTSManager implements AutoCloseable {
         this.outputClass = builder.outputClass;
         this.config = builder.config;
         this.context = builder.context.getApplicationContext();
+        this.lifecycle = builder.lifecycle;
         this.listeners.addAll(builder.listeners);
         prepare();
     }
@@ -125,9 +127,6 @@ public final class TTSManager implements AutoCloseable {
     public void close() {
         release();
         this.ttsService = null;
-        if (this.lifecycle != null && this.output != null) {
-            this.lifecycle.removeObserver(this.output);
-        }
         this.output = null;
         this.listeners.clear();
     }
@@ -146,9 +145,9 @@ public final class TTSManager implements AutoCloseable {
         this.ttsService =
               createComponent(this.ttsServiceClass, TTSService.class);
         for (TTSListener listener : this.listeners) {
-           this.ttsService.addListener(listener);
+            this.ttsService.addListener(listener);
         }
-        if (this.outputClass != null) {
+        if (this.outputClass != null && this.output == null) {
             this.output = createComponent(this.outputClass, SpeechOutput.class);
             this.ttsService.addListener(this.output);
             this.output.setAppContext(this.context);
@@ -175,6 +174,9 @@ public final class TTSManager implements AutoCloseable {
     public void release() {
         if (this.output != null) {
             try {
+                if (this.lifecycle != null) {
+                    this.lifecycle.removeObserver(this.output);
+                }
                 this.output.close();
             } catch (Exception e) {
                 raiseError(e);
@@ -183,6 +185,7 @@ public final class TTSManager implements AutoCloseable {
 
         try {
             this.ttsService.close();
+            this.ttsService = null;
         } catch (Exception e) {
             raiseError(e);
         }
@@ -203,6 +206,7 @@ public final class TTSManager implements AutoCloseable {
         private String ttsServiceClass;
         private String outputClass;
         private Context context;
+        private Lifecycle lifecycle;
         private SpeechConfig config = new SpeechConfig();
         private List<TTSListener> listeners = new ArrayList<>();
 
@@ -260,6 +264,18 @@ public final class TTSManager implements AutoCloseable {
          */
         public Builder setProperty(String key, Object value) {
             this.config.put(key, value);
+            return this;
+        }
+
+        /**
+         * Sets the manager's current lifecycle.
+         *
+         * @param curLifecycle The lifecycle dispatching events to this TTS
+         *                  manager.
+         * @return this
+         */
+        public Builder setLifecycle(Lifecycle curLifecycle) {
+            this.lifecycle = curLifecycle;
             return this;
         }
 
