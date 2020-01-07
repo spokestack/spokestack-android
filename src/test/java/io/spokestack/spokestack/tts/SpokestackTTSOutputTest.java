@@ -64,6 +64,10 @@ public class SpokestackTTSOutputTest {
         SpokestackTTSOutput ttsOutput =
               new SpokestackTTSOutput(null, factory, this::simpleHandler);
         assertNull(ttsOutput.getMediaPlayer());
+
+        // no errors thrown
+        ttsOutput.pauseContent();
+        ttsOutput.playContent();
     }
 
     @Test

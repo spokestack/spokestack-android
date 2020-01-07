@@ -265,11 +265,30 @@
                      <goal>prepare-agent</goal>
                   </goals>
                </execution>
+               <execution>
+                  <id>jacoco-check</id>
+                  <goals>
+                     <goal>check</goal>
+                  </goals>
+               </execution>
             </executions>
             <configuration>
                <excludes>
                   <exclude>**/io/spokestack/spokestack/BuildConfig.*</exclude>
                </excludes>
+               <dataFile>./target/jacoco.exec</dataFile>
+               <rules>
+                 <rule>
+                   <element>BUNDLE</element>
+                   <limits>
+                     <limit>
+                       <counter>INSTRUCTION</counter>
+                       <value>COVEREDRATIO</value>
+                       <minimum>0.9</minimum>
+                     </limit>
+                   </limits>
+                 </rule>
+               </rules>
             </configuration>
          </plugin>
          <plugin>

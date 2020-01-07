@@ -55,13 +55,16 @@ public class TTSManagerTest implements TTSListener {
                     .setOutputClass("invalid")
                     .build());
 
-        // valid config
+        // valid config, also demonstrating that setConfig overrides any
+        // previously set properties
         LifecycleRegistry lifecycleRegistry =
               new LifecycleRegistry(mock(LifecycleOwner.class));
 
         TTSManager manager = new TTSManager.Builder(context)
               .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
               .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
+              .setProperty("spokestack-key", "test")
+              .setConfig(new SpeechConfig())
               .setLifecycle(lifecycleRegistry)
               .addTTSListener(this)
               .build();
@@ -112,6 +115,10 @@ public class TTSManagerTest implements TTSListener {
     public static class Input extends TTSService {
 
         public Input(SpeechConfig config) {
+            String key = config.getString("spokestack-key", "default");
+            if (!key.equals("default")) {
+                fail("custom key should not be set by tests");
+            }
         }
 
         @Override

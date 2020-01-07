@@ -325,16 +325,6 @@ public class SpokestackTTSOutput extends SpeechOutput
             this.curPosition = playbackPosition;
             this.window = windowIndex;
         }
-
-        @Override
-        public String toString() {
-            return "PlayerState{"
-                  + "shouldPlay=" + shouldPlay
-                  + ", hasContent=" + hasContent
-                  + ", window=" + window
-                  + ", curPosition=" + curPosition
-                  + '}';
-        }
     }
 
     /**
