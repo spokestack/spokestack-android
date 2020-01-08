@@ -129,7 +129,6 @@ public class SynthesisRequest {
      *                         synthesized.
      * @param requestData      Any additional data that should be included along
      *                         with the TTS request.
-     * @see SSML
      */
     public SynthesisRequest(CharSequence textToSynthesize, Mode synthesisMode,
                             String ttsVoice, Map<String, String> requestData) {

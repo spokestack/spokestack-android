@@ -80,13 +80,21 @@ public class SpokestackTTSClientTest {
     }
 
     @Test
-    public void testSpeak() throws Exception {
+    public void testConfig() throws Exception {
         // no api key
-        TestCallback callback = new TestCallback("API key not provided");
+        TestCallback callback = new TestCallback("client key not provided");
         SpokestackTTSClient client =
               new SpokestackTTSClient(callback, httpClient);
 
         SynthesisRequest request = new SynthesisRequest.Builder("text").build();
+        client.synthesize(request);
+        assertTrue(callback.errorReceived);
+
+        // no client secret
+        callback = new TestCallback("client secret not provided");
+        client = new SpokestackTTSClient(callback, httpClient);
+        client.setCredentials("valid", null);
+
         client.synthesize(request);
         assertTrue(callback.errorReceived);
 
@@ -110,7 +118,6 @@ public class SpokestackTTSClientTest {
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.errorReceived);
 
-
         // no TTS URL
         latch = new CountDownLatch(1);
         callback = new TestCallback("TTS URL not provided", latch);
@@ -120,13 +127,36 @@ public class SpokestackTTSClientTest {
         client.synthesize(request);
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.errorReceived);
+    }
 
+    @Test
+    public void testRequestSigning() {
+        CountDownLatch latch = new CountDownLatch(1);
+        TestCallback callback = new TestCallback(null, latch);
+        SpokestackTTSClient client = new SpokestackTTSClient(callback, httpClient);
+        String key = "f0bc990c-e9db-4a0c-a2b1-6a6395a3d97e";
+        String secret =
+              "5BD5483F573D691A15CFA493C1782F451D4BD666E39A9E7B2EBE287E6A72C6B6";
+        client.setCredentials(key, secret);
+
+        String body = "{\"query\": "
+              + "\"query AndroidSynthesize($voice:String!, $text:String!) {"
+              + "synthesizeText(voice: $voice, text: $text) {url}}\", "
+              + "\"variables\": {\"voice\": \"demo-male\", \"text\": \"test\""
+              + "}}";
+        String sig = client.signRequest(body);
+        assertEquals("ZqrTG+aiIYJKgHB63HCmXCLj0acUEi92d/b2au2WdEM=", sig);
+    }
+
+    @Test
+    public void testSpeak() throws Exception {
         // valid text request
-        latch = new CountDownLatch(1);
-        callback = new TestCallback(null, latch);
-        client = new SpokestackTTSClient(callback, httpClient);
+        CountDownLatch latch = new CountDownLatch(1);
+        TestCallback callback = new TestCallback(null, latch);
+        SpokestackTTSClient client = new SpokestackTTSClient(callback, httpClient);
         client.setCredentials("key", "secret");
 
+        SynthesisRequest request = new SynthesisRequest.Builder("text").build();
         client.synthesize(request);
         latch.await(1, TimeUnit.SECONDS);
         assertTrue(callback.urlReceived);
@@ -171,7 +201,7 @@ public class SpokestackTTSClientTest {
 
         @Override
         protected AudioResponse createAudioResponse(
-              @NonNull String responseJson, @Nullable  String requestId) {
+              @NonNull String responseJson, @Nullable String requestId) {
             HashMap<String, Object> metadata = new HashMap<>();
             metadata.put("id", requestId);
             return new AudioResponse(metadata, Uri.EMPTY);

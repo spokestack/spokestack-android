@@ -1,6 +1,7 @@
 package io.spokestack.spokestack.tts;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -28,13 +29,13 @@ import java.util.concurrent.TimeUnit;
 public final class SpokestackTTSClient {
     private String ttsUrl = "https://api.spokestack.io/v1";
     private static final MediaType APPLICATION_JSON =
-          MediaType.parse("application/json; charset=utf-8");
+          MediaType.parse("application/json");
     private static final String HMAC_TYPE = "HmacSHA256";
     private static final String GRAPHQL_QUERY =
-          "\"query AndroidSynthesize($voice: String!, $%1$s: String!) {"
-                + "%2$s(voice: $voice, $%1$s: %1$s) {"
+          "query AndroidSynthesize($voice: String!, $%1$s: String!) {"
+                + "%2$s(voice: $voice, %1$s: $%1$s) {"
                 + "url"
-                + "}}\"";
+                + "}}";
 
     private final OkHttpClient httpClient;
     private TTSCallback ttsCallback;
@@ -69,7 +70,7 @@ public final class SpokestackTTSClient {
      */
     public SpokestackTTSClient(TTSCallback callback,
                                OkHttpClient client) {
-        this.gson = new Gson();
+        this.gson = new GsonBuilder().disableHtmlEscaping().create();
         this.ttsCallback = callback;
         this.httpClient = client;
     }
@@ -143,7 +144,11 @@ public final class SpokestackTTSClient {
                             String queryString,
                             Map<String, String> variables) {
         if (this.ttsClientKey == null) {
-            ttsCallback.onError("API key not provided");
+            ttsCallback.onError("client key not provided");
+            return;
+        }
+        if (this.ttsClientSecret == null) {
+            ttsCallback.onError("client secret not provided");
             return;
         }
         if (this.ttsUrl == null) {
@@ -153,7 +158,7 @@ public final class SpokestackTTSClient {
 
         String bodyJson = gson.toJson(variables);
         String fullBody =
-              "{\"query\": " + queryString + ", "
+              "{\"query\": \"" + queryString + "\", "
                     + "\"variables\": " + bodyJson + "}";
         RequestBody postBody = RequestBody.create(fullBody, APPLICATION_JSON);
 
@@ -171,7 +176,7 @@ public final class SpokestackTTSClient {
 
         Request request = builder
               .url(ttsUrl)
-              .header("content-type", "application/json")
+              .header("Content-Type", "application/json")
               .header("Authorization",
                     "Spokestack " + ttsClientKey + ":" + authHeader)
               .post(postBody)
@@ -180,7 +185,7 @@ public final class SpokestackTTSClient {
         httpClient.newCall(request).enqueue(this.ttsCallback);
     }
 
-    private String signRequest(String body) {
+    String signRequest(String body) {
         String base64Signature = null;
         try {
             Mac hmacAlgo = Mac.getInstance(HMAC_TYPE);
