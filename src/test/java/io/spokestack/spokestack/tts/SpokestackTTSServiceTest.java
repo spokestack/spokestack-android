@@ -34,7 +34,7 @@ import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({Call.class, Uri.class})
-@PowerMockIgnore({"javax.net.ssl.*","javax.crypto.*"})
+@PowerMockIgnore({"javax.net.ssl.*", "javax.crypto.*"})
 public class SpokestackTTSServiceTest {
 
     private static final String AUDIO_URL =
@@ -42,10 +42,9 @@ public class SpokestackTTSServiceTest {
     private final Gson gson = new Gson();
     private SpokestackTTSClient client;
     private CallbackForwarder callbackForwarder;
-    private Response validResponse;
 
     @Before
-    public void before() throws Exception {
+    public void before() {
         mockStatic(Uri.class);
         when(Uri.parse(any())).thenReturn(mock(Uri.class));
 
@@ -55,22 +54,6 @@ public class SpokestackTTSServiceTest {
         this.client = new SpokestackTTSClient(null, httpClient);
         this.callbackForwarder = new CallbackForwarder();
         this.client.setTtsCallback(this.callbackForwarder);
-
-        Request request = new okhttp3.Request.Builder()
-              .url("http://example.com/")
-              .build();
-        ResponseBody validBody = mock(ResponseBody.class);
-        BufferedSource validSource = mock(BufferedSource.class);
-        when(validSource.readString(any(Charset.class)))
-              .thenReturn("{\"url\": \"" + AUDIO_URL + "\"}");
-        when(validBody.source()).thenReturn(validSource);
-        validResponse = new Response.Builder()
-              .request(request)
-              .protocol(okhttp3.Protocol.HTTP_1_1)
-              .code(200)
-              .message("OK")
-              .body(validBody)
-              .build();
     }
 
     @Test
@@ -128,7 +111,7 @@ public class SpokestackTTSServiceTest {
         uri = uriQueue.poll(1, TimeUnit.SECONDS);
         assertNotNull(uri);
 
-        request = new SynthesisRequest.Builder("error") .build();
+        request = new SynthesisRequest.Builder("error").build();
         ttsService.synthesize(request);
         Throwable error = errorQueue.poll(1, TimeUnit.SECONDS);
         assertNotNull(error);
@@ -164,6 +147,14 @@ public class SpokestackTTSServiceTest {
      */
     private class FakeResponder implements Interceptor {
 
+        private static final String SSML_JSON =
+              "{\"data\": {\"synthesizeSsml\": {\"url\": \""
+                    + AUDIO_URL + "\"}}}";
+
+        private static final String TEXT_JSON =
+              "{\"data\": {\"synthesizeText\": {\"url\": \""
+                    + AUDIO_URL + "\"}}}";
+
         @NotNull
         @Override
         public Response intercept(@NotNull Chain chain) throws IOException {
@@ -178,7 +169,28 @@ public class SpokestackTTSServiceTest {
                 throw new IOException("test exc");
             }
 
-            return validResponse;
+            return createResponse(text == null);
         }
+
+        private Response createResponse(boolean isSsml) throws IOException {
+            Request request = new okhttp3.Request.Builder()
+                  .url("http://example.com/")
+                  .build();
+
+            ResponseBody body = mock(ResponseBody.class);
+            BufferedSource responseSource = mock(BufferedSource.class);
+            String responseBody = isSsml ? SSML_JSON : TEXT_JSON;
+            when(responseSource.readString(any(Charset.class)))
+                  .thenReturn(responseBody);
+            when(body.source()).thenReturn(responseSource);
+            return new Response.Builder()
+                  .request(request)
+                  .protocol(okhttp3.Protocol.HTTP_1_1)
+                  .code(200)
+                  .message("OK")
+                  .body(body)
+                  .build();
+        }
+
     }
 }
