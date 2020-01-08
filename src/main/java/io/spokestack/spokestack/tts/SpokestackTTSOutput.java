@@ -19,6 +19,7 @@ import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.audio.AudioAttributes;
+import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.upstream.DataSource;
@@ -59,6 +60,7 @@ public class SpokestackTTSOutput extends SpeechOutput
     private Handler playerHandler;
     private PlayerFactory playerFactory;
     private ExoPlayer mediaPlayer;
+    private ConcatenatingMediaSource mediaSource;
     private Context appContext;
     private PlayerState playerState;
 
@@ -85,6 +87,7 @@ public class SpokestackTTSOutput extends SpeechOutput
         }
         this.taskHandler = this::runOnPlayerThread;
         this.playerFactory = new PlayerFactory();
+        this.mediaSource = new ConcatenatingMediaSource();
     }
 
     private void runOnPlayerThread(Runnable task) {
@@ -145,6 +148,7 @@ public class SpokestackTTSOutput extends SpeechOutput
                   this.appContext);
             player.addListener(this);
             this.mediaPlayer = player;
+            this.mediaPlayer.prepare(mediaSource);
         });
     }
 
@@ -165,8 +169,15 @@ public class SpokestackTTSOutput extends SpeechOutput
 
         this.taskHandler.accept(() -> {
             Uri audioUri = response.getAudioUri();
-            MediaSource mediaSource = createMediaSource(audioUri);
-            mediaPlayer.prepare(mediaSource);
+            MediaSource newTrack = createMediaSource(audioUri);
+
+            if (mediaPlayer.isPlaying()) {
+                mediaSource.addMediaSource(newTrack);
+            } else {
+                mediaSource.clear();
+                mediaSource.addMediaSource(newTrack);
+                mediaPlayer.prepare(mediaSource);
+            }
             this.playerState = new PlayerState(
                   true,
                   this.playerState.shouldPlay,
@@ -224,6 +235,13 @@ public class SpokestackTTSOutput extends SpeechOutput
 
     @Override
     public void onResume(@NonNull LifecycleOwner owner) {
+        this.taskHandler.accept(() -> {
+            if (mediaPlayer != null) {
+                // restore player state
+                mediaPlayer.seekTo(playerState.window,
+                      playerState.curPosition);
+            }
+        });
         playContent();
     }
 
@@ -244,10 +262,6 @@ public class SpokestackTTSOutput extends SpeechOutput
             if (mediaPlayer == null) {
                 prepare();
             }
-
-            // restore player state
-            mediaPlayer.seekTo(playerState.window,
-                  playerState.curPosition);
 
             // only play if focus is granted
             if (requestFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {

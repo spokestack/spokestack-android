@@ -107,7 +107,7 @@ public class SpokestackTTSOutputTest {
         verify(ttsOutput, times(1)).playContent();
         verify(ttsOutput, times(1)).createMediaSource(Uri.EMPTY);
         verify(ttsOutput, times(1)).requestFocus();
-        verify(mediaPlayer, times(1)).prepare(any());
+        verify(mediaPlayer, times(2)).prepare(any());
         verify(mediaPlayer, times(1)).setPlayWhenReady(true);
     }
 
