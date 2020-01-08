@@ -31,21 +31,20 @@ import static org.mockito.Mockito.when;
 public class SpokestackTTSClientTest {
     private Response invalidResponse;
     private Response errorResponse;
-    private Response validResponse;
     private static final String AUDIO_URL =
           "https://spokestack.io/tts/test.mp3";
     private static final Gson gson = new Gson();
     private OkHttpClient httpClient;
 
     @Before
-    public void before() throws IOException {
+    public void before() {
         mockResponses();
         httpClient = new OkHttpClient.Builder()
               .addInterceptor(new FakeResponder())
               .build();
     }
 
-    private void mockResponses() throws IOException {
+    private void mockResponses() {
         Request request = new okhttp3.Request.Builder()
               .url("http://example.com/")
               .build();
@@ -63,19 +62,6 @@ public class SpokestackTTSClientTest {
               .code(419)
               .message("Unacceptable")
               .body(mock(ResponseBody.class))
-              .build();
-        ResponseBody validBody = mock(ResponseBody.class);
-        BufferedSource validSource = mock(BufferedSource.class);
-        when(validSource.readString(any(Charset.class)))
-              .thenReturn("{\"url\": \"" + AUDIO_URL + "\"," +
-                    "\"requestId\": \"123\"}");
-        when(validBody.source()).thenReturn(validSource);
-        validResponse = new Response.Builder()
-              .request(request)
-              .protocol(okhttp3.Protocol.HTTP_1_1)
-              .code(200)
-              .message("OK")
-              .body(validBody)
               .build();
     }
 
@@ -159,27 +145,33 @@ public class SpokestackTTSClientTest {
         SynthesisRequest request = new SynthesisRequest.Builder("text").build();
         client.synthesize(request);
         latch.await(1, TimeUnit.SECONDS);
-        assertTrue(callback.urlReceived);
+        assertNotNull(callback.audioResponse);
 
         // valid ssml request
         latch = new CountDownLatch(1);
         callback = new TestCallback(null, latch);
         client = new SpokestackTTSClient(callback, httpClient);
         client.setCredentials("key", "secret");
+        HashMap<String, String> metadata = new HashMap<>();
+        String requestId = "abce153193";
+        metadata.put("id", requestId);
 
         SynthesisRequest validSSML =
               new SynthesisRequest.Builder("<speak>aloha</speak>")
-                    .withMode(SynthesisRequest.Mode.SSML).build();
+                    .withMode(SynthesisRequest.Mode.SSML)
+                    .withData(metadata)
+                    .build();
         client.synthesize(validSSML);
         latch.await(1, TimeUnit.SECONDS);
-        assertTrue(callback.urlReceived);
+        AudioResponse response = callback.audioResponse;
+        assertEquals(requestId, response.getMetadata().get("id"));
     }
 
     static class TestCallback extends TTSCallback {
         private String errorMessage;
         private CountDownLatch countDownLatch;
         boolean errorReceived = false;
-        boolean urlReceived = false;
+        AudioResponse audioResponse;
 
         public TestCallback(String errorMessage) {
             this.errorMessage = errorMessage;
@@ -212,7 +204,7 @@ public class SpokestackTTSClientTest {
             if (this.errorMessage != null) {
                 fail("Error expected");
             }
-            urlReceived = true;
+            this.audioResponse = response;
             countDownLatch.countDown();
         }
     }
@@ -222,6 +214,10 @@ public class SpokestackTTSClientTest {
      * varying the response based on predetermined request parameters.
      */
     private class FakeResponder implements Interceptor {
+
+        private static final String TEXT_JSON =
+              "{\"data\": {\"synthesizeText\": {\"url\": \""
+                    + AUDIO_URL + "\"}}}";
 
         @NotNull
         @Override
@@ -234,7 +230,27 @@ public class SpokestackTTSClientTest {
             if (hasInvalidBody(request)) {
                 return errorResponse;
             }
-            return validResponse;
+            return createResponse(request);
+        }
+
+        private Response createResponse(Request request) throws IOException {
+            ResponseBody responseBody = mock(ResponseBody.class);
+            BufferedSource source = mock(BufferedSource.class);
+            when(source.readString(any(Charset.class))).thenReturn(TEXT_JSON);
+            when(responseBody.source()).thenReturn(source);
+            Response.Builder builder = new Response.Builder()
+                  .request(request)
+                  .protocol(okhttp3.Protocol.HTTP_1_1)
+                  .code(200)
+                  .message("OK")
+                  .body(responseBody);
+
+            String requestId = request.header("x-request-id");
+            if (requestId != null) {
+                builder.header("x-request-id", requestId);
+            }
+
+            return builder.build();
         }
 
         private boolean hasInvalidKey(Request request) {

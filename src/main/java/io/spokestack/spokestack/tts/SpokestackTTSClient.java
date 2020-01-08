@@ -115,7 +115,7 @@ public final class SpokestackTTSClient {
      */
     public void synthesize(SynthesisRequest request) {
         HashMap<String, String> headers = new HashMap<>();
-        String requestId = request.metadata.get("x-request-id");
+        String requestId = request.metadata.get("id");
         if (requestId != null) {
             headers.put("x-request-id", requestId);
         }
