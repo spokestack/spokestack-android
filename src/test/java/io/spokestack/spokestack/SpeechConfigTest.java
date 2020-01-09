@@ -1,9 +1,10 @@
 package io.spokestack.spokestack;
 
-import java.util.*;
-
 import org.junit.Test;
-import org.junit.jupiter.api.function.Executable;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SpeechConfigTest {
@@ -28,9 +29,8 @@ public class SpeechConfigTest {
 
         // default value
         assertEquals("default", config.getString("string", "default"));
-        assertThrows(IllegalArgumentException.class, new Executable() {
-            public void execute() { config.getString("string"); }
-        });
+        assertThrows(IllegalArgumentException.class,
+              () -> config.getString("string"));
 
         // null value
         config.put("string", null);
@@ -54,9 +54,8 @@ public class SpeechConfigTest {
 
         // default value
         assertEquals(42, config.getInteger("integer", 42));
-        assertThrows(IllegalArgumentException.class, new Executable() {
-                public void execute() { config.getInteger("double"); }
-        });
+        assertThrows(IllegalArgumentException.class,
+              () -> config.getInteger("double"));
 
         // integer value
         config.put("integer", 1);
@@ -80,9 +79,8 @@ public class SpeechConfigTest {
 
         // default value
         assertEquals(42.0, config.getDouble("double", 42.0));
-        assertThrows(IllegalArgumentException.class, new Executable() {
-            public void execute() { config.getDouble("double"); }
-        });
+        assertThrows(IllegalArgumentException.class,
+              () -> config.getDouble("double"));
 
         // double value
         config.put("double", 3.14);
@@ -98,5 +96,19 @@ public class SpeechConfigTest {
         config.put("double", "2.72");
         assertEquals(2.72, config.getDouble("double", 1.0));
         assertEquals(2.72, config.getDouble("double"));
+    }
+
+    @Test
+    public void testObject() {
+        final SpeechConfig config = new SpeechConfig();
+
+        final SpeechConfig nested = new SpeechConfig();
+        nested.put("key", "value");
+
+        config.put("nested", nested);
+        SpeechConfig retrieved = (SpeechConfig) config.getObject("nested");
+        assertEquals("value", retrieved.getString("key"));
+        assertThrows(IllegalArgumentException.class,
+              () -> config.getObject("invalid"));
     }
 }

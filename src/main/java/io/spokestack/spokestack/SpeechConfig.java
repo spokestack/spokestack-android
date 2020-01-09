@@ -109,7 +109,7 @@ public final class SpeechConfig {
     }
 
     /**
-     * fetches an string value, coercing if needed.
+     * fetches a double value, coercing if needed.
      * @param key          key to look up
      * @param defaultValue value to return if not found
      * @return the double configuration value if found, defaultValue otherwise
@@ -135,6 +135,21 @@ public final class SpeechConfig {
         if (o instanceof String)
             return Double.parseDouble((String) o);
         return (double) o;
+    }
+
+    /**
+     * fetches a raw object.
+     *
+     * @param key key to look up
+     * @return the object value if {@code key} is found.
+     * @throws IllegalArgumentException if {@code key} is not found.
+     */
+    public Object getObject(String key) {
+        if (!this.params.containsKey(key)) {
+            throw new IllegalArgumentException(key + " not present");
+        }
+
+        return this.params.get(key);
     }
 
     /**

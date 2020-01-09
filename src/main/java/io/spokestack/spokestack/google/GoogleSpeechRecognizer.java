@@ -204,7 +204,7 @@ public final class GoogleSpeechRecognizer implements SpeechProcessor {
         public void onCompleted() {
             this.context.setTranscript(this.transcript);
             this.context.setConfidence(this.confidence);
-            if (this.transcript != "")
+            if (!this.transcript.equals(""))
                 this.context.dispatch(SpeechContext.Event.RECOGNIZE);
             else
                 this.context.dispatch(SpeechContext.Event.TIMEOUT);
