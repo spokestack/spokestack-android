@@ -62,7 +62,7 @@ public class SpokestackTTSOutputTest {
     @Test
     public void testConstruction() {
         SpokestackTTSOutput ttsOutput =
-              new SpokestackTTSOutput(null, factory, this::simpleHandler);
+              new SpokestackTTSOutput(null, factory);
         assertNull(ttsOutput.getMediaPlayer());
 
         // no errors thrown
@@ -73,7 +73,7 @@ public class SpokestackTTSOutputTest {
     @Test
     public void testResourceManagement() {
         SpokestackTTSOutput ttsOutput =
-              new SpokestackTTSOutput(null, factory, this::simpleHandler);
+              new SpokestackTTSOutput(null, factory);
         ttsOutput.setAppContext(mockContext);
         lifecycleRegistry.addObserver(ttsOutput);
         ttsOutput.prepare();
@@ -90,6 +90,12 @@ public class SpokestackTTSOutputTest {
         ttsOutput.close();
         mediaPlayer = ttsOutput.getMediaPlayer();
         assertNull(mediaPlayer);
+
+        // included for test coverage; these should not throw errors
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
     }
 
     @Test
@@ -162,9 +168,29 @@ public class SpokestackTTSOutputTest {
         verify(mediaPlayer, times(2)).setPlayWhenReady(true);
     }
 
+    @Test
+    public void testCompatibility() {
+        SpokestackTTSOutput ttsOutput =
+              new SpokestackTTSOutput(null, factory);
+
+        // these methods are implemented solely to maintain compatibility with
+        // older Android APIs; calling them should do nothing
+        ttsOutput.onTimelineChanged(null, 0);
+        ttsOutput.onTimelineChanged(null, null, 0);
+        ttsOutput.onTracksChanged(null, null);
+        ttsOutput.onLoadingChanged(true);
+        ttsOutput.onPlaybackSuppressionReasonChanged(0);
+        ttsOutput.onIsPlayingChanged(false);
+        ttsOutput.onRepeatModeChanged(0);
+        ttsOutput.onShuffleModeEnabledChanged(false);
+        ttsOutput.onPositionDiscontinuity(-10);
+        ttsOutput.onPlaybackParametersChanged(null);
+        ttsOutput.onSeekProcessed();
+    }
+
     private SpokestackTTSOutput spiedOutput() {
         SpokestackTTSOutput ttsOutput =
-              spy(new SpokestackTTSOutput(null, factory, this::simpleHandler));
+              spy(new SpokestackTTSOutput(null, factory));
         // mocked because Android system methods called indirectly by the code
         // under test are all stubbed or absent from the android/androidx deps
         doReturn(mock(MediaSource.class))
@@ -173,10 +199,6 @@ public class SpokestackTTSOutputTest {
               .when(ttsOutput).requestFocus();
         ttsOutput.setAppContext(mockContext);
         return ttsOutput;
-    }
-
-    private void simpleHandler(Runnable task) {
-        task.run();
     }
 
     private class MockPlayerFactory

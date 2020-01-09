@@ -16,20 +16,23 @@ import androidx.media.AudioManagerCompat;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.audio.AudioAttributes;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.ProgressiveMediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
+import io.spokestack.spokestack.util.TaskHandler;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechOutput;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.function.Consumer;
 
 /**
  * Audio player component for the TTS subsystem.
@@ -56,7 +59,7 @@ public class SpokestackTTSOutput extends SpeechOutput
 
     private final int contentType;
     private final int usage;
-    private Consumer<Runnable> taskHandler;
+    private TaskHandler taskHandler;
     private Handler playerHandler;
     private PlayerFactory playerFactory;
     private ExoPlayer mediaPlayer;
@@ -85,7 +88,7 @@ public class SpokestackTTSOutput extends SpeechOutput
         } else {
             this.usage = C.USAGE_MEDIA;
         }
-        this.taskHandler = this::runOnPlayerThread;
+        this.taskHandler = new TaskHandler(true);
         this.playerFactory = new PlayerFactory();
         this.mediaSource = new ConcatenatingMediaSource();
     }
@@ -103,14 +106,12 @@ public class SpokestackTTSOutput extends SpeechOutput
      *
      * @param config  A configuration object.
      * @param factory A media player factory.
-     * @param handler A task handler used to interact with the media player.
      */
     SpokestackTTSOutput(SpeechConfig config,
-                        PlayerFactory factory,
-                        Consumer<Runnable> handler) {
+                        PlayerFactory factory) {
         this(config);
         this.playerFactory = factory;
-        this.taskHandler = handler;
+        this.taskHandler = new TaskHandler(false);
     }
 
     @Override
@@ -141,7 +142,7 @@ public class SpokestackTTSOutput extends SpeechOutput
      * Establish the media player and allocate its internal resources.
      */
     public void prepare() {
-        this.taskHandler.accept(() -> {
+        this.taskHandler.run(() -> {
             ExoPlayer player = this.playerFactory.createPlayer(
                   this.usage,
                   this.contentType,
@@ -154,7 +155,7 @@ public class SpokestackTTSOutput extends SpeechOutput
 
     @Override
     public void close() {
-        this.taskHandler.accept(() -> {
+        this.taskHandler.run(() -> {
             savePlayerSettings();
             this.mediaPlayer.release();
             this.mediaPlayer = null;
@@ -167,7 +168,7 @@ public class SpokestackTTSOutput extends SpeechOutput
             prepare();
         }
 
-        this.taskHandler.accept(() -> {
+        this.taskHandler.run(() -> {
             Uri audioUri = response.getAudioUri();
             MediaSource newTrack = createMediaSource(audioUri);
 
@@ -235,7 +236,7 @@ public class SpokestackTTSOutput extends SpeechOutput
 
     @Override
     public void onResume(@NonNull LifecycleOwner owner) {
-        this.taskHandler.accept(() -> {
+        this.taskHandler.run(() -> {
             if (mediaPlayer != null) {
                 // restore player state
                 mediaPlayer.seekTo(playerState.window,
@@ -254,7 +255,7 @@ public class SpokestackTTSOutput extends SpeechOutput
      * Start or resume playback of any TTS responses.
      */
     public void playContent() {
-        this.taskHandler.accept(() -> {
+        this.taskHandler.run(() -> {
             if (!playerState.hasContent) {
                 return;
             }
@@ -298,7 +299,7 @@ public class SpokestackTTSOutput extends SpeechOutput
      * internally for later resumption.
      */
     public void pauseContent() {
-        this.taskHandler.accept(() -> {
+        this.taskHandler.run(() -> {
             if (mediaPlayer == null) {
                 return;
             }
@@ -359,4 +360,50 @@ public class SpokestackTTSOutput extends SpeechOutput
             return player;
         }
     }
+
+    // these lifecycle methods are unused but must be implemented to maintain
+    // backwards compatibility with older Android APIs that don't allow the
+    // default implementations in DefaultLifecycleObserver
+
+    @Override public void onCreate(@NonNull LifecycleOwner owner) { }
+
+    @Override public void onStart(@NonNull LifecycleOwner owner) { }
+
+    @Override public void onPause(@NonNull LifecycleOwner owner) { }
+
+    @Override public void onDestroy(@NonNull LifecycleOwner owner) { }
+
+    // similarly, implementing these listener methods maintains backwards
+    // compatibility for ExoPlayer
+
+    @Override public void onTimelineChanged(Timeline timeline, int reason) { }
+
+    @Override
+    public void onTimelineChanged(Timeline timeline,
+                                  @Nullable Object manifest, int reason) { }
+
+    @Override
+    public void onTracksChanged(TrackGroupArray trackGroups,
+                                TrackSelectionArray trackSelections) { }
+
+    @Override public void onLoadingChanged(boolean isLoading) { }
+
+    @Override
+    public void onPlaybackSuppressionReasonChanged(
+          int playbackSuppressionReason) { }
+
+    @Override public void onIsPlayingChanged(boolean isPlaying) { }
+
+    @Override public void onRepeatModeChanged(int repeatMode) { }
+
+    @Override public void onShuffleModeEnabledChanged(
+          boolean shuffleModeEnabled) { }
+
+    @Override public void onPositionDiscontinuity(int reason) { }
+
+    @Override
+    public void onPlaybackParametersChanged(
+          PlaybackParameters playbackParameters) { }
+
+    @Override public void onSeekProcessed() { }
 }

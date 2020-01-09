@@ -2,6 +2,7 @@ package io.spokestack.spokestack.tts;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import io.spokestack.spokestack.util.Base64;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -12,7 +13,6 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -195,7 +195,7 @@ public final class SpokestackTTSClient {
             hmacAlgo.init(keySpec);
             byte[] macData = hmacAlgo.doFinal(
                   body.getBytes(StandardCharsets.UTF_8));
-            base64Signature = Base64.getEncoder().encodeToString(macData);
+            base64Signature = Base64.encode(macData);
         } catch (NoSuchAlgorithmException e) {
             this.ttsCallback.onError("Invalid HMAC algorithm");
         } catch (InvalidKeyException e) {
