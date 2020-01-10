@@ -12,7 +12,6 @@ import static org.mockito.Mockito.*;
 import com.google.api.gax.rpc.ApiStreamObserver;
 import com.google.api.gax.rpc.BidiStreamingCallable;
 import com.google.cloud.speech.v1.SpeechClient;
-import com.google.cloud.speech.v1.SpeechSettings;
 import com.google.cloud.speech.v1.stub.SpeechStub;
 import com.google.cloud.speech.v1.StreamingRecognizeRequest;
 import com.google.cloud.speech.v1.StreamingRecognizeResponse;

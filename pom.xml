@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>io.spokestack</groupId>
    <artifactId>spokestack-android</artifactId>
-   <version>3.2.1-SNAPSHOT</version>
+   <version>4.0.0-SNAPSHOT</version>
    <packaging>aar</packaging>
    <name>Spokestack Library for Android</name>
    <description>Core library of the Spokestack framework for Android</description>
@@ -40,6 +40,10 @@
 
    <repositories>
       <repository>
+         <id>google</id>
+         <url>https://maven.google.com</url>
+      </repository>
+      <repository>
          <id>jcenter</id>
          <url>https://jcenter.bintray.com/</url>
       </repository>
@@ -62,6 +66,7 @@
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <maven.compiler.source>1.8</maven.compiler.source>
       <maven.compiler.target>1.8</maven.compiler.target>
+      <powermock.version>2.0.2</powermock.version>
    </properties>
 
    <dependencies>
@@ -70,6 +75,26 @@
          <groupId>com.google.android</groupId>
          <artifactId>android</artifactId>
          <version>4.1.1.4</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>androidx.lifecycle</groupId>
+         <artifactId>lifecycle-common-java8</artifactId>
+         <version>2.1.0</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>androidx.media</groupId>
+         <artifactId>media</artifactId>
+         <version>1.1.0</version>
+         <type>aar</type>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.google.android.exoplayer</groupId>
+         <artifactId>exoplayer-core</artifactId>
+         <version>2.11.0</version>
+         <type>aar</type>
          <scope>provided</scope>
       </dependency>
 
@@ -123,7 +148,19 @@
       <dependency>
          <groupId>org.mockito</groupId>
          <artifactId>mockito-core</artifactId>
-         <version>2.22.0</version>
+         <version>2.23.0</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.powermock</groupId>
+         <artifactId>powermock-module-junit4</artifactId>
+         <version>${powermock.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.powermock</groupId>
+         <artifactId>powermock-api-mockito2</artifactId>
+         <version>${powermock.version}</version>
          <scope>test</scope>
       </dependency>
    </dependencies>
@@ -157,6 +194,7 @@
             <artifactId>android-ndk-maven-plugin</artifactId>
             <version>1.1.2</version>
             <configuration>
+               <ndkPath>${android.ndk.path}</ndkPath>
                <useHeaderArchives>false</useHeaderArchives>
             </configuration>
             <executions>
@@ -227,11 +265,30 @@
                      <goal>prepare-agent</goal>
                   </goals>
                </execution>
+               <execution>
+                  <id>jacoco-check</id>
+                  <goals>
+                     <goal>check</goal>
+                  </goals>
+               </execution>
             </executions>
             <configuration>
                <excludes>
                   <exclude>**/io/spokestack/spokestack/BuildConfig.*</exclude>
                </excludes>
+               <dataFile>./target/jacoco.exec</dataFile>
+               <rules>
+                 <rule>
+                   <element>BUNDLE</element>
+                   <limits>
+                     <limit>
+                       <counter>INSTRUCTION</counter>
+                       <value>COVEREDRATIO</value>
+                       <minimum>0.85</minimum>
+                     </limit>
+                   </limits>
+                 </rule>
+               </rules>
             </configuration>
          </plugin>
          <plugin>
@@ -244,7 +301,7 @@
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-checkstyle-plugin</artifactId>
-            <version>3.0.0</version>
+            <version>3.1.0</version>
             <configuration>
                <configLocation>src/main/resources/checkstyle.xml</configLocation>
             </configuration>

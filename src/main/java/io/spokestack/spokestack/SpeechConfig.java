@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * speech pipeline configuration
+ * Spokestack component configuration
  *
  * <p>
- * This class provides for passing generic configuration properties through
- * the pipeline abstraction down to implementations. Configuration values
+ * This class allows generic configuration properties to pass through
+ * various builder abstractions down to implementations. Configuration values
  * may be primitive types and are registered in a global namespace. The
  * pipeline performs the following primitive type conversions (input on rows).
  * </p>
@@ -25,7 +25,7 @@ public final class SpeechConfig {
 
     /** initializes a default configuration instance. */
     public SpeechConfig() {
-        this(new HashMap<String, Object>());
+        this(new HashMap<>());
     }
 
     /**
@@ -104,7 +104,7 @@ public final class SpeechConfig {
         if (o instanceof Double)
             return (int) (double) o;
         if (o instanceof String)
-            return Integer.valueOf((String) o);
+            return Integer.parseInt((String) o);
         return (int) o;
     }
 
@@ -133,7 +133,7 @@ public final class SpeechConfig {
         if (o instanceof Integer)
             return (double) (int) o;
         if (o instanceof String)
-            return Double.valueOf((String) o);
+            return Double.parseDouble((String) o);
         return (double) o;
     }
 

@@ -89,6 +89,8 @@ for spectrum preprocessing, an autoregressive encoder *encode* model, and a
 the wakeword detector and its configuration parameters, click
 [here](https://github.com/spokestack/spokestack-android/wiki/wakeword).
 
+To use the demo "Spokestack" wakeword, download the TensorFlow Lite models: [detect](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/detect.lite) | [encode](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/encode.lite) | [filter](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/filter.lite)
+
 ## Development
 Maven is used for building/deployment, and the package is hosted at JCenter.
 
@@ -96,6 +98,8 @@ This package requires the [Android NDK](https://developer.android.com/ndk/guides
 to be installed and the `ANDROID_HOME` and `ANDROID_NDK_HOME` variables to be
 set. On OSX, `ANDROID_HOME` is usually set to `~/Library/Android/sdk` and
 `ANDROID_NDK_HOME` is usually set to `~/Library/Android/sdk/ndk/<version>`.
+
+`ANDROID_NDK_HOME` can also be specified in your local Maven `settings.xml` file as the `android.ndk.path` property.
 
 ### Testing/Coverage
 

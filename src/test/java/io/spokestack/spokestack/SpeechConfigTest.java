@@ -6,8 +6,6 @@ import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.spokestack.spokestack.SpeechConfig;
-
 public class SpeechConfigTest {
     @Test
     public void testConstruction() {
