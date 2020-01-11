@@ -138,21 +138,6 @@ public final class SpeechConfig {
     }
 
     /**
-     * fetches a raw object.
-     *
-     * @param key key to look up
-     * @return the object value if {@code key} is found.
-     * @throws IllegalArgumentException if {@code key} is not found.
-     */
-    public Object getObject(String key) {
-        if (!this.params.containsKey(key)) {
-            throw new IllegalArgumentException(key + " not present");
-        }
-
-        return this.params.get(key);
-    }
-
-    /**
      * writes a configuration value.
      * @param key   key to put
      * @param value value to store for the key

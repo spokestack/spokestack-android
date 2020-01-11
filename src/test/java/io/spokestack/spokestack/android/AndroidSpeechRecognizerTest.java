@@ -69,10 +69,10 @@ public class AndroidSpeechRecognizerTest {
     @Test
     public void testProcess() {
         SpeechConfig config = new SpeechConfig();
-        config.put("app-context", mockContext);
         AndroidSpeechRecognizer speechRecognizer =
               new AndroidSpeechRecognizer(config, new TaskHandler(false));
         SpeechContext context = new SpeechContext(config);
+        context.setAndroidContext(mockContext);
         EventListener listener = new EventListener();
         context.addOnSpeechEventListener(listener);
         ByteBuffer frame = ByteBuffer.allocateDirect(32);
@@ -92,7 +92,6 @@ public class AndroidSpeechRecognizerTest {
         // ASR received an error
         listener.clear();
         context.setActive(true);
-        config.put("app-context", emptyAppContext);
         speechRecognizer =
               new AndroidSpeechRecognizer(config, new TaskHandler(false));
         speechRecognizer.process(context, frame);

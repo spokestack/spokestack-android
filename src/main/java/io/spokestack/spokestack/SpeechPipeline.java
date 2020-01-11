@@ -1,5 +1,7 @@
 package io.spokestack.spokestack;
 
+import android.content.Context;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -83,6 +85,7 @@ public final class SpeechPipeline implements AutoCloseable {
         this.stageClasses = builder.stageClasses;
         this.config = builder.config;
         this.context = new SpeechContext(this.config);
+        this.context.setAndroidContext(builder.appContext);
         this.stages = new ArrayList<>();
 
         for (OnSpeechEventListener l : builder.listeners) {
@@ -255,6 +258,7 @@ public final class SpeechPipeline implements AutoCloseable {
         private String inputClass;
         private List<String> stageClasses = new ArrayList<>();
         private SpeechConfig config = new SpeechConfig();
+        private Context appContext;
         private List<OnSpeechEventListener> listeners = new ArrayList<>();
 
         /**
@@ -307,6 +311,20 @@ public final class SpeechPipeline implements AutoCloseable {
          */
         public Builder setConfig(SpeechConfig value) {
             this.config = value;
+            return this;
+        }
+
+        /**
+         * Sets the android context for the pipeline. Some components may
+         * require an application context instead of an activity context;
+         * see individual component documentation for details.
+         *
+         * @param androidContext the android context for the pipeline.
+         * @return this
+         * @see io.spokestack.spokestack.android.AndroidSpeechRecognizer
+         */
+        public Builder setAndroidContext(Context androidContext) {
+            this.appContext = androidContext;
             return this;
         }
 

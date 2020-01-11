@@ -33,6 +33,14 @@ import java.util.ArrayList;
  * </p>
  *
  * <p>
+ * Note that this component requires an Android {@code Context} to be attached
+ * to the pipeline that has created it. If the pipeline is meant to persist
+ * across different {@code Activity}s, the {@code Context} used must either be
+ * the <em>application</em> context, or it must be re-set on the pipeline's
+ * {@code SpeechContext} object when the Activity context changes.
+ * </p>
+ *
+ * <p>
  * Implementation of {@code SpeechRecognizer} is left up to devices, and even
  * though the API exists, an actual recognizer may not be present on all
  * devices. If using this component, it's a good idea to call {@code
@@ -48,21 +56,10 @@ import java.util.ArrayList;
  * {@link SpeechRecognizerError}s and have an appropriate fallback strategy in
  * place.
  * </p>
- *
- * <p>
- * This pipeline component requires the following configuration property:
- * </p>
- * <ul>
- *   <li>
- *      <b>app-context</b> ({@code android.content.Context}): the application
- *      Context
- *   </li>
- * </ul>
  */
 public final class AndroidSpeechRecognizer implements SpeechProcessor {
     private boolean streaming;
     private SpeechRecognizer speechRecognizer;
-    private Context appContext;
     private TaskHandler taskHandler;
 
     /**
@@ -70,10 +67,9 @@ public final class AndroidSpeechRecognizer implements SpeechProcessor {
      *
      * @param speechConfig Spokestack pipeline configuration
      */
+    @SuppressWarnings("unused")
     public AndroidSpeechRecognizer(SpeechConfig speechConfig) {
         this.streaming = false;
-        this.appContext = ((Context) speechConfig.getObject("app-context"))
-              .getApplicationContext();
         this.taskHandler = new TaskHandler(true);
     }
 
@@ -109,8 +105,9 @@ public final class AndroidSpeechRecognizer implements SpeechProcessor {
 
     private void createRecognizer(SpeechContext context) {
         this.taskHandler.run(() -> {
+            Context androidContext = context.getAndroidContext();
             this.speechRecognizer =
-                  SpeechRecognizer.createSpeechRecognizer(this.appContext);
+                  SpeechRecognizer.createSpeechRecognizer(androidContext);
             this.speechRecognizer.setRecognitionListener(
                   new SpokestackListener(context));
         });

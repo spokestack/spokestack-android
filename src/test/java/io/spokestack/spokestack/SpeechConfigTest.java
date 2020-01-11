@@ -97,18 +97,4 @@ public class SpeechConfigTest {
         assertEquals(2.72, config.getDouble("double", 1.0));
         assertEquals(2.72, config.getDouble("double"));
     }
-
-    @Test
-    public void testObject() {
-        final SpeechConfig config = new SpeechConfig();
-
-        final SpeechConfig nested = new SpeechConfig();
-        nested.put("key", "value");
-
-        config.put("nested", nested);
-        SpeechConfig retrieved = (SpeechConfig) config.getObject("nested");
-        assertEquals("value", retrieved.getString("key"));
-        assertThrows(IllegalArgumentException.class,
-              () -> config.getObject("invalid"));
-    }
 }
