@@ -42,13 +42,13 @@ public class TTSManagerTest implements TTSListener {
     public void testBuilder() throws Exception {
         // invalid TTS service
         assertThrows(ClassNotFoundException.class,
-              () -> new TTSManager.Builder(context)
+              () -> new TTSManager.Builder()
                     .setTTSServiceClass("invalid")
                     .build());
 
         // invalid output component
         assertThrows(ClassNotFoundException.class,
-              () -> new TTSManager.Builder(context)
+              () -> new TTSManager.Builder()
                     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
                     .setProperty("spokestack-key", "test")
                     .setProperty("spokestack-secret", "test")
@@ -60,11 +60,12 @@ public class TTSManagerTest implements TTSListener {
         LifecycleRegistry lifecycleRegistry =
               new LifecycleRegistry(mock(LifecycleOwner.class));
 
-        TTSManager manager = new TTSManager.Builder(context)
+        TTSManager manager = new TTSManager.Builder()
               .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
               .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
               .setProperty("spokestack-key", "test")
               .setConfig(new SpeechConfig())
+              .setAndroidContext(context)
               .setLifecycle(lifecycleRegistry)
               .addTTSListener(this)
               .build();
@@ -138,8 +139,8 @@ public class TTSManagerTest implements TTSListener {
     public static class Output extends SpeechOutput
           implements DefaultLifecycleObserver {
 
-        public Output(SpeechConfig config) {
-        }
+        @SuppressWarnings("unused")
+        public Output(SpeechConfig config) { }
 
         @Override
         public void onResume(@NotNull LifecycleOwner owner) {
@@ -155,8 +156,7 @@ public class TTSManagerTest implements TTSListener {
         }
 
         @Override
-        public void setAppContext(Context appContext) {
-        }
+        public void setAndroidContext(Context appContext) { }
 
         @Override
         public void close() {
