@@ -17,8 +17,12 @@ import java.io.IOException;
  * </p>
  * <ul>
  *     <li>
- *         <b>spokestack-key</b> (string): The API key used for synthesis
- *         requests.
+ *         <b>spokestack-id</b> (string, required): The client ID used for
+ *         synthesis requests.
+ *     </li>
+ *     <li>
+ *         <b>spokestack-secret</b> (string, required): The client secret used
+ *         to sign synthesis requests.
  *     </li>
  *     <li>
  *         <b>spokestack-url</b> (string): The URL used for synthesis
@@ -61,9 +65,9 @@ public final class SpokestackTTSService extends TTSService {
     }
 
     private void configure(SpeechConfig config) {
-        String apiKey = config.getString("spokestack-key");
+        String clientId = config.getString("spokestack-id");
         String clientSecret = config.getString("spokestack-secret");
-        this.client.setCredentials(apiKey, clientSecret);
+        this.client.setCredentials(clientId, clientSecret);
         String ttsUrl = config.getString("spokestack-url", null);
         if (ttsUrl != null) {
             this.client.setTtsUrl(ttsUrl);

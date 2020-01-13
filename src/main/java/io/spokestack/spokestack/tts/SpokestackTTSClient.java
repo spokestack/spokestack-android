@@ -40,7 +40,7 @@ public final class SpokestackTTSClient {
     private final OkHttpClient httpClient;
     private TTSCallback ttsCallback;
     private final Gson gson;
-    private String ttsClientKey;
+    private String ttsClientId;
     private String ttsClientSecret;
 
     /**
@@ -96,12 +96,12 @@ public final class SpokestackTTSClient {
     /**
      * Set the API key used for synthesis requests.
      *
-     * @param apiKey       The API key to use for synthesis requests.
-     * @param clientSecret The client secret used to authorize synthesis
+     * @param clientId     The client ID used for synthesis requests.
+     * @param clientSecret The client secret used to sign synthesis
      *                     requests.
      */
-    public void setCredentials(String apiKey, String clientSecret) {
-        this.ttsClientKey = apiKey;
+    public void setCredentials(String clientId, String clientSecret) {
+        this.ttsClientId = clientId;
         this.ttsClientSecret = clientSecret;
     }
 
@@ -143,7 +143,7 @@ public final class SpokestackTTSClient {
     private void postSpeech(Map<String, String> headers,
                             String queryString,
                             Map<String, String> variables) {
-        if (this.ttsClientKey == null) {
+        if (this.ttsClientId == null) {
             ttsCallback.onError("client key not provided");
             return;
         }
@@ -178,7 +178,7 @@ public final class SpokestackTTSClient {
               .url(ttsUrl)
               .header("Content-Type", "application/json")
               .header("Authorization",
-                    "Spokestack " + ttsClientKey + ":" + authHeader)
+                    "Spokestack " + ttsClientId + ":" + authHeader)
               .post(postBody)
               .build();
 

@@ -50,7 +50,7 @@ public class TTSManagerTest implements TTSListener {
         assertThrows(ClassNotFoundException.class,
               () -> new TTSManager.Builder(context)
                     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
-                    .setProperty("spokestack-key", "test")
+                    .setProperty("spokestack-id", "test")
                     .setProperty("spokestack-secret", "test")
                     .setOutputClass("invalid")
                     .build());
@@ -63,7 +63,7 @@ public class TTSManagerTest implements TTSListener {
         TTSManager manager = new TTSManager.Builder(context)
               .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
               .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
-              .setProperty("spokestack-key", "test")
+              .setProperty("spokestack-id", "test")
               .setConfig(new SpeechConfig())
               .setLifecycle(lifecycleRegistry)
               .addTTSListener(this)
@@ -115,9 +115,9 @@ public class TTSManagerTest implements TTSListener {
     public static class Input extends TTSService {
 
         public Input(SpeechConfig config) {
-            String key = config.getString("spokestack-key", "default");
+            String key = config.getString("spokestack-id", "default");
             if (!key.equals("default")) {
-                fail("custom key should not be set by tests");
+                fail("custom client ID should not be set by tests");
             }
         }
 
