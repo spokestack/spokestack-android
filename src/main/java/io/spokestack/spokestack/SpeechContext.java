@@ -1,5 +1,8 @@
 package io.spokestack.spokestack;
 
+import android.content.Context;
+import androidx.annotation.Nullable;
+
 import java.util.Deque;
 import java.util.List;
 import java.util.ArrayList;
@@ -68,6 +71,7 @@ public final class SpeechContext {
 
     private final List<OnSpeechEventListener> listeners = new ArrayList<>();
     private final int traceLevel;
+    private Context appContext;
     private Deque<ByteBuffer> buffer;
     private boolean speech;
     private boolean active;
@@ -84,6 +88,22 @@ public final class SpeechContext {
         this.traceLevel = config.getInteger(
             "trace-level",
             TraceLevel.NONE.value());
+    }
+
+    /**
+     * @return the Android context if set
+     */
+    @Nullable
+    public Context getAndroidContext() {
+        return appContext;
+    }
+
+    /**
+     * sets the Android context.
+     * @param androidContext The Android context
+     */
+    public void setAndroidContext(@Nullable Context androidContext) {
+        this.appContext = androidContext;
     }
 
     /** @return speech frame buffer */

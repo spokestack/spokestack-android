@@ -109,7 +109,7 @@ public final class SpeechConfig {
     }
 
     /**
-     * fetches an string value, coercing if needed.
+     * fetches a double value, coercing if needed.
      * @param key          key to look up
      * @param defaultValue value to return if not found
      * @return the double configuration value if found, defaultValue otherwise

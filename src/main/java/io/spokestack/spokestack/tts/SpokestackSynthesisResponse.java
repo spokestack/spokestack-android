@@ -30,7 +30,7 @@ public class SpokestackSynthesisResponse {
     /**
      * Wrapper class used for deserializing synthesis responses.
      */
-    private class ResponseData {
+    private static class ResponseData {
         private ResponseMethod synthesizeText;
         private ResponseMethod synthesizeSsml;
     }
@@ -38,7 +38,7 @@ public class SpokestackSynthesisResponse {
     /**
      * Wrapper class used for deserializing synthesis responses.
      */
-    private class ResponseMethod {
+    private static class ResponseMethod {
         private String url;
     }
 }
