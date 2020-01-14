@@ -52,9 +52,9 @@ public abstract class SpeechOutput extends TTSComponent
     public abstract void audioReceived(AudioResponse response);
 
     /**
-     * Sets the output's application context.
+     * Sets the output's Android context.
      *
-     * @param appContext The application context.
+     * @param androidContext The Android context.
      */
-    public abstract void setAppContext(Context appContext);
+    public abstract void setAndroidContext(Context androidContext);
 }

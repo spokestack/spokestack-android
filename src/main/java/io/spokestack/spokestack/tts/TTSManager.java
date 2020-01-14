@@ -62,8 +62,8 @@ public final class TTSManager implements AutoCloseable {
     private final List<TTSListener> listeners = new ArrayList<>();
     private TTSService ttsService;
     private SpeechOutput output;
-    private Context context;
     private Lifecycle lifecycle;
+    private Context appContext;
 
     /**
      * Get the current TTS service.
@@ -93,9 +93,9 @@ public final class TTSManager implements AutoCloseable {
         this.ttsServiceClass = builder.ttsServiceClass;
         this.outputClass = builder.outputClass;
         this.config = builder.config;
-        this.context = builder.context.getApplicationContext();
         this.lifecycle = builder.lifecycle;
         this.listeners.addAll(builder.listeners);
+        this.appContext = builder.appContext;
         prepare();
     }
 
@@ -127,6 +127,22 @@ public final class TTSManager implements AutoCloseable {
         }
     }
 
+    /**
+     * Sets the android context for the TTS Subsystem. Some components may
+     * require an application context instead of an activity context;
+     * see individual component documentation for details.
+     *
+     * @param androidContext the android context for the TTS subsystem.
+     *
+     * @see io.spokestack.spokestack.tts.SpokestackTTSOutput
+     */
+    public void setAndroidContext(Context androidContext) {
+        this.appContext = androidContext;
+        if (this.output != null) {
+            this.output.setAndroidContext(androidContext);
+        }
+    }
+
     @Override
     public void close() {
         release();
@@ -153,8 +169,8 @@ public final class TTSManager implements AutoCloseable {
         }
         if (this.outputClass != null && this.output == null) {
             this.output = createComponent(this.outputClass, SpeechOutput.class);
+            this.output.setAndroidContext(appContext);
             this.ttsService.addListener(this.output);
-            this.output.setAppContext(this.context);
             if (this.lifecycle != null) {
                 this.registerLifecycle(this.lifecycle);
             }
@@ -209,22 +225,15 @@ public final class TTSManager implements AutoCloseable {
     public static final class Builder {
         private String ttsServiceClass;
         private String outputClass;
-        private Context context;
+        private Context appContext;
         private Lifecycle lifecycle;
         private SpeechConfig config = new SpeechConfig();
         private List<TTSListener> listeners = new ArrayList<>();
 
         /**
          * Initializes a new builder with no default configuration.
-         *
-         * @param appContext The context for the TTS manager. Since the manager
-         *                   is meant to cross activity boundaries, this should
-         *                   be the application context rather than an activity
-         *                   context.
          */
-        public Builder(Context appContext) {
-            this.context = appContext;
-        }
+        public Builder() { }
 
         /**
          * Sets the class name of the external TTS service component.
@@ -272,10 +281,24 @@ public final class TTSManager implements AutoCloseable {
         }
 
         /**
+         * Sets the Android context for the pipeline. Some components may
+         * require an Application context instead of an Activity context;
+         * see individual component documentation for details.
+         *
+         * @param androidContext The Android context for the pipeline.
+         * @return this
+         * @see io.spokestack.spokestack.tts.SpokestackTTSOutput
+         */
+        public Builder setAndroidContext(Context androidContext) {
+            this.appContext = androidContext;
+            return this;
+        }
+
+        /**
          * Sets the manager's current lifecycle.
          *
          * @param curLifecycle The lifecycle dispatching events to this TTS
-         *                  manager.
+         *                     manager.
          * @return this
          */
         public Builder setLifecycle(Lifecycle curLifecycle) {
