@@ -74,7 +74,7 @@ public class SpokestackTTSOutputTest {
     public void testResourceManagement() {
         SpokestackTTSOutput ttsOutput =
               new SpokestackTTSOutput(null, factory);
-        ttsOutput.setAppContext(mockContext);
+        ttsOutput.setAndroidContext(mockContext);
         lifecycleRegistry.addObserver(ttsOutput);
         ttsOutput.prepare();
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
@@ -197,7 +197,6 @@ public class SpokestackTTSOutputTest {
               .when(ttsOutput).createMediaSource(any());
         doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
               .when(ttsOutput).requestFocus();
-        ttsOutput.setAppContext(mockContext);
         return ttsOutput;
     }
 

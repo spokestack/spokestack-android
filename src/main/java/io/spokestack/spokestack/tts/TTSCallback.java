@@ -28,7 +28,7 @@ public abstract class TTSCallback implements Callback {
           throws IOException {
         if (!httpResponse.isSuccessful()) {
             if (httpResponse.code() == 403) {
-                onError("Invalid API key");
+                onError("Invalid API secret");
             } else {
                 onError("Synthesis error: HTTP " + httpResponse.code());
             }

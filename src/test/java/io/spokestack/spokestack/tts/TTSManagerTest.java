@@ -42,15 +42,15 @@ public class TTSManagerTest implements TTSListener {
     public void testBuilder() throws Exception {
         // invalid TTS service
         assertThrows(ClassNotFoundException.class,
-              () -> new TTSManager.Builder(context)
+              () -> new TTSManager.Builder()
                     .setTTSServiceClass("invalid")
                     .build());
 
         // invalid output component
         assertThrows(ClassNotFoundException.class,
-              () -> new TTSManager.Builder(context)
+              () -> new TTSManager.Builder()
                     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
-                    .setProperty("spokestack-key", "test")
+                    .setProperty("spokestack-id", "test")
                     .setProperty("spokestack-secret", "test")
                     .setOutputClass("invalid")
                     .build());
@@ -60,11 +60,12 @@ public class TTSManagerTest implements TTSListener {
         LifecycleRegistry lifecycleRegistry =
               new LifecycleRegistry(mock(LifecycleOwner.class));
 
-        TTSManager manager = new TTSManager.Builder(context)
+        TTSManager manager = new TTSManager.Builder()
               .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
               .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
-              .setProperty("spokestack-key", "test")
+              .setProperty("spokestack-id", "test")
               .setConfig(new SpeechConfig())
+              .setAndroidContext(context)
               .setLifecycle(lifecycleRegistry)
               .addTTSListener(this)
               .build();
@@ -115,9 +116,9 @@ public class TTSManagerTest implements TTSListener {
     public static class Input extends TTSService {
 
         public Input(SpeechConfig config) {
-            String key = config.getString("spokestack-key", "default");
+            String key = config.getString("spokestack-id", "default");
             if (!key.equals("default")) {
-                fail("custom key should not be set by tests");
+                fail("custom client ID should not be set by tests");
             }
         }
 
@@ -138,8 +139,8 @@ public class TTSManagerTest implements TTSListener {
     public static class Output extends SpeechOutput
           implements DefaultLifecycleObserver {
 
-        public Output(SpeechConfig config) {
-        }
+        @SuppressWarnings("unused")
+        public Output(SpeechConfig config) { }
 
         @Override
         public void onResume(@NotNull LifecycleOwner owner) {
@@ -155,8 +156,7 @@ public class TTSManagerTest implements TTSListener {
         }
 
         @Override
-        public void setAppContext(Context appContext) {
-        }
+        public void setAndroidContext(Context appContext) { }
 
         @Override
         public void close() {

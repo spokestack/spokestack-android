@@ -59,7 +59,7 @@ public class SpokestackTTSServiceTest {
     @Test
     public void testCleanup() {
         SpeechConfig config = new SpeechConfig();
-        config.put("spokestack-key", "test");
+        config.put("spokestack-id", "test");
         config.put("spokestack-secret", "test");
         config.put("spokestack-url", "https://api.spokestack.io");
         SpokestackTTSService ttsService = new SpokestackTTSService(config,
@@ -76,7 +76,7 @@ public class SpokestackTTSServiceTest {
     @Test
     public void testSynthesize() throws InterruptedException {
         SpeechConfig config = new SpeechConfig();
-        config.put("spokestack-key", "test");
+        config.put("spokestack-id", "test");
         config.put("spokestack-secret", "test");
         config.put("spokestack-url", "https://api.spokestack.io");
         SpokestackTTSService ttsService =
