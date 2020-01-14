@@ -67,8 +67,8 @@ public class SpokestackTTSClientTest {
 
     @Test
     public void testConfig() throws Exception {
-        // no api key
-        TestCallback callback = new TestCallback("client key not provided");
+        // no API id
+        TestCallback callback = new TestCallback("API ID not provided");
         SpokestackTTSClient client =
               new SpokestackTTSClient(callback, httpClient);
 
@@ -76,17 +76,17 @@ public class SpokestackTTSClientTest {
         client.synthesize(request);
         assertTrue(callback.errorReceived);
 
-        // no client secret
-        callback = new TestCallback("client secret not provided");
+        // no API secret
+        callback = new TestCallback("API secret not provided");
         client = new SpokestackTTSClient(callback, httpClient);
         client.setCredentials("valid", null);
 
         client.synthesize(request);
         assertTrue(callback.errorReceived);
 
-        // invalid api key
+        // invalid API secret
         CountDownLatch latch = new CountDownLatch(1);
-        callback = new TestCallback("Invalid API key", latch);
+        callback = new TestCallback("Invalid API secret", latch);
         client = new SpokestackTTSClient(callback, httpClient);
         client.setCredentials("invalid", "invalider");
         client.synthesize(request);
@@ -97,7 +97,7 @@ public class SpokestackTTSClientTest {
         latch = new CountDownLatch(1);
         callback = new TestCallback("Synthesis error: HTTP 419", latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setCredentials("key", "secret");
+        client.setCredentials("id", "secret");
         SynthesisRequest invalidSSML = new SynthesisRequest.Builder("just text")
               .withMode(SynthesisRequest.Mode.SSML).build();
         client.synthesize(invalidSSML);
@@ -108,7 +108,7 @@ public class SpokestackTTSClientTest {
         latch = new CountDownLatch(1);
         callback = new TestCallback("TTS URL not provided", latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setCredentials("key", "secret");
+        client.setCredentials("id", "secret");
         client.setTtsUrl(null);
         client.synthesize(request);
         latch.await(1, TimeUnit.SECONDS);
@@ -120,10 +120,10 @@ public class SpokestackTTSClientTest {
         CountDownLatch latch = new CountDownLatch(1);
         TestCallback callback = new TestCallback(null, latch);
         SpokestackTTSClient client = new SpokestackTTSClient(callback, httpClient);
-        String key = "f0bc990c-e9db-4a0c-a2b1-6a6395a3d97e";
+        String id = "f0bc990c-e9db-4a0c-a2b1-6a6395a3d97e";
         String secret =
               "5BD5483F573D691A15CFA493C1782F451D4BD666E39A9E7B2EBE287E6A72C6B6";
-        client.setCredentials(key, secret);
+        client.setCredentials(id, secret);
 
         String body = "{\"query\": "
               + "\"query AndroidSynthesize($voice:String!, $text:String!) {"
@@ -140,7 +140,7 @@ public class SpokestackTTSClientTest {
         CountDownLatch latch = new CountDownLatch(1);
         TestCallback callback = new TestCallback(null, latch);
         SpokestackTTSClient client = new SpokestackTTSClient(callback, httpClient);
-        client.setCredentials("key", "secret");
+        client.setCredentials("id", "secret");
 
         SynthesisRequest request = new SynthesisRequest.Builder("text").build();
         client.synthesize(request);
@@ -151,7 +151,7 @@ public class SpokestackTTSClientTest {
         latch = new CountDownLatch(1);
         callback = new TestCallback(null, latch);
         client = new SpokestackTTSClient(callback, httpClient);
-        client.setCredentials("key", "secret");
+        client.setCredentials("id", "secret");
         HashMap<String, String> metadata = new HashMap<>();
         String requestId = "abce153193";
         metadata.put("id", requestId);
@@ -224,7 +224,7 @@ public class SpokestackTTSClientTest {
         public Response intercept(@NotNull Chain chain) throws IOException {
             Request request = chain.request();
 
-            if (hasInvalidKey(request)) {
+            if (hasInvalidId(request)) {
                 return invalidResponse;
             }
             if (hasInvalidBody(request)) {
@@ -253,7 +253,7 @@ public class SpokestackTTSClientTest {
             return builder.build();
         }
 
-        private boolean hasInvalidKey(Request request) {
+        private boolean hasInvalidId(Request request) {
             String authHeader = request.header("Authorization");
             return authHeader != null && authHeader.contains("invalid:");
         }

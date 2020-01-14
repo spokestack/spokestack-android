@@ -32,7 +32,7 @@ import java.util.List;
  * TTSManager ttsManager = new TTSManager.Builder()
  *     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
  *     .setOutputClass("io.spokestack.spokestack.tts.SpokestackTTSOutput")
- *     .setProperty("spokestack-key", "f0bc990c-e9db-4a0c-a2b1-6a6395a3d97e")
+ *     .setProperty("spokestack-id", "f0bc990c-e9db-4a0c-a2b1-6a6395a3d97e")
  *     .setProperty(
  *         "spokestack-secret",
  *         "5BD5483F573D691A15CFA493C1782F451D4BD666E39A9E7B2EBE287E6A72C6B6")
