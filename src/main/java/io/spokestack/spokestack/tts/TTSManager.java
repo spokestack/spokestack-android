@@ -32,7 +32,11 @@ import java.util.List;
  * TTSManager ttsManager = new TTSManager.Builder()
  *     .setTTSServiceClass("io.spokestack.spokestack.tts.SpokestackTTSService")
  *     .setOutputClass("io.spokestack.spokestack.tts.SpokestackTTSOutput")
- *     .setProperty("spokestack-key", "f854fbf30a5f40c189ecb1b38bc78059")
+ *     .setProperty("spokestack-key", "f0bc990c-e9db-4a0c-a2b1-6a6395a3d97e")
+ *     .setProperty(
+ *         "spokestack-secret",
+ *         "5BD5483F573D691A15CFA493C1782F451D4BD666E39A9E7B2EBE287E6A72C6B6")
+ *     .setAndroidContext(getApplicationContext())
  *     .setLifecycle(getLifecycle())
  *     .build();
  * }
@@ -58,8 +62,8 @@ public final class TTSManager implements AutoCloseable {
     private final List<TTSListener> listeners = new ArrayList<>();
     private TTSService ttsService;
     private SpeechOutput output;
-    private Context context;
     private Lifecycle lifecycle;
+    private Context appContext;
 
     /**
      * Get the current TTS service.
@@ -89,9 +93,9 @@ public final class TTSManager implements AutoCloseable {
         this.ttsServiceClass = builder.ttsServiceClass;
         this.outputClass = builder.outputClass;
         this.config = builder.config;
-        this.context = builder.context.getApplicationContext();
         this.lifecycle = builder.lifecycle;
         this.listeners.addAll(builder.listeners);
+        this.appContext = builder.appContext;
         prepare();
     }
 
@@ -123,6 +127,22 @@ public final class TTSManager implements AutoCloseable {
         }
     }
 
+    /**
+     * Sets the android context for the TTS Subsystem. Some components may
+     * require an application context instead of an activity context;
+     * see individual component documentation for details.
+     *
+     * @param androidContext the android context for the TTS subsystem.
+     *
+     * @see io.spokestack.spokestack.tts.SpokestackTTSOutput
+     */
+    public void setAndroidContext(Context androidContext) {
+        this.appContext = androidContext;
+        if (this.output != null) {
+            this.output.setAndroidContext(androidContext);
+        }
+    }
+
     @Override
     public void close() {
         release();
@@ -149,8 +169,8 @@ public final class TTSManager implements AutoCloseable {
         }
         if (this.outputClass != null && this.output == null) {
             this.output = createComponent(this.outputClass, SpeechOutput.class);
+            this.output.setAndroidContext(appContext);
             this.ttsService.addListener(this.output);
-            this.output.setAppContext(this.context);
             if (this.lifecycle != null) {
                 this.registerLifecycle(this.lifecycle);
             }
@@ -205,22 +225,15 @@ public final class TTSManager implements AutoCloseable {
     public static final class Builder {
         private String ttsServiceClass;
         private String outputClass;
-        private Context context;
+        private Context appContext;
         private Lifecycle lifecycle;
         private SpeechConfig config = new SpeechConfig();
         private List<TTSListener> listeners = new ArrayList<>();
 
         /**
          * Initializes a new builder with no default configuration.
-         *
-         * @param appContext The context for the TTS manager. Since the manager
-         *                   is meant to cross activity boundaries, this should
-         *                   be the application context rather than an activity
-         *                   context.
          */
-        public Builder(Context appContext) {
-            this.context = appContext;
-        }
+        public Builder() { }
 
         /**
          * Sets the class name of the external TTS service component.
@@ -268,10 +281,24 @@ public final class TTSManager implements AutoCloseable {
         }
 
         /**
+         * Sets the Android context for the pipeline. Some components may
+         * require an Application context instead of an Activity context;
+         * see individual component documentation for details.
+         *
+         * @param androidContext The Android context for the pipeline.
+         * @return this
+         * @see io.spokestack.spokestack.tts.SpokestackTTSOutput
+         */
+        public Builder setAndroidContext(Context androidContext) {
+            this.appContext = androidContext;
+            return this;
+        }
+
+        /**
          * Sets the manager's current lifecycle.
          *
          * @param curLifecycle The lifecycle dispatching events to this TTS
-         *                  manager.
+         *                     manager.
          * @return this
          */
         public Builder setLifecycle(Lifecycle curLifecycle) {

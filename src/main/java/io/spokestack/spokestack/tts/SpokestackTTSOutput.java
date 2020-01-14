@@ -4,8 +4,6 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.DefaultLifecycleObserver;
@@ -29,9 +27,9 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
-import io.spokestack.spokestack.util.TaskHandler;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechOutput;
+import io.spokestack.spokestack.util.TaskHandler;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -52,6 +50,14 @@ import org.jetbrains.annotations.NotNull;
  * playback is desired, consider adding a {@link TTSListener} to the {@code
  * TTSManager} and managing audio via its methods.
  * </p>
+ *
+ * <p>
+ * Additionally, this component requires an Android {@code Context} to be
+ * attached to the manager that has created it. If the manager is meant to
+ * persist across different {@code Activity}s, the {@code Context} used must
+ * either be the <em>application</em> context, or it must be re-set on the
+ * manager when the Activity context changes.
+ * </p>
  */
 public class SpokestackTTSOutput extends SpeechOutput
       implements Player.EventListener,
@@ -60,7 +66,6 @@ public class SpokestackTTSOutput extends SpeechOutput
     private final int contentType;
     private final int usage;
     private TaskHandler taskHandler;
-    private Handler playerHandler;
     private PlayerFactory playerFactory;
     private ExoPlayer mediaPlayer;
     private ConcatenatingMediaSource mediaSource;
@@ -74,9 +79,11 @@ public class SpokestackTTSOutput extends SpeechOutput
      *               configuration properties, but this constructor is required
      *               for participation in the TTS subsystem.
      */
-    public SpokestackTTSOutput(@Nullable SpeechConfig config) {
-        // the constant value here is the same in ExoPlayer as in
-        // AudioAttributesCompat in versions 2.11.0 and v1.1.0, respectively
+    @SuppressWarnings("unused")
+    public SpokestackTTSOutput(SpeechConfig config) {
+        // this constant's value (1) is the same in ExoPlayer as in
+        // AudioAttributesCompat in versions 2.11.0 and v1.1.0, respectively,
+        // which is why it's used as a stand-in for both in this class
         this.contentType = C.CONTENT_TYPE_SPEECH;
 
         this.playerState = new PlayerState();
@@ -91,13 +98,6 @@ public class SpokestackTTSOutput extends SpeechOutput
         this.taskHandler = new TaskHandler(true);
         this.playerFactory = new PlayerFactory();
         this.mediaSource = new ConcatenatingMediaSource();
-    }
-
-    private void runOnPlayerThread(Runnable task) {
-        if (playerHandler == null) {
-            playerHandler = new Handler(Looper.getMainLooper());
-        }
-        playerHandler.post(task);
     }
 
     /**
@@ -115,8 +115,8 @@ public class SpokestackTTSOutput extends SpeechOutput
     }
 
     @Override
-    public void setAppContext(@NonNull Context context) {
-        this.appContext = context;
+    public void setAndroidContext(@NonNull Context androidContext) {
+        this.appContext = androidContext;
     }
 
     /**
@@ -379,6 +379,9 @@ public class SpokestackTTSOutput extends SpeechOutput
     @Override public void onTimelineChanged(Timeline timeline, int reason) { }
 
     @Override
+    // it's deprecated, but it's still a default method, so we have to
+    // implement it for older versions of Android
+    @SuppressWarnings("deprecation")
     public void onTimelineChanged(Timeline timeline,
                                   @Nullable Object manifest, int reason) { }
 
