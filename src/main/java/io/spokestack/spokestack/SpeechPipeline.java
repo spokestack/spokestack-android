@@ -2,11 +2,12 @@ package io.spokestack.spokestack;
 
 import android.content.Context;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.util.Map;
 
 /**
  * Spokestack speech pipeline.
@@ -201,8 +202,9 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     private void run() {
-        while (this.running)
+        while (this.running) {
             dispatch();
+        }
         cleanup();
     }
 
@@ -316,8 +318,8 @@ public final class SpeechPipeline implements AutoCloseable {
 
         /**
          * Sets the android context for the pipeline. Some components may
-         * require an application context instead of an activity context;
-         * see individual component documentation for details.
+         * require an application context instead of an activity context; see
+         * individual component documentation for details.
          *
          * @param androidContext the android context for the pipeline.
          * @return this
@@ -338,6 +340,60 @@ public final class SpeechPipeline implements AutoCloseable {
         public Builder setProperty(String key, Object value) {
             this.config.put(key, value);
             return this;
+        }
+
+        /**
+         * applies configuration from a {@link PipelineProfile} to the current
+         * builder, returning the modified builder. subsequent calls to {@code
+         * useProfile} or {@code setProperty} can override configuration set by
+         * a profile.
+         *
+         * @param profileClass class name of the profile to apply.
+         * @return an updated builder
+         * @throws IllegalArgumentException if the specified profile does not
+         *                                  exist
+         */
+        public Builder useProfile(String profileClass)
+              throws IllegalArgumentException {
+            return this.useProfile(profileClass, null);
+        }
+
+        /**
+         * applies configuration from a {@link PipelineProfile} to the current
+         * builder, returning the modified builder. subsequent calls to {@code
+         * useProfile} or {@code setProperty} can override configuration set by
+         * a profile.
+         *
+         * @param profileClass  class name of the profile to apply.
+         * @param profileConfig additional configuration properties associated
+         *                      with the profile.
+         * @return an updated builder
+         * @throws IllegalArgumentException if the specified profile does not
+         *                                  exist
+         */
+        public Builder useProfile(String profileClass,
+                                  Map<String, Object> profileConfig)
+              throws IllegalArgumentException {
+            PipelineProfile profile;
+            try {
+                profile = (PipelineProfile) Class
+                      .forName(profileClass)
+                      .getConstructor()
+                      .newInstance();
+            } catch (Exception e) {
+                throw new IllegalArgumentException(
+                      profileClass + " pipeline profile is invalid!");
+            }
+
+            Builder profiled = profile.apply(this);
+
+            if (profileConfig != null) {
+                for (Map.Entry<String, Object> entry
+                      : profileConfig.entrySet()) {
+                    profiled.setProperty(entry.getKey(), entry.getValue());
+                }
+            }
+            return profiled;
         }
 
         /**

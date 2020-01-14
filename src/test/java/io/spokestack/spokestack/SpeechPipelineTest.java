@@ -1,5 +1,6 @@
 package io.spokestack.spokestack;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.nio.ByteBuffer;
@@ -65,6 +66,41 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             pipeline.start();
             Input.stop();
         }
+    }
+
+    @Test
+    public void testProfiles() {
+        assertThrows(IllegalArgumentException.class, () ->
+              new SpeechPipeline.Builder()
+                    .useProfile("io.spokestack.InvalidProfile")
+        );
+
+        // no pre-set profiles should throw errors on use
+        // (use instantiates the associated profile class)
+        for (Profile profile : Profile.values()) {
+            new SpeechPipeline.Builder()
+                  .useProfile(profile.getClassName());
+        }
+
+        // The implicated class requires a config property
+        SpeechPipeline pipeline = new SpeechPipeline.Builder()
+              .setInputClass("io.spokestack.spokestack.SpeechPipelineTest$Input")
+              .useProfile(
+                    "io.spokestack.spokestack.SpeechPipelineTest$TestProfile")
+              .build();
+
+        assertThrows(InvocationTargetException.class, pipeline::start);
+
+        // no errors thrown when we supply config
+        Map<String, Object> config = new HashMap<>();
+        config.put("required-property", "value");
+        SpeechPipeline.Builder builder = new SpeechPipeline.Builder()
+              .setInputClass("io.spokestack.spokestack.SpeechPipelineTest$Input")
+              .useProfile(
+                    "io.spokestack.spokestack.SpeechPipelineTest$TestProfile",
+                    config);
+
+        builder.build();
     }
 
     @Test
@@ -233,6 +269,32 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         public void process(SpeechContext context, ByteBuffer frame)
                 throws Exception {
             throw new Exception("fail");
+        }
+    }
+
+    public static class ConfigRequiredStage implements SpeechProcessor {
+        public ConfigRequiredStage(SpeechConfig config) {
+            config.getString("required-property");
+        }
+
+        public void close() throws Exception {
+            throw new Exception("fail");
+        }
+
+        public void process(SpeechContext context, ByteBuffer frame)
+              throws Exception {
+            throw new Exception("fail");
+        }
+    }
+
+    private static class TestProfile implements PipelineProfile {
+
+        public TestProfile() {}
+
+        @Override
+        public SpeechPipeline.Builder apply(SpeechPipeline.Builder builder) {
+            return builder.addStageClass(
+                  "io.spokestack.spokestack.SpeechPipelineTest$ConfigRequiredStage");
         }
     }
 }
