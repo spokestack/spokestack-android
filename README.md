@@ -22,72 +22,43 @@ than is in this brief introduction.
 
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
-    .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
-    .addStageClass("io.spokestack.spokestack.webrtc.AutomaticGainControl")
-    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityDetector")
-    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityTrigger")
-    .addStageClass("io.spokestack.spokestack.google.GoogleSpeechRecognizer")
+    .useProfile("io.spokestack.spokestack.profile.VADTriggerGoogleASR")
     .setProperty("google-credentials", "<google-credentials>")
     .setProperty("locale", "en-US")
     .build();
 ```
 
-This example creates an active speech recognition pipeline using the Google
-Speech API that is triggered by VAD. The `google-credentials` parameter should
+This example uses a pre-built profile to create a speech recognition pipeline triggered by VAD
+that uses the Google Speech API for speech recognition. The `google-credentials` parameter should
 be the contents of a Google Cloud service account credentials file, in JSON
 format. For more information, see the [documentation](https://cloud.google.com/speech/docs/streaming-recognize).
-See the [javadoc](https://www.javadoc.io/doc/io.spokestack/spokestack) for
+See the [javadoc](https://www.javadoc.io/doc/io.spokestack/spokestack-android) for
 other component-specific configuration parameters.
-
-### Microsoft Bing Speech API
-
-```java
-SpeechPipeline pipeline = new SpeechPipeline.Builder()
-    .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
-    .addStageClass("io.spokestack.spokestack.webrtc.AutomaticGainControl")
-    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityDetector")
-    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityTrigger")
-    .addStageClass("io.spokestack.spokestack.microsoft.BingSpeechRecognizer")
-    .setProperty("sample-rate", 16000)
-    .setProperty("frame-width", 20)
-    .setProperty("buffer-width", 300)
-    .setProperty("vad-rise-delay", 100)
-    .setProperty("vad-fall-delay", 500)
-    .setProperty("bing-speech-api-key", "<bing-api-key>")
-    .setProperty("locale", "fr-CA")
-    .build();
-```
-
-This example creates a VAD-triggered pipeline with custom rise/fall delays
-using the Microsoft Bing Speech API. For more information on this API, check
-out the [documentation](https://azure.microsoft.com/en-us/services/cognitive-services/speech/).
 
 ### Wakeword Detection
 ```java
 SpeechPipeline pipeline = new SpeechPipeline.Builder()
-    .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
-    .addStageClass("io.spokestack.spokestack.webrtc.AutomaticGainControl")
-    .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityDetector")
-    .addStageClass("io.spokestack.spokestack.wakeword.WakewordTrigger")
-    .addStageClass("io.spokestack.spokestack.google.GoogleSpeechRecognizer")
-    .setProperty("vad-fall-delay", 200)
-    .setProperty("pre-emphasis", 0.97)
+    .useProfile("io.spokestack.spokestack.profile.TFWakewordGoogleASR")
     .setProperty("wake-filter-path", "<tensorflow-lite-filter-path>")
     .setProperty("wake-encode-path", "<tensorflow-lite-encode-path>")
     .setProperty("wake-detect-path", "<tensorflow-lite-detect-path>")
-    .setProperty("wake-smooth-length", 50)
+    .setProperty("wake-threshold", 0.85)
     .setProperty("google-credentials", "<google-credentials>")
     .setProperty("locale", "en-US")
     .build();
 ```
 
-This example creates a wakeword-triggered pipeline with the google speech
+This example creates a wakeword-triggered pipeline with the Google Speech
 recognizer. The wakeword trigger uses three trained
 [TensorFlow Lite](https://www.tensorflow.org/lite/) models: a *filter* model
 for spectrum preprocessing, an autoregressive encoder *encode* model, and a
 *detect* decoder model for keyword classification. For more information on
 the wakeword detector and its configuration parameters, click
 [here](https://github.com/spokestack/spokestack-android/wiki/wakeword).
+
+The "wake-threshold" property is set by the `TFWakewordGoogleASR` profile, but it is
+overridden here to emphasize that properties set after a profile is applied (either directly
+in the builder or by another profile) supersede those set by that profile.
 
 To use the demo "Spokestack" wakeword, download the TensorFlow Lite models: [detect](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/detect.lite) | [encode](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/encode.lite) | [filter](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/filter.lite)
 
@@ -143,7 +114,7 @@ For additional information about releasing see http://maven.apache.org/maven-rel
 
 ## License
 
-Copyright 2019 Spokestack, Inc.
+Copyright 2020 Spokestack, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.

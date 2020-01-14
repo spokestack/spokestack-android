@@ -352,6 +352,33 @@ public final class SpeechPipeline implements AutoCloseable {
         }
 
         /**
+         * applies configuration from a {@link PipelineProfile} to the current
+         * builder, returning the modified builder. subsequent calls to {@code
+         * useProfile} or {@code setProperty} can override configuration set by
+         * a profile.
+         *
+         * @param profileClass class name of the profile to apply.
+         * @return an updated builder
+         * @throws IllegalArgumentException if the specified profile does not
+         *                                  exist
+         */
+        public Builder useProfile(String profileClass)
+              throws IllegalArgumentException {
+            PipelineProfile profile;
+            try {
+                profile = (PipelineProfile) Class
+                      .forName(profileClass)
+                      .getConstructor()
+                      .newInstance();
+            } catch (Exception e) {
+                throw new IllegalArgumentException(
+                      profileClass + " pipeline profile is invalid!");
+            }
+
+            return profile.apply(this);
+        }
+
+        /**
          * adds a pipeline event listener.
          *
          * @param listen listener callback
