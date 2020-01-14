@@ -40,8 +40,8 @@ public final class SpokestackTTSClient {
     private final OkHttpClient httpClient;
     private TTSCallback ttsCallback;
     private final Gson gson;
-    private String ttsClientId;
-    private String ttsClientSecret;
+    private String ttsApiId;
+    private String ttsApiSecret;
 
     /**
      * Create a new Spokestack TTS client. This client should be created once
@@ -61,7 +61,7 @@ public final class SpokestackTTSClient {
     }
 
     /**
-     * Create a new Spokestack TTS client with an API key and a provided HTTP
+     * Create a new Spokestack TTS client with an API ID and a provided HTTP
      * client. Used for testing.
      *
      * @param callback The callback object used to deliver an audio URL when it
@@ -94,15 +94,15 @@ public final class SpokestackTTSClient {
     }
 
     /**
-     * Set the API key used for synthesis requests.
+     * Set the API ID used for synthesis requests.
      *
-     * @param clientId     The client ID used for synthesis requests.
-     * @param clientSecret The client secret used to sign synthesis
-     *                     requests.
+     * @param apiId     The ID used for synthesis requests.
+     * @param apiSecret The secret key used to sign synthesis
+     *                  requests.
      */
-    public void setCredentials(String clientId, String clientSecret) {
-        this.ttsClientId = clientId;
-        this.ttsClientSecret = clientSecret;
+    public void setCredentials(String apiId, String apiSecret) {
+        this.ttsApiId = apiId;
+        this.ttsApiSecret = apiSecret;
     }
 
     /**
@@ -143,12 +143,12 @@ public final class SpokestackTTSClient {
     private void postSpeech(Map<String, String> headers,
                             String queryString,
                             Map<String, String> variables) {
-        if (this.ttsClientId == null) {
-            ttsCallback.onError("client key not provided");
+        if (this.ttsApiId == null) {
+            ttsCallback.onError("API ID not provided");
             return;
         }
-        if (this.ttsClientSecret == null) {
-            ttsCallback.onError("client secret not provided");
+        if (this.ttsApiSecret == null) {
+            ttsCallback.onError("API secret not provided");
             return;
         }
         if (this.ttsUrl == null) {
@@ -178,7 +178,7 @@ public final class SpokestackTTSClient {
               .url(ttsUrl)
               .header("Content-Type", "application/json")
               .header("Authorization",
-                    "Spokestack " + ttsClientId + ":" + authHeader)
+                    "Spokestack " + ttsApiId + ":" + authHeader)
               .post(postBody)
               .build();
 
@@ -190,7 +190,7 @@ public final class SpokestackTTSClient {
         try {
             Mac hmacAlgo = Mac.getInstance(HMAC_TYPE);
             byte[] keyBytes =
-                  this.ttsClientSecret.getBytes(StandardCharsets.UTF_8);
+                  this.ttsApiSecret.getBytes(StandardCharsets.UTF_8);
             SecretKeySpec keySpec = new SecretKeySpec(keyBytes, HMAC_TYPE);
             hmacAlgo.init(keySpec);
             byte[] macData = hmacAlgo.doFinal(
@@ -199,7 +199,7 @@ public final class SpokestackTTSClient {
         } catch (NoSuchAlgorithmException e) {
             this.ttsCallback.onError("Invalid HMAC algorithm");
         } catch (InvalidKeyException e) {
-            this.ttsCallback.onError("Invalid client key");
+            this.ttsCallback.onError("Invalid API secret");
         }
 
         return base64Signature;

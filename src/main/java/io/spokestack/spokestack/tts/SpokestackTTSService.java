@@ -65,9 +65,9 @@ public final class SpokestackTTSService extends TTSService {
     }
 
     private void configure(SpeechConfig config) {
-        String clientId = config.getString("spokestack-id");
-        String clientSecret = config.getString("spokestack-secret");
-        this.client.setCredentials(clientId, clientSecret);
+        String apiId = config.getString("spokestack-id");
+        String apiSecret = config.getString("spokestack-secret");
+        this.client.setCredentials(apiId, apiSecret);
         String ttsUrl = config.getString("spokestack-url", null);
         if (ttsUrl != null) {
             this.client.setTtsUrl(ttsUrl);
