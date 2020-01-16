@@ -157,6 +157,11 @@ public final class SpeechContext {
      */
     public SpeechContext setActive(boolean value) {
         this.active = value;
+        if (value) {
+            dispatch(Event.ACTIVATE);
+        } else {
+            dispatch(Event.DEACTIVATE);
+        }
         return this;
     }
 

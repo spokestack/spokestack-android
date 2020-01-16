@@ -27,7 +27,8 @@ import java.nio.ByteOrder;
  * {@code
  *  SpeechPipeline pipeline = new SpeechPipeline.Builder()
  *      .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
- *      .addStageClass("io.spokestack.spokestack.libfvad.VADTrigger")
+ *      .addStageClass("io.spokestack.spokestack.webrtc.VoiceActivityTrigger")
+ *      .addStageClass("io.spokestack.spokestack.ActivationTimeout")
  *      .setProperty("sample-rate", 16000)
  *      .setProperty("frame-width", 20)
  *      .setProperty("buffer-width", 300)
@@ -115,10 +116,20 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     /**
-     * @return true if the pipeline is listening, false otherwise.
+     * @return true if the pipeline has been started, false otherwise.
      */
     public boolean isRunning() {
         return this.running;
+    }
+
+    /** manually activate the speech pipeline. */
+    public void activate() {
+        this.context.setActive(true);
+    }
+
+    /** manually deactivate the speech pipeline. */
+    public void deactivate() {
+        this.context.setActive(false);
     }
 
     /**

@@ -4,12 +4,18 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.nio.ByteBuffer;
 
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SpeechPipelineTest implements OnSpeechEventListener {
-    private SpeechContext.Event event;
+    private List<SpeechContext.Event> events = new ArrayList<>();
+
+    @Before
+    public void before() {
+        this.events.clear();
+    }
 
     @Test
     public void testBuilder() throws Exception {
@@ -92,12 +98,12 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
 
         // first frame
         transact();
-        assertEquals(SpeechContext.Event.ACTIVATE, this.event);
+        assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
         assertTrue(pipeline.getContext().isActive());
 
         // next frame
         transact();
-        assertEquals(SpeechContext.Event.DEACTIVATE, this.event);
+        assertEquals(SpeechContext.Event.DEACTIVATE, this.events.get(0));
         assertFalse(pipeline.getContext().isActive());
 
         // shutdown
@@ -116,7 +122,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .build();
         pipeline.start();
         pipeline.stop();
-        assertEquals(SpeechContext.Event.ERROR, this.event);
+        assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
     }
 
     @Test
@@ -129,23 +135,27 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         pipeline.start();
 
         transact();
-        assertEquals(SpeechContext.Event.ERROR, this.event);
-        this.event = null;
+        assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
+        this.events.clear();
 
         Input.stop();
         pipeline.stop();
-        assertEquals(SpeechContext.Event.ERROR, this.event);
+        assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
+        // more than one error might be sent, but deactivate should
+        // be sent last
+        assertEquals(SpeechContext.Event.DEACTIVATE,
+              this.events.get(this.events.size() - 1));
     }
 
     private void transact() throws Exception {
-        this.event = null;
+        this.events.clear();
         Input.send();
-        while (this.event == null)
+        while (this.events.isEmpty())
             Thread.sleep(0);
     }
 
     public void onEvent(SpeechContext.Event event, SpeechContext context) {
-        this.event = event;
+        this.events.add(event);
     }
 
     public static class Input implements SpeechInput {

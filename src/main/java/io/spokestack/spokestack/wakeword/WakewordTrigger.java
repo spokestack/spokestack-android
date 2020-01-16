@@ -9,6 +9,7 @@ import io.spokestack.spokestack.SpeechProcessor;
 import io.spokestack.spokestack.SpeechContext;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
 
+
 /**
  * wakeword Detection pipeline component
  *
@@ -180,10 +181,6 @@ public final class WakewordTrigger implements SpeechProcessor {
     public static final int DEFAULT_WAKE_ENCODE_WIDTH = 128;
     /** default wake-threshold value. */
     public static final float DEFAULT_WAKE_THRESHOLD = 0.5f;
-    /** default wake-active-min configuration value. */
-    public static final int DEFAULT_WAKE_ACTIVE_MIN = 500;
-    /** default wake-active-max configuration value. */
-    public static final int DEFAULT_WAKE_ACTIVE_MAX = 5000;
 
     // voice activity detection
     private boolean isSpeech;
@@ -218,9 +215,6 @@ public final class WakewordTrigger implements SpeechProcessor {
     // wakeword activation management
     private final float posteriorThreshold;
     private float posteriorMax;
-    private final int minActive;
-    private final int maxActive;
-    private int activeLength;
 
     /**
      * constructs a new trigger instance.
@@ -312,15 +306,8 @@ public final class WakewordTrigger implements SpeechProcessor {
             .load();
 
         // configure the wakeword activation lengths
-        int frameWidth = config.getInteger("frame-width");
         this.posteriorThreshold = (float) config
             .getDouble("wake-threshold", (double) DEFAULT_WAKE_THRESHOLD);
-        this.minActive = config
-            .getInteger("wake-active-min", DEFAULT_WAKE_ACTIVE_MIN)
-            / frameWidth;
-        this.maxActive = config
-            .getInteger("wake-active-max", DEFAULT_WAKE_ACTIVE_MAX)
-            / frameWidth;
     }
 
     /**
@@ -342,21 +329,13 @@ public final class WakewordTrigger implements SpeechProcessor {
     public void process(SpeechContext context, ByteBuffer buffer)
             throws Exception {
         // detect speech deactivation edges for wakeword deactivation
-        boolean vadRise = !this.isSpeech && context.isSpeech();
         boolean vadFall = this.isSpeech && !context.isSpeech();
         this.isSpeech = context.isSpeech();
 
         if (!context.isActive()) {
             // run the current frame through the detector pipeline
             // activate if a keyword phrase was detected
-            this.activeLength = 0;
             sample(context, buffer);
-        } else {
-            // continue this wakeword (or external) activation
-            // until a vad deactivation or timeout
-            if (++this.activeLength > this.minActive)
-                if (vadFall || this.activeLength > this.maxActive)
-                    deactivate(context);
         }
 
         // always reset detector state on a vad deactivation
@@ -479,13 +458,6 @@ public final class WakewordTrigger implements SpeechProcessor {
     private void activate(SpeechContext context) {
         trace(context);
         context.setActive(true);
-        context.dispatch(SpeechContext.Event.ACTIVATE);
-    }
-
-    private void deactivate(SpeechContext context) {
-        reset(context);
-        context.setActive(false);
-        context.dispatch(SpeechContext.Event.DEACTIVATE);
     }
 
     private void reset(SpeechContext context) {

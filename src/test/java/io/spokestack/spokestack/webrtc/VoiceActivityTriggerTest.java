@@ -44,24 +44,6 @@ public class VoiceActivityTriggerTest implements OnSpeechEventListener {
         vad.process(context, sampleBuffer(config));
         assertEquals(SpeechContext.Event.ACTIVATE, this.event);
         assertTrue(context.isActive());
-
-        // continued speech
-        this.event = null;
-        vad.process(context, sampleBuffer(config));
-        assertEquals(null, this.event);
-        assertTrue(context.isActive());
-
-        // silence transition
-        context.setSpeech(false);
-        vad.process(context, sampleBuffer(config));
-        assertEquals(SpeechContext.Event.DEACTIVATE, this.event);
-        assertFalse(context.isActive());
-
-        // continued silence
-        this.event = null;
-        vad.process(context, sampleBuffer(config));
-        assertEquals(null, this.event);
-        assertFalse(context.isActive());
     }
 
     private ByteBuffer sampleBuffer(SpeechConfig config) {

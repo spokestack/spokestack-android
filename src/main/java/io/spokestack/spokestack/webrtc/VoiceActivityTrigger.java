@@ -42,10 +42,6 @@ public class VoiceActivityTrigger implements SpeechProcessor {
         if (context.isSpeech() != this.isSpeech) {
             if (context.isSpeech()) {
                 context.setActive(true);
-                context.dispatch(SpeechContext.Event.ACTIVATE);
-            } else {
-                context.setActive(false);
-                context.dispatch(SpeechContext.Event.DEACTIVATE);
             }
             this.isSpeech = context.isSpeech();
         }

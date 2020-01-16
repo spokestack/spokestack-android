@@ -135,27 +135,6 @@ public class WakewordTriggerTest {
     }
 
     @Test
-    public void testDetActiveVadDeactivate() throws Exception {
-        // verify deactivation on vad timeout after min activation length
-        TestEnv env = new TestEnv(testConfig());
-
-        env.context.setSpeech(true);
-        env.detect.setOutputs(0);
-        env.process();
-
-        env.detect.setOutputs(1);
-        env.process();
-        env.process();
-
-        env.process();
-        env.process();
-        env.process();
-
-        assertEquals(SpeechContext.Event.DEACTIVATE, env.event);
-        assertFalse(env.context.isActive());
-    }
-
-    @Test
     public void testDetActiveMinDelay() throws Exception {
         // verify no deactivation on vad timeout before min activation length
         TestEnv env = new TestEnv(testConfig());
@@ -175,44 +154,6 @@ public class WakewordTriggerTest {
     }
 
     @Test
-    public void testDetActiveTimeout() throws Exception {
-        // verify max activation timeout
-        TestEnv env = new TestEnv(testConfig());
-
-        env.context.setSpeech(true);
-        env.detect.setOutputs(0);
-        env.process();
-
-        env.detect.setOutputs(1);
-        env.process();
-        env.process();
-        env.process();
-
-        env.context.setSpeech(false);
-        env.process();
-
-        assertEquals(SpeechContext.Event.DEACTIVATE, env.event);
-        assertFalse(env.context.isActive());
-    }
-
-    @Test
-    public void testDetManualVadDeactivate() throws Exception {
-        // verify manual activation followed by vad deactivation
-        TestEnv env = new TestEnv(testConfig());
-
-        env.context.setActive(true);
-        env.context.setSpeech(true);
-        env.process();
-        env.process();
-
-        env.context.setSpeech(false);
-        env.process();
-
-        assertEquals(SpeechContext.Event.DEACTIVATE, env.event);
-        assertFalse(env.context.isActive());
-    }
-
-    @Test
     public void testDetManualMinDelay() throws Exception {
         // verify manual activation remains with no vad activation/deactivation
         TestEnv env = new TestEnv(testConfig());
@@ -223,21 +164,6 @@ public class WakewordTriggerTest {
         env.process();
 
         assertTrue(env.context.isActive());
-    }
-
-    @Test
-    public void testDetManualTimeout() throws Exception {
-        // verify manual activation max activation timeout
-        TestEnv env = new TestEnv(testConfig());
-
-        env.context.setActive(true);
-        env.process();
-        env.process();
-        env.process();
-        env.process();
-
-        assertEquals(SpeechContext.Event.DEACTIVATE, env.event);
-        assertFalse(env.context.isActive());
     }
 
     @Test
@@ -270,9 +196,7 @@ public class WakewordTriggerTest {
             .put("wake-encode-path", "encode-path")
             .put("wake-detect-path", "detect-path")
             .put("wake-encode-length", 1000)
-            .put("wake-encode-width", 128)
-            .put("wake-active-min", 20)
-            .put("wake-active-max", 30);
+            .put("wake-encode-width", 128);
     }
 
     public static class TestModel extends TensorflowModel {
