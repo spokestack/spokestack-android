@@ -202,6 +202,29 @@ public class SpeechContextTest implements OnSpeechEventListener {
         assertEquals("trace", Event.TRACE.toString());
     }
 
+    @Test
+    public void testActivationEvents() {
+        SpeechConfig config = new SpeechConfig();
+        SpeechContext context = new SpeechContext(config);
+
+        // valid listener
+        context.addOnSpeechEventListener(this);
+        context.setActive(true);
+        assertEquals(Event.ACTIVATE, this.event);
+        this.event = null;
+
+        // no event unless the current state changes
+        context.setActive(true);
+        assertNull(this.event);
+
+        context.setActive(false);
+        assertEquals(Event.DEACTIVATE, this.event);
+        this.event = null;
+
+        context.setActive(false);
+        assertNull(this.event);
+    }
+
     public void onEvent(Event event, SpeechContext context) {
         this.event = event;
         this.context = context;

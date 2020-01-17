@@ -156,10 +156,11 @@ public final class SpeechContext {
      * @return this
      */
     public SpeechContext setActive(boolean value) {
+        boolean isActive = this.active;
         this.active = value;
-        if (value) {
+        if (value && !isActive) {
             dispatch(Event.ACTIVATE);
-        } else {
+        } else if (!value && isActive) {
             dispatch(Event.DEACTIVATE);
         }
         return this;

@@ -141,10 +141,6 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         Input.stop();
         pipeline.stop();
         assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
-        // more than one error might be sent, but deactivate should
-        // be sent last
-        assertEquals(SpeechContext.Event.DEACTIVATE,
-              this.events.get(this.events.size() - 1));
     }
 
     private void transact() throws Exception {
