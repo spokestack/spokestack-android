@@ -1,0 +1,18 @@
+## Spokestack proguard config
+
+-keep class io.spokestack.** { *; }
+
+-keep public class * {
+    public protected *;
+}
+
+-keepparameternames
+-renamesourcefileattribute SourceFile
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,
+                SourceFile,LineNumberTable,*Annotation*,EnclosingMethod
+
+-keepclasseswithmembernames,includedescriptorclasses class * {
+    native <methods>;
+}
+
+## end Spokestack proguard config

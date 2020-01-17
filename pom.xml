@@ -184,6 +184,9 @@
             <version>4.6.0</version>
             <extensions>true</extensions>
             <configuration>
+               <consumerProguardFiles>
+                  <consumerProguardFile>src/main/proguard.txt</consumerProguardFile>
+               </consumerProguardFiles>
                <sdk>
                   <platform>26</platform>
                </sdk>
