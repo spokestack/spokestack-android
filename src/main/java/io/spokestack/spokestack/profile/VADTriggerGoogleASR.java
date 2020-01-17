@@ -39,6 +39,6 @@ public class VADTriggerGoogleASR implements PipelineProfile {
                     "io.spokestack.spokestack.webrtc.VoiceActivityTrigger")
               .addStageClass("io.spokestack.spokestack.ActivationTimeout")
               .addStageClass(
-                    "io.spokestack.spokestack.android.GoogleSpeechRecognizer");
+                    "io.spokestack.spokestack.google.GoogleSpeechRecognizer");
     }
 }
