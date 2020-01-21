@@ -59,6 +59,8 @@ public class VoiceActivityDetector implements SpeechProcessor {
     /** default voice detection mode (high precision). */
     public static final String DEFAULT_MODE = "very-aggressive";
 
+    private static final int DEFAULT_FALL = 500;
+
     private static final int MODE_QUALITY = 0;
     private static final int MODE_LOW_BITRATE = 1;
     private static final int MODE_AGGRESSIVE = 2;
@@ -111,7 +113,8 @@ public class VoiceActivityDetector implements SpeechProcessor {
 
         // decode the rising/falling edge delay, in ms
         this.riseLength = config.getInteger("vad-rise-delay", 0) / frameWidth;
-        this.fallLength = config.getInteger("vad-fall-delay", 0) / frameWidth;
+        this.fallLength = config.getInteger("vad-fall-delay", DEFAULT_FALL)
+              / frameWidth;
 
         // initialize the vad
         this.vadHandle = create(mode);
