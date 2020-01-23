@@ -15,6 +15,7 @@ import com.google.android.exoplayer2.source.MediaSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -29,8 +30,12 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ExoPlaybackException.class)
 public class SpokestackTTSOutputTest {
-    private LifecycleRegistry lifecycleRegistry =
-          new LifecycleRegistry(mock(LifecycleOwner.class));
+    @Mock
+    @SuppressWarnings("unused")
+    LifecycleOwner owner;
+
+    @InjectMocks
+    private LifecycleRegistry lifecycleRegistry;
 
     @Mock
     private Context mockContext;
