@@ -147,6 +147,21 @@ public class SpokestackTTSClientTest {
         latch.await(1, TimeUnit.SECONDS);
         assertNotNull(callback.audioResponse);
 
+        // valid markdown request
+        latch = new CountDownLatch(1);
+        callback = new TestCallback(null, latch);
+        client = new SpokestackTTSClient(callback, httpClient);
+        client.setCredentials("id", "secret");
+
+        SynthesisRequest validMarkdown =
+              new SynthesisRequest.Builder(
+                    "Hello! [1s] Can you spare (5)[number] minutes?")
+                    .withMode(SynthesisRequest.Mode.MARKDOWN)
+                    .build();
+        client.synthesize(validMarkdown);
+        latch.await(1, TimeUnit.SECONDS);
+        assertNotNull(callback.audioResponse);
+
         // valid ssml request
         latch = new CountDownLatch(1);
         callback = new TestCallback(null, latch);

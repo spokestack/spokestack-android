@@ -44,11 +44,6 @@ import java.util.Map;
  * </p>
  *
  * <p>
- * Note that long inputs should be split into separate {@code s} ("sentence")
- * elements for the best performance.
- * </p>
- *
- * <p>
  * Currently, Spokestack is focused on pronunciation of English words and loan
  * words/foreign words common in spoken English and thus restricts its
  * character set from the full range of
@@ -78,6 +73,25 @@ import java.util.Map;
  * cause an error, but not until the request reaches the synthesis server.
  * </p>
  *
+ * <h2>Speech Markdown support</h2>
+ *
+ * <p>
+ * Spokestack also supports a subset of
+ * <a href="https://www.speechmarkdown.org/">Speech Markdown</a> syntax; please
+ * see the
+ * <a href="https://www.speechmarkdown.org/syntax/">Speech Markdown syntax
+ * documentation</a> for more details.
+ * </p>
+ *
+ * <p>
+ * Currently, the only elements relevant to Spokestack are
+ * <a href="https://www.speechmarkdown.org/syntax/break/">{@code break}</a>,
+ * <a href="https://www.speechmarkdown.org/syntax/characters/">
+ *     {@code characters}</a>,
+ * <a href="https://www.speechmarkdown.org/syntax/ipa/">{@code ipa}</a>,
+ * and
+ * <a href="https://www.speechmarkdown.org/syntax/number/">{@code number}</a>.
+ * </p>
  */
 public class SynthesisRequest {
 
@@ -90,6 +104,11 @@ public class SynthesisRequest {
          * Plain-text synthesis.
          */
         TEXT,
+
+        /**
+         * Speech Markdown synthesis.
+         */
+        MARKDOWN,
 
         /**
          * Synthesis using the subset of SSML supported by Spokestack.

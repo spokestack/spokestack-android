@@ -127,6 +127,11 @@ public final class SpokestackTTSClient {
             case TEXT:
                 variables.put("text", String.valueOf(request.text));
                 break;
+            case MARKDOWN:
+                variables.put("markdown", String.valueOf(request.text));
+                param = "markdown";
+                method = "synthesizeMarkdown";
+                break;
             case SSML:
                 variables.put("ssml", String.valueOf(request.text));
                 param = "ssml";
