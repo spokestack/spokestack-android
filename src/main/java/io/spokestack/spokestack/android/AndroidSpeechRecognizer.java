@@ -57,7 +57,7 @@ import java.util.ArrayList;
  * place.
  * </p>
  */
-public final class AndroidSpeechRecognizer implements SpeechProcessor {
+public class AndroidSpeechRecognizer implements SpeechProcessor {
     private boolean streaming;
     private SpeechRecognizer speechRecognizer;
     private TaskHandler taskHandler;
@@ -120,7 +120,7 @@ public final class AndroidSpeechRecognizer implements SpeechProcessor {
         });
     }
 
-    private Intent createRecognitionIntent() {
+    Intent createRecognitionIntent() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);

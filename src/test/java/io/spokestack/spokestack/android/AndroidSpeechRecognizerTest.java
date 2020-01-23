@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({SpeechRecognizer.class, AndroidSpeechRecognizer.class, Bundle.class})
+@PrepareForTest({SpeechRecognizer.class, Bundle.class})
 public class AndroidSpeechRecognizerTest {
 
     private ContextWrapper emptyAppContext = mock(ContextWrapper.class);
@@ -70,7 +70,8 @@ public class AndroidSpeechRecognizerTest {
     public void testProcess() {
         SpeechConfig config = new SpeechConfig();
         AndroidSpeechRecognizer speechRecognizer =
-              new AndroidSpeechRecognizer(config, new TaskHandler(false));
+              spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
+        doReturn(null).when(speechRecognizer).createRecognitionIntent();
         SpeechContext context = new SpeechContext(config);
         context.setAndroidContext(mockContext);
         EventListener listener = new EventListener();
@@ -93,7 +94,8 @@ public class AndroidSpeechRecognizerTest {
         listener.clear();
         context.setActive(true);
         speechRecognizer =
-              new AndroidSpeechRecognizer(config, new TaskHandler(false));
+              spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
+        doReturn(null).when(speechRecognizer).createRecognitionIntent();
         speechRecognizer.process(context, frame);
         assertNull(listener.transcript);
         assertEquals(SpeechRecognizerError.class, listener.error.getClass());
