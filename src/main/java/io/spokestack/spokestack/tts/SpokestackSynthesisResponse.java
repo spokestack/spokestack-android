@@ -16,14 +16,17 @@ public class SpokestackSynthesisResponse {
             return null;
         }
 
-        ResponseMethod method = data.synthesizeSsml;
+        ResponseMethod method = data.synthesizeMarkdown;
+        if (method == null) {
+            method = data.synthesizeSsml;
+        }
         if (method == null) {
             method = data.synthesizeText;
-            if (method == null) {
-                return null;
-            }
         }
 
+        if (method == null) {
+            return null;
+        }
         return method.url;
     }
 
@@ -31,8 +34,9 @@ public class SpokestackSynthesisResponse {
      * Wrapper class used for deserializing synthesis responses.
      */
     private static class ResponseData {
-        private ResponseMethod synthesizeText;
+        private ResponseMethod synthesizeMarkdown;
         private ResponseMethod synthesizeSsml;
+        private ResponseMethod synthesizeText;
     }
 
     /**
