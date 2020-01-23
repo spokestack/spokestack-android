@@ -13,10 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SpeechPipelineTest implements OnSpeechEventListener {
     private static final List<Class<?>> PROFILES = Arrays.asList(
           io.spokestack.spokestack.profile.PushToTalkAndroidASR.class,
+          io.spokestack.spokestack.profile.PushToTalkAzureASR.class,
           io.spokestack.spokestack.profile.PushToTalkGoogleASR.class,
           io.spokestack.spokestack.profile.TFWakewordAndroidASR.class,
+          io.spokestack.spokestack.profile.TFWakewordAzureASR.class,
           io.spokestack.spokestack.profile.TFWakewordGoogleASR.class,
           io.spokestack.spokestack.profile.VADTriggerAndroidASR.class,
+          io.spokestack.spokestack.profile.VADTriggerAzureASR.class,
           io.spokestack.spokestack.profile.VADTriggerGoogleASR.class
     );
 

@@ -47,6 +47,10 @@
          <id>jcenter</id>
          <url>https://jcenter.bintray.com/</url>
       </repository>
+      <repository>
+         <id>microsoft</id>
+         <url>https://csspeechstorage.blob.core.windows.net/maven/</url>
+      </repository>
    </repositories>
 
    <distributionManagement>
@@ -106,7 +110,16 @@
          <scope>provided</scope>
       </dependency>
 
-      <!-- microsoft speech api / spokestack TTS -->
+      <!-- azure speech service  -->
+      <dependency>
+         <groupId>com.microsoft.cognitiveservices.speech</groupId>
+         <artifactId>client-sdk</artifactId>
+         <version>1.9.0</version>
+         <type>aar</type>
+         <scope>provided</scope>
+      </dependency>
+
+      <!-- spokestack TTS -->
       <dependency>
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>okhttp</artifactId>

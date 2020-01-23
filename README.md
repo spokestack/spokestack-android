@@ -3,7 +3,7 @@
 Spokestack provides an extensible speech recognition pipeline for the Android
 platform. It includes a variety of built-in speech processors for Voice
 Activity Detection (VAD) and Automatic Speech Recognition (ASR) via popular
-speech recognition services, such as the Google Speech API and Bing Speech
+speech recognition services such as the Google Speech API and Azure Speech
 API.
 
 See the [documentation](https://spokestack.io/docs) for a lot more information
