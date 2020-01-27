@@ -13,7 +13,7 @@ than is in this brief introduction.
 [![CircleCI](https://circleci.com/gh/spokestack/spokestack-android.svg?style=shield)](https://circleci.com/gh/spokestack/spokestack-android)
 [![Coverage](https://coveralls.io/repos/github/spokestack/spokestack-android/badge.svg)](https://coveralls.io/github/spokestack/spokestack-android)
 [ ![JCenter](https://api.bintray.com/packages/spokestack/io.spokestack/spokestack-android/images/download.svg) ](https://bintray.com/spokestack/io.spokestack/spokestack-android/_latestVersion)
-[![Javadocs](https://www.javadoc.io/badge2/io.spokestack/spokestack-android/javadoc.svg)](https://www.javadoc.io/doc/io.spokestack/spokestack-android)
+[![Javadocs](https://javadoc.io/badge2/io.spokestack/spokestack-android/javadoc.svg)](https://javadoc.io/doc/io.spokestack/spokestack-android)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Configuration
@@ -32,7 +32,7 @@ This example uses a pre-built profile to create a speech recognition pipeline tr
 that uses the Google Speech API for speech recognition. The `google-credentials` parameter should
 be the contents of a Google Cloud service account credentials file, in JSON
 format. For more information, see the [documentation](https://cloud.google.com/speech/docs/streaming-recognize).
-See the [javadoc](https://www.javadoc.io/doc/io.spokestack/spokestack-android) for
+See the [javadoc](https://javadoc.io/doc/io.spokestack/spokestack-android) for
 other component-specific configuration parameters.
 
 ### Wakeword Detection
@@ -56,7 +56,7 @@ for spectrum preprocessing, an autoregressive encoder *encode* model, and a
 the wakeword detector and its configuration parameters, click
 [here](https://github.com/spokestack/spokestack-android/wiki/wakeword).
 
-The "wake-threshold" property is set by the `TFWakewordGoogleASR` profile, but it is
+The `wake-threshold` property is set by the `TFWakewordGoogleASR` profile, but it is
 overridden here to emphasize that properties set after a profile is applied (either directly
 in the builder or by another profile) supersede those set by that profile.
 
