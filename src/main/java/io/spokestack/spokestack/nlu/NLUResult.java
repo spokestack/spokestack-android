@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.nlu;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -72,9 +73,9 @@ public final class NLUResult {
     public static final class Builder {
 
         private String builderUtterance;
-        private String builderIntent;
-        private Map<String, Slot> builderSlots;
-        private Map<String, Object> builderContext;
+        private String builderIntent = "";
+        private Map<String, Slot> builderSlots = new HashMap<>();
+        private Map<String, Object> builderContext = new HashMap<>();
         private Throwable builderError;
 
         /**

@@ -1,0 +1,32 @@
+{
+  "intents": [
+    {
+      "name": "accept.proposal",
+      "slots": []
+    },
+    {
+      "name": "reject.proposal",
+      "slots": []
+    },
+    {
+      "name": "describe_test",
+      "slots": [
+        {
+          "name": "noun_phrase",
+          "type": "entity"
+        },
+        {
+          "name": "test_num",
+          "type": "integer"
+        }
+      ]
+    }
+  ],
+  "tags": [
+    "o",
+    "b_noun_phrase",
+    "i_noun_phrase",
+    "b_test_num",
+    "i_test_num"
+  ]
+}
