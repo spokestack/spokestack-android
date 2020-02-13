@@ -205,14 +205,14 @@ public class WakewordTriggerTest {
         }
 
         public void run() {
-            this.inputs().rewind();
-            this.outputs().rewind();
+            this.inputs(0).rewind();
+            this.outputs(0).rewind();
         }
 
         public final void setOutputs(float ...outputs) {
-            this.outputs().rewind();
+            this.outputs(0).rewind();
             for (float o: outputs)
-                this.outputs().putFloat(o);
+                this.outputs(0).putFloat(o);
         }
     }
 
@@ -247,15 +247,15 @@ public class WakewordTriggerTest {
             doReturn(ByteBuffer
                         .allocateDirect(fftSize * 4)
                         .order(ByteOrder.nativeOrder()))
-                .when(this.filter).inputs();
+                .when(this.filter).inputs(0);
             doReturn(ByteBuffer
                         .allocateDirect(melWidth * 4)
                         .order(ByteOrder.nativeOrder()))
-                .when(this.filter).outputs();
+                .when(this.filter).outputs(0);
             doReturn(ByteBuffer
                         .allocateDirect(melLength * melWidth * 4)
                         .order(ByteOrder.nativeOrder()))
-                .when(this.encode).inputs();
+                .when(this.encode).inputs(0);
             doReturn(ByteBuffer
                         .allocateDirect(encodeWidth * 4)
                         .order(ByteOrder.nativeOrder()))
@@ -263,15 +263,15 @@ public class WakewordTriggerTest {
             doReturn(ByteBuffer
                         .allocateDirect(encodeWidth * 4)
                         .order(ByteOrder.nativeOrder()))
-                .when(this.encode).outputs();
+                .when(this.encode).outputs(0);
             doReturn(ByteBuffer
                         .allocateDirect(encodeLength * encodeWidth * 4)
                         .order(ByteOrder.nativeOrder()))
-                .when(this.detect).inputs();
+                .when(this.detect).inputs(0);
             doReturn(ByteBuffer
                         .allocateDirect(1 * 4)
                         .order(ByteOrder.nativeOrder()))
-                .when(this.detect).outputs();
+                .when(this.detect).outputs(0);
             doCallRealMethod().when(this.filter).run();
             doCallRealMethod().when(this.encode).run();
             doCallRealMethod().when(this.detect).run();

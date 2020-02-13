@@ -1,13 +1,12 @@
 package io.spokestack.spokestack.wakeword;
 
-import java.nio.ByteBuffer;
-
+import io.spokestack.spokestack.SpeechConfig;
+import io.spokestack.spokestack.SpeechContext;
+import io.spokestack.spokestack.SpeechProcessor;
+import io.spokestack.spokestack.tensorflow.TensorflowModel;
 import org.jtransforms.fft.FloatFFT_1D;
 
-import io.spokestack.spokestack.SpeechConfig;
-import io.spokestack.spokestack.SpeechProcessor;
-import io.spokestack.spokestack.SpeechContext;
-import io.spokestack.spokestack.tensorflow.TensorflowModel;
+import java.nio.ByteBuffer;
 
 
 /**
@@ -290,19 +289,15 @@ public final class WakewordTrigger implements SpeechProcessor {
         // load the tensorflow-lite models
         this.filterModel = loader
             .setPath(config.getString("wake-filter-path"))
-            .setInputShape(windowSize / 2 + 1)
-            .setOutputShape(this.melWidth)
             .load();
+        loader.reset();
         this.encodeModel = loader
             .setPath(config.getString("wake-encode-path"))
-            .setInputShape(melLength * this.melWidth)
-            .setOutputShape(this.encodeWidth)
-            .setStateShape(stateWidth)
+            .setStatePosition(1)
             .load();
+        loader.reset();
         this.detectModel = loader
             .setPath(config.getString("wake-detect-path"))
-            .setInputShape(encodeLength * this.encodeWidth)
-            .setOutputShape(1)
             .load();
 
         // configure the wakeword activation lengths
@@ -398,23 +393,25 @@ public final class WakewordTrigger implements SpeechProcessor {
         // . the first and last stft components contain only real parts
         //   and are stored in the first two positions of the stft output
         // . the remaining components contain real/imaginary parts
-        this.filterModel.inputs().rewind();
-        this.filterModel.inputs().putFloat(this.fftFrame[0]);
+        this.filterModel.inputs(0).rewind();
+        this.filterModel.inputs(0).putFloat(this.fftFrame[0]);
         for (int i = 1; i < this.fftFrame.length / 2; i++) {
             float re = this.fftFrame[i * 2 + 0];
             float im = this.fftFrame[i * 2 + 1];
             float ab = (float) Math.sqrt(re * re + im * im);
-            this.filterModel.inputs().putFloat(ab);
+            this.filterModel.inputs(0).putFloat(ab);
         }
-        this.filterModel.inputs().putFloat(this.fftFrame[1]);
+        this.filterModel.inputs(0).putFloat(this.fftFrame[1]);
 
         // execute the mel filterbank tensorflow model
         this.filterModel.run();
 
         // copy the current mel frame into the mel window
         this.frameWindow.rewind().seek(this.melWidth);
-        while (this.filterModel.outputs().hasRemaining())
-            this.frameWindow.write(this.filterModel.outputs().getFloat());
+        while (this.filterModel.outputs(0).hasRemaining()) {
+            this.frameWindow.write(
+                  this.filterModel.outputs(0).getFloat());
+        }
 
         encode(context);
     }
@@ -422,17 +419,20 @@ public final class WakewordTrigger implements SpeechProcessor {
     private void encode(SpeechContext context) {
         // transfer the mel filterbank window to the encoder model's inputs
         this.frameWindow.rewind();
-        this.encodeModel.inputs().rewind();
-        while (!this.frameWindow.isEmpty())
-            this.encodeModel.inputs().putFloat(this.frameWindow.read());
+        this.encodeModel.inputs(0).rewind();
+        while (!this.frameWindow.isEmpty()) {
+            this.encodeModel.inputs(0).putFloat(this.frameWindow.read());
+        }
 
         // run the encoder tensorflow model
         this.encodeModel.run();
 
         // copy the encoder output into the encode window
         this.encodeWindow.rewind().seek(this.encodeWidth);
-        while (this.encodeModel.outputs().hasRemaining())
-            this.encodeWindow.write(this.encodeModel.outputs().getFloat());
+        while (this.encodeModel.outputs(0).hasRemaining()) {
+            this.encodeWindow.write(
+                  this.encodeModel.outputs(0).getFloat());
+        }
 
         detect(context);
     }
@@ -440,15 +440,15 @@ public final class WakewordTrigger implements SpeechProcessor {
     private void detect(SpeechContext context) {
         // transfer the encoder window to the detector model's inputs
         this.encodeWindow.rewind();
-        this.detectModel.inputs().rewind();
+        this.detectModel.inputs(0).rewind();
         while (!this.encodeWindow.isEmpty())
-            this.detectModel.inputs().putFloat(this.encodeWindow.read());
+            this.detectModel.inputs(0).putFloat(this.encodeWindow.read());
 
         // run the classifier tensorflow model
         this.detectModel.run();
 
         // check the classifier's output and activate
-        float posterior = this.detectModel.outputs().getFloat();
+        float posterior = this.detectModel.outputs(0).getFloat();
         if (posterior > this.posteriorThreshold)
             activate(context);
         if (posterior > this.posteriorMax)
