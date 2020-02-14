@@ -17,6 +17,8 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -69,6 +71,7 @@ public class AndroidSpeechRecognizerTest {
     @Test
     public void testProcess() {
         SpeechConfig config = new SpeechConfig();
+        config.put("trace-level", SpeechContext.TraceLevel.DEBUG.value());
         AndroidSpeechRecognizer speechRecognizer =
               spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
         doReturn(null).when(speechRecognizer).createRecognitionIntent();
@@ -89,6 +92,10 @@ public class AndroidSpeechRecognizerTest {
         speechRecognizer.process(context, frame);
         assertEquals(MockRecognizer.TRANSCRIPT, listener.transcript);
         assertNull(listener.error);
+
+        // make sure all the events fired, but only once because they
+        // shouldn't fire when ASR is inactive
+        assertEquals(7, listener.traces.size());
 
         // ASR received an error
         listener.clear();
@@ -111,6 +118,7 @@ public class AndroidSpeechRecognizerTest {
 
     private static class EventListener implements OnSpeechEventListener {
         String transcript;
+        List<String> traces = new ArrayList<>();
         double confidence;
         Throwable error;
 
@@ -132,6 +140,9 @@ public class AndroidSpeechRecognizerTest {
                     break;
                 case ERROR:
                     this.error = context.getError();
+                    break;
+                case TRACE:
+                    this.traces.add(context.getMessage());
                     break;
                 default:
                     break;

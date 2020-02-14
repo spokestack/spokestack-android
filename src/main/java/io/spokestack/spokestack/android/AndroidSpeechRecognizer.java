@@ -172,28 +172,43 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
             return confidences.length > 0 ? confidences[0] : 0.0f;
         }
 
-        // other methods required by RecognitionListener but useless for our
-        // current purposes
+        @Override
+        public void onReadyForSpeech(Bundle params) {
+            this.context.traceDebug(
+                  "AndroidSpeechRecognizer ready for speech");
+        }
 
         @Override
-        public void onReadyForSpeech(Bundle params) { }
+        public void onBeginningOfSpeech() {
+            this.context.traceDebug("AndroidSpeechRecognizer begin speech");
+        }
 
         @Override
-        public void onBeginningOfSpeech() { }
+        public void onRmsChanged(float rmsdB) {
+            this.context.traceDebug("AndroidSpeechRecognizer RMS %f", rmsdB);
+        }
 
         @Override
-        public void onRmsChanged(float rmsdB) { }
+        public void onBufferReceived(byte[] buffer) {
+            this.context.traceDebug("AndroidSpeechRecognizer buffer received");
+        }
 
         @Override
-        public void onBufferReceived(byte[] buffer) { }
+        public void onEndOfSpeech() {
+            this.context.traceDebug("AndroidSpeechRecognizer end speech");
+        }
 
         @Override
-        public void onEndOfSpeech() { }
+        public void onPartialResults(Bundle partialResults) {
+            String transcript = extractTranscript(partialResults);
+            this.context.traceDebug(
+                  "AndroidSpeechRecognizer partial results: %s", transcript);
+        }
 
         @Override
-        public void onPartialResults(Bundle partialResults) { }
-
-        @Override
-        public void onEvent(int eventType, Bundle params) { }
+        public void onEvent(int eventType, Bundle params) {
+            this.context.traceDebug(
+                  "AndroidSpeechRecognizer event: %d", eventType);
+        }
     }
 }
