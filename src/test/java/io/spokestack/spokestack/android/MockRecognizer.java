@@ -46,31 +46,29 @@ public class MockRecognizer {
      */
     @SuppressWarnings("unused")
     public void startListening(Intent recognitionIntent) {
+        Bundle results = mock(Bundle.class);
+        ArrayList<String> nBest =
+              new ArrayList<>( Arrays.asList(TRANSCRIPT, "testy"));
+        when(results
+              .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
+              .thenReturn(nBest);
+        float[] confidences = new float[]{.85f, .15f};
+        when(results
+              .getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES))
+              .thenReturn(confidences);
+
         if (this.isSuccessful) {
-            Bundle results = mock(Bundle.class);
-            ArrayList<String> nBest =
-                  new ArrayList<>( Arrays.asList(TRANSCRIPT, "testy"));
-            when(results
-                  .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
-                  .thenReturn(nBest);
-            float[] confidences = new float[]{.85f, .15f};
-            when(results
-                  .getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES))
-                  .thenReturn(confidences);
             recognitionListener.onResults(results);
         } else {
             recognitionListener.onError(4);
         }
 
-        // this is a terrible thing to do to just improve test coverage for
-        // unimplemented methods, but it will trigger a revisiting of this
-        // test if the methods are implemented in the future
         recognitionListener.onReadyForSpeech(null);
         recognitionListener.onBeginningOfSpeech();
         recognitionListener.onRmsChanged(0);
         recognitionListener.onBufferReceived(new byte[]{});
         recognitionListener.onEndOfSpeech();
-        recognitionListener.onPartialResults(null);
+        recognitionListener.onPartialResults(results);
         recognitionListener.onEvent(0, null);
     }
 }
