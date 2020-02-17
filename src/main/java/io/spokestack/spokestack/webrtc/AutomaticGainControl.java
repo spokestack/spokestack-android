@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechProcessor;
 import io.spokestack.spokestack.SpeechContext;
-import io.spokestack.spokestack.SpeechContext.TraceLevel;
+import io.spokestack.spokestack.util.EventTracer;
 
 /**
  * Automatic Gain Control (AGC) pipeline component
@@ -114,7 +114,7 @@ public class AutomaticGainControl implements SpeechProcessor {
             throw new IllegalStateException();
 
         // trace the amplification levels
-        if (context.canTrace(TraceLevel.PERF)) {
+        if (context.canTrace(EventTracer.Level.PERF)) {
             // measure the updated sample RMS dBFS
             // maintain a running mean of the levels
             double frameLevel = rms(frame);

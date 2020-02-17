@@ -479,8 +479,7 @@ public final class WakewordTrigger implements SpeechProcessor {
     }
 
     private void trace(SpeechContext context) {
-        if (context.canTrace(SpeechContext.TraceLevel.INFO))
-            context.traceInfo(String.format("wake: %f", this.posteriorMax));
+        context.traceInfo(String.format("wake: %f", this.posteriorMax));
     }
 
     private float[] hannWindow(int len) {

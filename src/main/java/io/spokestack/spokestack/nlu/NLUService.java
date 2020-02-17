@@ -1,7 +1,6 @@
 package io.spokestack.spokestack.nlu;
 
-import java.util.Map;
-import java.util.concurrent.Future;
+import io.spokestack.spokestack.util.AsyncResult;
 
 /**
  * A simple interface for components that provide intent classification and slot
@@ -10,12 +9,17 @@ import java.util.concurrent.Future;
 public interface NLUService {
 
     /**
-     * Classifies a user utterance into an intent asynchronously.
+     * Classifies a user utterance. Classification should be performed on a
+     * background thread, but the use of an {@link AsyncResult} allows the
+     * caller to either block while waiting for a result or register a callback
+     * to be executed when the result is available.
      *
      * @param utterance The user utterance to be classified.
-     * @param context   Any contextual information that should be sent along
-     *                  with the utterance to assist classification.
-     * @return A {@code Future} representing the completed classification task.
+     * @param context   The current NLU context, containing request metadata and
+     *                  the ability to fire trace events.
+     * @return An {@link AsyncResult} representing the result of the
+     * classification task.
+     * @see AsyncResult#registerCallback(io.spokestack.spokestack.util.Callback)
      */
-    Future<NLUResult> classify(String utterance, Map<String, Object> context);
+    AsyncResult<NLUResult> classify(String utterance, NLUContext context);
 }

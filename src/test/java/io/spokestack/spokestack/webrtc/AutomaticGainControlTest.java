@@ -1,13 +1,15 @@
+import io.spokestack.spokestack.SpeechConfig;
+import io.spokestack.spokestack.SpeechContext;
+import io.spokestack.spokestack.util.EventTracer;
+import io.spokestack.spokestack.webrtc.AutomaticGainControl;
+import org.junit.Test;
+import org.junit.jupiter.api.function.Executable;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.junit.Test;
-import org.junit.jupiter.api.function.Executable;
-import static org.junit.jupiter.api.Assertions.*;
-
-import io.spokestack.spokestack.SpeechConfig;
-import io.spokestack.spokestack.SpeechContext;
-import io.spokestack.spokestack.webrtc.AutomaticGainControl;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AutomaticGainControlTest {
 
@@ -111,7 +113,7 @@ public class AutomaticGainControlTest {
         final SpeechConfig config = new SpeechConfig()
             .put("sample-rate", 8000)
             .put("frame-width", 10)
-            .put("trace-level", SpeechContext.TraceLevel.PERF.value());
+            .put("trace-level", EventTracer.Level.PERF.value());
         final SpeechContext context = new SpeechContext(config);
         final AutomaticGainControl agc = new AutomaticGainControl(config);
         for (int i = 0; i < 100; i++)

@@ -3,11 +3,11 @@ package io.spokestack.spokestack;
 import java.util.*;
 import java.nio.ByteBuffer;
 
+import io.spokestack.spokestack.util.EventTracer;
 import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.spokestack.spokestack.SpeechContext.Event;
-import io.spokestack.spokestack.SpeechContext.TraceLevel;
 
 public class SpeechContextTest implements OnSpeechEventListener {
     private Event event;
@@ -83,7 +83,7 @@ public class SpeechContextTest implements OnSpeechEventListener {
     @Test
     public void testReset() {
         SpeechConfig config = new SpeechConfig()
-            .put("trace-level", TraceLevel.DEBUG.value());
+            .put("trace-level", EventTracer.Level.DEBUG.value());
 
         SpeechContext context = new SpeechContext(config);
         context.setActive(true);
@@ -103,7 +103,7 @@ public class SpeechContextTest implements OnSpeechEventListener {
     @Test
     public void testDispatch() {
         SpeechConfig config = new SpeechConfig()
-            .put("trace-level", TraceLevel.INFO.value());
+            .put("trace-level", EventTracer.Level.INFO.value());
         SpeechContext context = new SpeechContext(config);
 
         // valid listener
@@ -141,14 +141,11 @@ public class SpeechContextTest implements OnSpeechEventListener {
         context = new SpeechContext(config)
             .addOnSpeechEventListener(this);
         context.traceDebug("trace");
-        assertFalse(context.canTrace(TraceLevel.DEBUG));
-        assertFalse(context.canTrace(TraceLevel.PERF));
-        assertFalse(context.canTrace(TraceLevel.INFO));
         assertEquals(null, this.event);
         assertEquals(null, context.getMessage());
 
         // skipped tracing
-        config.put("trace-level", TraceLevel.INFO.value());
+        config.put("trace-level", EventTracer.Level.INFO.value());
         context = new SpeechContext(config)
             .addOnSpeechEventListener(this);
         context.traceDebug("trace");
@@ -156,36 +153,27 @@ public class SpeechContextTest implements OnSpeechEventListener {
         assertEquals(null, context.getMessage());
 
         // informational tracing
-        config.put("trace-level", TraceLevel.INFO.value());
+        config.put("trace-level", EventTracer.Level.INFO.value());
         context = new SpeechContext(config)
             .addOnSpeechEventListener(this);
-        assertFalse(context.canTrace(TraceLevel.DEBUG));
-        assertFalse(context.canTrace(TraceLevel.PERF));
-        assertTrue(context.canTrace(TraceLevel.INFO));
         context.traceInfo("test %d", 42);
         assertEquals(Event.TRACE, this.event);
         assertEquals("test 42", context.getMessage());
         context.reset();
 
         // performance tracing
-        config.put("trace-level", TraceLevel.PERF.value());
+        config.put("trace-level", EventTracer.Level.PERF.value());
         context = new SpeechContext(config)
             .addOnSpeechEventListener(this);
-        assertFalse(context.canTrace(TraceLevel.DEBUG));
-        assertTrue(context.canTrace(TraceLevel.PERF));
-        assertTrue(context.canTrace(TraceLevel.INFO));
         context.tracePerf("test %d", 42);
         assertEquals(Event.TRACE, this.event);
         assertEquals("test 42", context.getMessage());
         context.reset();
 
         // debug tracing
-        config.put("trace-level", TraceLevel.DEBUG.value());
+        config.put("trace-level", EventTracer.Level.DEBUG.value());
         context = new SpeechContext(config)
             .addOnSpeechEventListener(this);
-        assertTrue(context.canTrace(TraceLevel.DEBUG));
-        assertTrue(context.canTrace(TraceLevel.PERF));
-        assertTrue(context.canTrace(TraceLevel.INFO));
         context.traceDebug("test %d", 42);
         assertEquals(Event.TRACE, this.event);
         assertEquals("test 42", context.getMessage());
