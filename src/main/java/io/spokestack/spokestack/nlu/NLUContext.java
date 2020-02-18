@@ -11,7 +11,7 @@ import java.util.Map;
  * Context for NLU operations, including request metadata and a facility for
  * dispatch of trace events.
  */
-final class NLUContext {
+public final class NLUContext {
 
     private final EventTracer tracer;
     private final List<TraceListener> listeners;
