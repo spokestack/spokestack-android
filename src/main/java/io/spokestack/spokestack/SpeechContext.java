@@ -2,6 +2,7 @@ package io.spokestack.spokestack;
 
 import android.content.Context;
 import androidx.annotation.Nullable;
+import io.spokestack.spokestack.util.EventTracer;
 
 import java.util.Deque;
 import java.util.List;
@@ -46,31 +47,8 @@ public final class SpeechContext {
         }
     }
 
-    /** trace levels, for simple filtering. */
-    public enum TraceLevel {
-        /** all the traces. */
-        DEBUG(10),
-        /** performance traces. */
-        PERF(20),
-        /** informational traces. */
-        INFO(30),
-        /** no traces. */
-        NONE(100);
-
-        private final int level;
-
-        TraceLevel(int l) {
-            this.level = l;
-        }
-
-        /** @return the trace level value */
-        public int value() {
-            return this.level;
-        }
-    }
-
     private final List<OnSpeechEventListener> listeners = new ArrayList<>();
-    private final int traceLevel;
+    private final EventTracer tracer;
     private Context appContext;
     private Deque<ByteBuffer> buffer;
     private boolean speech;
@@ -85,9 +63,11 @@ public final class SpeechContext {
      * @param config speech configuration
     */
     public SpeechContext(SpeechConfig config) {
-        this.traceLevel = config.getInteger(
+        int traceLevel = config.getInteger(
             "trace-level",
-            TraceLevel.NONE.value());
+            EventTracer.Level.NONE.value());
+
+        this.tracer = new EventTracer(traceLevel);
     }
 
     /**
@@ -239,7 +219,7 @@ public final class SpeechContext {
      * @return this
      */
     public SpeechContext traceDebug(String format, Object... params) {
-        return trace(TraceLevel.DEBUG, format, params);
+        return trace(EventTracer.Level.DEBUG, format, params);
     }
 
     /**
@@ -249,7 +229,7 @@ public final class SpeechContext {
      * @return this
      */
     public SpeechContext tracePerf(String format, Object... params) {
-        return trace(TraceLevel.PERF, format, params);
+        return trace(EventTracer.Level.PERF, format, params);
     }
 
     /**
@@ -259,7 +239,16 @@ public final class SpeechContext {
      * @return this
      */
     public SpeechContext traceInfo(String format, Object... params) {
-        return trace(TraceLevel.INFO, format, params);
+        return trace(EventTracer.Level.INFO, format, params);
+    }
+
+    /**
+     * indicates whether a message will be traced at a level.
+     * @param level tracing level
+     * @return true if tracing will occur, false otherwise
+     */
+    public boolean canTrace(EventTracer.Level level) {
+        return this.tracer.canTrace(level);
     }
 
     /**
@@ -270,23 +259,14 @@ public final class SpeechContext {
      * @return this
      */
     public SpeechContext trace(
-            TraceLevel level,
+            EventTracer.Level level,
             String format,
             Object... params) {
-        if (canTrace(level)) {
+        if (this.tracer.canTrace(level)) {
             this.message = String.format(format, params);
             dispatch(Event.TRACE);
         }
         return this;
-    }
-
-    /**
-     * indicates whether a message will be traced at a level.
-     * @param level tracing level
-     * @return true if tracing will occur, false otherwise
-     */
-    public boolean canTrace(TraceLevel level) {
-        return level.value() >= this.traceLevel;
     }
 
     /**

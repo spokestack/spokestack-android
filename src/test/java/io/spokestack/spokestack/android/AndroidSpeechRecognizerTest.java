@@ -9,6 +9,7 @@ import android.speech.SpeechRecognizer;
 import io.spokestack.spokestack.OnSpeechEventListener;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
+import io.spokestack.spokestack.util.EventTracer;
 import io.spokestack.spokestack.util.TaskHandler;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,7 +72,7 @@ public class AndroidSpeechRecognizerTest {
     @Test
     public void testProcess() {
         SpeechConfig config = new SpeechConfig();
-        config.put("trace-level", SpeechContext.TraceLevel.DEBUG.value());
+        config.put("trace-level", EventTracer.Level.DEBUG.value());
         AndroidSpeechRecognizer speechRecognizer =
               spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
         doReturn(null).when(speechRecognizer).createRecognitionIntent();
