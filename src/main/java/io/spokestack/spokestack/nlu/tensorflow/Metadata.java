@@ -1,12 +1,18 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * A schema class used for metadata parsed from a JSON file that accompanies a
  * TensorFlow Lite NLU model. The metadata contains the information necessary to
  * translate the model's raw outputs into actionable intent and slot data.
  */
 final class Metadata {
-
     private Intent[] intents;
     private String[] tags;
 
@@ -31,6 +37,7 @@ final class Metadata {
     static class Intent {
         private String name;
         private Slot[] slots;
+        private Map<String, Slot> slotIndex;
 
         Intent(String slotName, Slot[] slotMetas) {
             this.name = slotName;
@@ -41,8 +48,14 @@ final class Metadata {
             return name;
         }
 
-        public Slot[] getSlots() {
-            return slots;
+        public Slot getSlot(String slotName) {
+            if (slotIndex == null) {
+                slotIndex = new HashMap<>();
+                for (Slot slot : slots) {
+                    slotIndex.put(slot.name, slot);
+                }
+            }
+            return slotIndex.get(slotName);
         }
     }
 
@@ -61,13 +74,13 @@ final class Metadata {
     static class Slot {
         private String name;
         private String type;
+        private String facets;
+        private Map<String, Object> parsedFacets;
 
-        // optional slot contents for various slot types
-        private Selection[] selections;
-
-        Slot(String slotName, String slotType) {
+        Slot(String slotName, String slotType, String slotFacets) {
             this.name = slotName;
             this.type = slotType;
+            this.facets = slotFacets;
         }
 
         public String getName() {
@@ -77,14 +90,19 @@ final class Metadata {
         public String getType() {
             return type;
         }
-    }
 
-    /**
-     * A single selection used by a selset to normalize concepts with varying
-     * surface forms into a single term.
-     */
-    static class Selection {
-        private String name;
-        private String[] aliases;
+        public Map<String, Object> getFacets() {
+            if (parsedFacets == null) {
+                Gson gson = new Gson();
+                if (facets != null) {
+                    Type jsonType =
+                          new TypeToken<Map<String, Object>>() { }.getType();
+                    parsedFacets = gson.fromJson(facets, jsonType);
+                } else {
+                    parsedFacets = new HashMap<>();
+                }
+            }
+            return parsedFacets;
+        }
     }
 }

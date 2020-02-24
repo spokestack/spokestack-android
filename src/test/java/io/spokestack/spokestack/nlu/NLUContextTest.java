@@ -51,7 +51,7 @@ public class NLUContextTest implements TraceListener {
     }
 
     @Override
-    public void onTrace(String message) {
+    public void onTrace(EventTracer.Level level, String message) {
         this.message = message;
     }
 }

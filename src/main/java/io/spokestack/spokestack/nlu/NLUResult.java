@@ -73,9 +73,9 @@ public final class NLUResult {
     public static final class Builder {
 
         private String builderUtterance;
-        private String builderIntent = "";
-        private Map<String, Slot> builderSlots = new HashMap<>();
-        private Map<String, Object> builderContext = new HashMap<>();
+        private String builderIntent;
+        private Map<String, Slot> builderSlots;
+        private Map<String, Object> builderContext;
         private Throwable builderError;
 
         /**
@@ -84,6 +84,9 @@ public final class NLUResult {
          */
         public Builder(String utterance) {
             this.builderUtterance = utterance;
+            this.builderIntent = "";
+            this.builderSlots = new HashMap<>();
+            this.builderContext = new HashMap<>();
         }
 
         /**

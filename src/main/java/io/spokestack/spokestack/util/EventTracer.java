@@ -1,7 +1,7 @@
 package io.spokestack.spokestack.util;
 
 /**
- * A utility class for components capable of dispatching trace events,
+ * A utility class for components capable of dispatching trace/logging events,
  * encapsulating the logic of checking an event's specified level against a
  * preconfigured threshold to determine whether the event message should be
  * formatted and dispatched, similar to the Java logger.
@@ -16,6 +16,10 @@ public final class EventTracer {
         PERF(20),
         /** informational traces. */
         INFO(30),
+        /** warning traces. */
+        WARN(50),
+        /** error traces. */
+        ERROR(80),
         /** no traces. */
         NONE(100);
 

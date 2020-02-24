@@ -17,7 +17,8 @@
         },
         {
           "name": "test_num",
-          "type": "integer"
+          "type": "integer",
+          "facets": "{\"range\": [1, 10]}"
         }
       ]
     }

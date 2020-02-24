@@ -1,6 +1,7 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
 import io.spokestack.spokestack.SpeechConfig;
+import io.spokestack.spokestack.nlu.NLUContext;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -10,6 +11,7 @@ import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Normalizes, tokenizes, and encodes text according to the
@@ -26,47 +28,73 @@ public class WordpieceTextEncoder implements TextEncoder {
     private static final String UNKNOWN = "[UNK]";
     private static final String SUFFIX_MARKER = "##";
 
+    private NLUContext context;
     private HashMap<String, Integer> vocabulary;
+
+    private volatile boolean ready = false;
+    private Thread loadThread;
 
     /**
      * Creates a new Wordpiece token encoder.
      *
-     * @param config Configuration object containing the name of wordpiece
-     *               resource file.
-     * @throws Exception if there was an error loading the Wordpiece
-     *                   vocabulary.
+     * @param config     Configuration object containing the name of wordpiece
+     *                   resource file.
+     * @param nluContext Context used to surface loading errors.
      */
-    public WordpieceTextEncoder(SpeechConfig config) throws Exception {
+    public WordpieceTextEncoder(SpeechConfig config, NLUContext nluContext) {
+        this(config, nluContext, Thread::new);
+    }
+
+    /**
+     * Creates a new Wordpiece token encoder with a custom thread factory. Used
+     * for testing.
+     *
+     * @param config        Configuration object containing the name of
+     *                      wordpiece resource file.
+     * @param nluContext    Context used to surface loading errors.
+     * @param threadFactory Thread factory used for creating a resource loading
+     *                      thread.
+     */
+    public WordpieceTextEncoder(SpeechConfig config, NLUContext nluContext,
+                                ThreadFactory threadFactory) {
         String vocabFile = config.getString("wordpiece-vocab-path");
-        this.vocabulary = loadVocab(vocabFile);
+        this.context = nluContext;
+        this.loadThread = threadFactory.newThread(() -> loadVocab(vocabFile));
+        this.loadThread.start();
+    }
+
+    private void loadVocab(String fileName) {
+        try (
+              FileInputStream inputStream = new FileInputStream(fileName);
+              BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(inputStream))) {
+            HashMap<String, Integer> words = new HashMap<>();
+            int index = 0;
+            String line = reader.readLine();
+            while (line != null) {
+                words.put(line, index);
+                line = reader.readLine();
+                index++;
+            }
+            this.vocabulary = words;
+            this.ready = true;
+        } catch (IOException e) {
+            this.context.traceError("Error loading Wordpiece vocabulary: %s",
+                  e.getLocalizedMessage());
+            this.vocabulary = new HashMap<>();
+        }
     }
 
     @Override
     public int encodeSingle(String token) {
+        ensureReady();
         return this.vocabulary.getOrDefault(token,
               this.vocabulary.get(UNKNOWN));
     }
 
-    private HashMap<String, Integer> loadVocab(String fileName)
-          throws IOException {
-        FileInputStream inputStream = new FileInputStream(fileName);
-        BufferedReader reader = new BufferedReader(
-              new InputStreamReader(inputStream));
-        HashMap<String, Integer> words = new HashMap<>();
-        int index = 0;
-        String line = reader.readLine();
-        while (line != null) {
-            words.put(line, index);
-            line = reader.readLine();
-            index++;
-        }
-        inputStream.close();
-        reader.close();
-        return words;
-    }
-
     @Override
     public EncodedTokens encode(String text) {
+        ensureReady();
         String[] spaceSeparated = text.split("[\\s\\p{Space}]+");
         EncodedTokens encoded = new EncodedTokens(spaceSeparated);
 
@@ -88,6 +116,17 @@ public class WordpieceTextEncoder implements TextEncoder {
         }
         encoded.setOriginalIndices(pieceToOriginal);
         return encoded;
+    }
+
+    private void ensureReady() {
+        if (!this.ready) {
+            try {
+                this.loadThread.join();
+            } catch (InterruptedException e) {
+                this.context.traceError("Interrupted during loading: %s",
+                      e.getLocalizedMessage());
+            }
+        }
     }
 
     private String[] normalizeAndStripPunct(String word) {
