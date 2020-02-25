@@ -1,62 +1,77 @@
 package io.spokestack.spokestack.tensorflow;
 
+import org.tensorflow.lite.Interpreter;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import org.tensorflow.lite.Interpreter;
 
 /**
  * Tensorflow-Lite model wrapper and loader
  *
  * <p>
- * This class wraps the TF-Lite interpreter, so that it can be mocked for
- * unit testing on non-android platforms. It also encapsulates the input/output
- * byte buffers used for passing input tensors into a model and retrieving
- * outputs.
+ * This class wraps the TensorFlow Lite interpreter so that it can be mocked
+ * for unit testing on non-android platforms. It also encapsulates the
+ * input/output byte buffers used for passing input tensors into a model
+ * and retrieving outputs.
  * </p>
  */
 public class TensorflowModel implements AutoCloseable {
     private final Interpreter interpreter;
-    private final ByteBuffer inputBuffer;
-    private final ByteBuffer outputBuffer;
-    private ByteBuffer stateInputBuffer;
-    private ByteBuffer stateOutputBuffer;
+    private final List<ByteBuffer> inputBuffers = new ArrayList<>();
+    private final List<ByteBuffer> outputBuffers = new ArrayList<>();
+    private final int inputSize;
 
     private final Object[] inputArray;
     private final Map<Integer, Object> outputMap;
 
+    private Integer statePosition;
+
     /**
      * constructs a new tensorflow model.
+     *
      * @param loader the loader (builder) for the model
      */
     public TensorflowModel(Loader loader) {
         this.interpreter = new Interpreter(new File(loader.path));
-        this.inputBuffer = loader.inputShape != 0
-            ? ByteBuffer
-                .allocateDirect(loader.inputShape * loader.inputSize)
-                .order(ByteOrder.nativeOrder())
-            : null;
-        this.outputBuffer = loader.outputShape != 0
-            ? ByteBuffer
-                .allocateDirect(loader.outputShape * loader.outputSize)
-                .order(ByteOrder.nativeOrder())
-            : null;
-        this.stateInputBuffer = loader.stateShape != 0
-            ? ByteBuffer
-                .allocateDirect(loader.stateShape * loader.stateSize)
-                .order(ByteOrder.nativeOrder())
-            : null;
-        this.stateOutputBuffer = loader.stateShape != 0
-            ? ByteBuffer
-                .allocateDirect(loader.stateShape * loader.stateSize)
-                .order(ByteOrder.nativeOrder())
-            : null;
+        for (int i = 0; i < this.interpreter.getInputTensorCount(); i++) {
+            int[] shape = this.interpreter.getInputTensor(i).shape();
+            int combinedShape = combineShape(shape);
+            this.inputBuffers.add(
+                  ByteBuffer.allocateDirect(combinedShape * loader.inputSize)
+                        .order(ByteOrder.nativeOrder()));
+        }
+        for (int i = 0; i < this.interpreter.getOutputTensorCount(); i++) {
+            int[] shape = this.interpreter.getOutputTensor(i).shape();
+            int combinedShape = combineShape(shape);
+            this.outputBuffers.add(
+                  ByteBuffer.allocateDirect(combinedShape * loader.outputSize)
+                        .order(ByteOrder.nativeOrder()));
+        }
 
-        this.inputArray = new Object[this.stateInputBuffer != null ? 2 : 1];
+        this.inputSize = loader.inputSize;
+        this.statePosition = loader.statePosition;
+        this.inputArray = new Object[this.inputBuffers.size()];
         this.outputMap = new HashMap<>();
+    }
+
+    private int combineShape(int[] dims) {
+        int product = 1;
+        for (int dim : dims) {
+            product *= dim;
+        }
+        return product;
+    }
+
+    /**
+     * @return the byte size of the model's inputs.
+     */
+    public int getInputSize() {
+        return inputSize;
     }
 
     /**
@@ -67,56 +82,70 @@ public class TensorflowModel implements AutoCloseable {
     }
 
     /**
-     * @return the input tensor buffer
+     * Get the input buffer at the specified index.
+     *
+     * @param index The index of the desired input buffer.
+     * @return the input tensor buffer at the specified index.
      */
-    public ByteBuffer inputs() {
-        return this.inputBuffer;
+    public ByteBuffer inputs(int index) {
+        return this.inputBuffers.get(index);
     }
 
     /**
      * @return the state tensor buffer
      */
     public ByteBuffer states() {
-        return this.stateInputBuffer;
+        if (this.statePosition == null) {
+            return null;
+        }
+        return this.inputBuffers.get(this.statePosition);
     }
 
     /**
-     * @return the output tensor buffer
+     * Get the output buffer at the specified index.
+     *
+     * @param index The index of the desired output buffer.
+     * @return the output tensor buffer at the specified index.
      */
-    public ByteBuffer outputs() {
-        return this.outputBuffer;
+    public ByteBuffer outputs(int index) {
+        return this.outputBuffers.get(index);
     }
 
     /**
      * executes the model using the attached buffers.
      */
     public void run() {
-        this.inputBuffer.rewind();
-        this.outputBuffer.rewind();
-        if (this.stateInputBuffer != null) {
-            this.stateInputBuffer.rewind();
-            this.stateOutputBuffer.rewind();
+        for (ByteBuffer buffer : this.inputBuffers) {
+            buffer.rewind();
+        }
+        for (ByteBuffer buffer : this.outputBuffers) {
+            buffer.rewind();
         }
 
-        this.inputArray[0] = this.inputBuffer;
-        this.outputMap.put(0, this.outputBuffer);
-        if (this.stateInputBuffer != null) {
-            this.inputArray[1] = this.stateInputBuffer;
-            this.outputMap.put(1, this.stateOutputBuffer);
+        for (int i = 0; i < this.inputBuffers.size(); i++) {
+            this.inputArray[i] = this.inputBuffers.get(i);
+        }
+        for (int i = 0; i < this.outputBuffers.size(); i++) {
+            this.outputMap.put(i, this.outputBuffers.get(i));
         }
 
         this.interpreter.runForMultipleInputsOutputs(
-            this.inputArray,
-            this.outputMap);
+              this.inputArray,
+              this.outputMap);
 
-        this.inputBuffer.rewind();
-        this.outputBuffer.rewind();
-        if (this.stateInputBuffer != null) {
-            ByteBuffer temp = this.stateInputBuffer;
-            this.stateInputBuffer = this.stateOutputBuffer;
-            this.stateOutputBuffer = temp;
-            this.stateInputBuffer.rewind();
-            this.stateOutputBuffer.rewind();
+        if (this.statePosition != null) {
+            ByteBuffer temp =
+                  this.inputBuffers.remove((int) this.statePosition);
+            ByteBuffer tempOutput =
+                  this.outputBuffers.remove((int) this.statePosition);
+            this.inputBuffers.add(this.statePosition, tempOutput);
+            this.outputBuffers.add(this.statePosition, temp);
+        }
+        for (ByteBuffer buffer : this.inputBuffers) {
+            buffer.rewind();
+        }
+        for (ByteBuffer buffer : this.outputBuffers) {
+            buffer.rewind();
         }
     }
 
@@ -124,19 +153,20 @@ public class TensorflowModel implements AutoCloseable {
      * loader (builder) class for the tensorflow model.
      */
     public static class Loader {
-        /** tensor data types. */
+        /**
+         * tensor data types.
+         */
         public enum DType {
-            /** 32-bit floating tensor. */
+            /**
+             * 32-bit floating tensor.
+             */
             FLOAT
         }
 
         private String path;
-        private int inputShape;
         private int inputSize;
-        private int outputShape;
         private int outputSize;
-        private int stateShape;
-        private int stateSize;
+        private Integer statePosition = null;
 
         /**
          * initializes a new loader instance.
@@ -147,21 +177,20 @@ public class TensorflowModel implements AutoCloseable {
 
         /**
          * resets the loader to the default state.
+         *
          * @return this
          */
         public Loader reset() {
             this.path = null;
-            this.inputShape = 0;
             this.inputSize = 4;
-            this.outputShape = 0;
             this.outputSize = 4;
-            this.stateShape = 0;
-            this.stateSize = 4;
+            this.statePosition = null;
             return this;
         }
 
         /**
          * sets the file system path to the TF-Lite model.
+         *
          * @param value value to assign
          * @return this
          */
@@ -171,76 +200,19 @@ public class TensorflowModel implements AutoCloseable {
         }
 
         /**
-         * sets the shape (product of shape dimensions) of the input tensor.
-         * @param value value to assign
+         * sets the position of the model's state tensor in its input array.
+         *
+         * @param position the position of the model's state tensor.
          * @return this
          */
-        public Loader setInputShape(int value) {
-            this.inputShape = value;
-            return this;
-        }
-
-        /**
-         * sets the data type of the input tensor.
-         * @param value value to assign
-         * @return this
-         */
-        public Loader setInputType(DType value) {
-            if (value == DType.FLOAT)
-                this.inputSize = 4;
-            else
-                throw new IllegalArgumentException("value");
-            return this;
-        }
-
-        /**
-         * sets the shape (product of shape dimensions) of the state tensor.
-         * @param value value to assign
-         * @return this
-         */
-        public Loader setStateShape(int value) {
-            this.stateShape = value;
-            return this;
-        }
-
-        /**
-         * sets the data type of the state tensor.
-         * @param value value to assign
-         * @return this
-         */
-        public Loader setStateType(DType value) {
-            if (value == DType.FLOAT)
-                this.stateSize = 4;
-            else
-                throw new IllegalArgumentException("value");
-            return this;
-        }
-
-        /**
-         * sets the shape (product of shape dimensions) of the output tensor.
-         * @param value value to assign
-         * @return this
-         */
-        public Loader setOutputShape(int value) {
-            this.outputShape = value;
-            return this;
-        }
-
-        /**
-         * sets the data type of the output tensor.
-         * @param value value to assign
-         * @return this
-         */
-        public Loader setOutputType(DType value) {
-            if (value == DType.FLOAT)
-                this.outputSize = 4;
-            else
-                throw new IllegalArgumentException("value");
+        public Loader setStatePosition(int position) {
+            this.statePosition = position;
             return this;
         }
 
         /**
          * loads the tensorflow model using the attached configuration.
+         *
          * @return the new tensorflow model
          */
         public TensorflowModel load() {
