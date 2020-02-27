@@ -15,6 +15,7 @@ import io.spokestack.spokestack.nlu.tensorflow.parsers.SelsetParser;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
 import io.spokestack.spokestack.util.AsyncResult;
 import io.spokestack.spokestack.util.EventTracer;
+import io.spokestack.spokestack.util.Tuple;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -69,7 +70,7 @@ public final class TensorflowNLU implements NLUService {
     private TFNLUOutput outputParser;
     private Map<String, SlotParser> slotParsers;
     private NLUContext context;
-    private int tokenLength;
+    private int maxTokens;
     private int sepTokenId;
     private int padTokenId;
     private Metadata metadata;
@@ -127,13 +128,21 @@ public final class TensorflowNLU implements NLUService {
             this.nluModel = loader
                   .setPath(modelPath)
                   .load();
-            this.tokenLength = this.nluModel.inputs(0).capacity()
+            this.maxTokens = this.nluModel.inputs(0).capacity()
                   / this.nluModel.getInputSize();
             this.ready = true;
         } catch (IOException e) {
             this.context.traceError("Error loading NLU model: %s",
                   e.getLocalizedMessage());
         }
+    }
+
+    /**
+     * @return The maximum number of tokens the model can accept. Used for
+     * testing.
+     */
+    int getMaxTokens() {
+        return this.maxTokens;
     }
 
     /**
@@ -203,9 +212,10 @@ public final class TensorflowNLU implements NLUService {
         }
 
         // interpret model outputs
-        Metadata.Intent intent = outputParser.getIntent(
+        Tuple<Metadata.Intent, Float> prediction = outputParser.getIntent(
               this.metadata,
               this.nluModel.outputs(0));
+        Metadata.Intent intent = prediction.first();
         nluContext.traceDebug("Intent: %s", intent.getName());
 
         Map<String, String> slots = outputParser.getSlots(
@@ -218,16 +228,22 @@ public final class TensorflowNLU implements NLUService {
 
         return new NLUResult.Builder(utterance)
               .withIntent(intent.getName())
+              .withConfidence(prediction.second())
               .withSlots(parsedSlots)
               .build();
     }
 
     private int[] pad(List<Integer> ids) {
-        int[] padded = new int[this.tokenLength];
+        if (ids.size() > this.maxTokens) {
+            throw new IllegalArgumentException(
+                  "input: " + ids.size() + " tokens; max input length is: "
+                        + this.maxTokens);
+        }
+        int[] padded = new int[this.maxTokens];
         for (int i = 0; i < ids.size(); i++) {
             padded[i] = ids.get(i);
         }
-        if (ids.size() < this.tokenLength) {
+        if (ids.size() < this.maxTokens) {
             padded[ids.size()] = sepTokenId;
             // if padTokenId is 0, we can rely on the fact that that's the
             // default value for primitive ints and not bother re-filling the

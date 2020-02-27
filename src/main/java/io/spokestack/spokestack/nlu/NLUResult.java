@@ -9,27 +9,19 @@ import java.util.Map;
  */
 public final class NLUResult {
     private final String intent;
+    private final float confidence;
     private final String utterance;
     private final Map<String, Object> context;
     private final Map<String, Slot> slots;
     private final Throwable error;
 
-    private NLUResult(String builderUtterance, String builderIntent,
-                      Map<String, Slot> builderSlots,
-                      Map<String, Object> builderContext) {
-        this.intent = builderIntent;
-        this.utterance = builderUtterance;
-        this.slots = builderSlots;
-        this.context = builderContext;
-        this.error = null;
-    }
-
-    private NLUResult(String builderUtterance, Throwable builderError) {
-        this.utterance = builderUtterance;
-        this.error = builderError;
-        this.intent = null;
-        this.slots = null;
-        this.context = null;
+    private NLUResult(Builder builder) {
+        this.error = builder.builderError;
+        this.utterance = builder.builderUtterance;
+        this.intent = builder.builderIntent;
+        this.confidence = builder.builderConfidence;
+        this.slots = builder.builderSlots;
+        this.context = builder.builderContext;
     }
 
     /**
@@ -44,6 +36,13 @@ public final class NLUResult {
      */
     public String getIntent() {
         return intent;
+    }
+
+    /**
+     * @return The NLU's confidence in its intent prediction.
+     */
+    public float getConfidence() {
+        return confidence;
     }
 
     /**
@@ -74,6 +73,7 @@ public final class NLUResult {
 
         private String builderUtterance;
         private String builderIntent;
+        private float builderConfidence;
         private Map<String, Slot> builderSlots;
         private Map<String, Object> builderContext;
         private Throwable builderError;
@@ -84,7 +84,8 @@ public final class NLUResult {
          */
         public Builder(String utterance) {
             this.builderUtterance = utterance;
-            this.builderIntent = "";
+            this.builderIntent = null;
+            this.builderConfidence = 0.0f;
             this.builderSlots = new HashMap<>();
             this.builderContext = new HashMap<>();
         }
@@ -106,6 +107,17 @@ public final class NLUResult {
          */
         public Builder withIntent(String intent) {
             this.builderIntent = intent;
+            return this;
+        }
+
+        /**
+         * Set the confidence for the intent classification.
+         * @param confidence The classifier's confidence for its intent
+         *                   prediction.
+         * @return this
+         */
+        public Builder withConfidence(float confidence) {
+            this.builderConfidence = confidence;
             return this;
         }
 
@@ -134,11 +146,7 @@ public final class NLUResult {
          * @return A populated NLU result instance.
          */
         public NLUResult build() {
-            if (builderError != null) {
-                return new NLUResult(builderUtterance, builderError);
-            }
-            return new NLUResult(builderUtterance, builderIntent,
-                  builderSlots, builderContext);
+            return new NLUResult(this);
         }
     }
 }

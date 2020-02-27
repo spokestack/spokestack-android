@@ -62,9 +62,24 @@ public class TensorflowNLUTest {
         NLUResult result = env.classify(utterance).get();
         assertEquals(IllegalStateException.class, result.getError().getClass());
         assertEquals(utterance, result.getUtterance());
+        assertEquals(0, result.getConfidence());
         assertNull(result.getIntent());
-        assertNull(result.getSlots());
-        assertNull(result.getContext());
+        assertTrue(result.getContext().isEmpty());
+        assertTrue(result.getSlots().isEmpty());
+
+        StringBuilder tooManyTokens = new StringBuilder();
+        for (int i = 0; i <= env.nlu.getMaxTokens(); i++) {
+           tooManyTokens.append("a ");
+        }
+        utterance = tooManyTokens.toString();
+        result = env.classify(utterance).get();
+        assertEquals(IllegalArgumentException.class,
+              result.getError().getClass());
+        assertEquals(utterance, result.getUtterance());
+        assertEquals(0, result.getConfidence());
+        assertNull(result.getIntent());
+        assertTrue(result.getContext().isEmpty());
+        assertTrue(result.getSlots().isEmpty());
 
         utterance = "this code is for test 1";
         float[] intentResult =
@@ -85,6 +100,7 @@ public class TensorflowNLUTest {
 
         assertNull(result.getError());
         assertEquals("describe_test", result.getIntent());
+        assertEquals(10.0, result.getConfidence());
         for (String slotName : slots.keySet()) {
             assertEquals(slots.get(slotName), result.getSlots().get(slotName));
         }

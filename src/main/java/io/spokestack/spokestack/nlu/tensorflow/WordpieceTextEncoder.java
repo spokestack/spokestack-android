@@ -158,6 +158,8 @@ public class WordpieceTextEncoder implements TextEncoder {
     private boolean isInvalid(char ch) {
         int charType = Character.getType(ch);
         return (charType == Character.NON_SPACING_MARK
+              || charType == Character.DIRECTIONALITY_NONSPACING_MARK
+              || charType == Character.ENCLOSING_MARK
               || charType == Character.FORMAT
               || charType == Character.CONTROL);
     }

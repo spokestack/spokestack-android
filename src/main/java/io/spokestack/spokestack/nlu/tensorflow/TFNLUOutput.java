@@ -1,6 +1,7 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
 import io.spokestack.spokestack.nlu.NLUContext;
+import io.spokestack.spokestack.util.Tuple;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -21,12 +22,15 @@ class TFNLUOutput {
      *
      * @param metadata The metadata for the current NLU model.
      * @param output   The output tensor containing the intent prediction.
-     * @return The intent from the model's output tensor.
+     * @return A tuple consisting of the intent from the model's output tensor
+     * and the model's posterior probability (confidence value) for that
+     * prediction.
      */
-    public Metadata.Intent getIntent(Metadata metadata, ByteBuffer output) {
+    public Tuple<Metadata.Intent, Float> getIntent(
+          Metadata metadata, ByteBuffer output) {
         Metadata.Intent[] intents = metadata.getIntents();
-        int index = bufferArgMax(output, intents.length);
-        return intents[index];
+        Tuple<Integer, Float> prediction = bufferArgMax(output, intents.length);
+        return new Tuple<>(intents[prediction.first()], prediction.second());
     }
 
     /**
@@ -83,13 +87,13 @@ class TFNLUOutput {
         int numTags = metadata.getTags().length;
         String[] labels = new String[numTokens];
         for (int i = 0; i < labels.length; i++) {
-            int index = bufferArgMax(output, numTags);
-            labels[i] = metadata.getTags()[index];
+            Tuple<Integer, Float> labelled = bufferArgMax(output, numTags);
+            labels[i] = metadata.getTags()[labelled.first()];
         }
         return labels;
     }
 
-    private int bufferArgMax(ByteBuffer buffer, int n) {
+    private Tuple<Integer, Float> bufferArgMax(ByteBuffer buffer, int n) {
         float[] posteriors = new float[n];
         for (int i = 0; i < n; i++) {
             posteriors[i] = buffer.getFloat();
@@ -97,7 +101,7 @@ class TFNLUOutput {
         return argMax(posteriors);
     }
 
-    private int argMax(float[] values) {
+    private Tuple<Integer, Float> argMax(float[] values) {
         int maxIndex = 0;
         float maxValue = values[0];
 
@@ -108,6 +112,6 @@ class TFNLUOutput {
                 maxValue = curVal;
             }
         }
-        return maxIndex;
+        return new Tuple<>(maxIndex, maxValue);
     }
 }
