@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  * than this will result in an exception.
  * </p>
  */
-public class IntegerParser implements SlotParser {
+public final class IntegerParser implements SlotParser {
     private static final Map<String, Integer> WORD_TO_NUM = new HashMap<>();
     private static final Map<String, Integer> MULTIPLIERS = new HashMap<>();
     private static final Pattern DIGIT_SPLIT_RE = Pattern.compile("[-,()\\s]");

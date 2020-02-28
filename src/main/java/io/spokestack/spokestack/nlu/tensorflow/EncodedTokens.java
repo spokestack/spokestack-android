@@ -8,7 +8,7 @@ import java.util.List;
  * A simple data class that represents both the text of tokens produced from a
  * full string and identifiers associated with those tokens.
  */
-public class EncodedTokens {
+final class EncodedTokens {
 
     private final List<String> originalTokens;
     private final List<Integer> ids;
@@ -19,7 +19,7 @@ public class EncodedTokens {
      *
      * @param spaceSeparated The original string split on whitespace.
      */
-    public EncodedTokens(String[] spaceSeparated) {
+    EncodedTokens(String[] spaceSeparated) {
         this.ids = new ArrayList<>();
         this.originalTokens = Arrays.asList(spaceSeparated);
     }

@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  * multi-digit requirements (telephone numbers, social security numbers, etc.)
  * </p>
  */
-public class DigitsParser implements SlotParser {
+public final class DigitsParser implements SlotParser {
     private static final Map<String, Integer> ENG_ZERO = new HashMap<>();
     private static final Map<String, Integer> ENG_MOD10 = new HashMap<>();
     private static final Map<String, Integer> ENG_MOD20 = new HashMap<>();

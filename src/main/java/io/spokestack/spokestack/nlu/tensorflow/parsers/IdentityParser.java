@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * A parser that does not alter string slot values recognized by the model.
  */
-public class IdentityParser implements SlotParser {
+public final class IdentityParser implements SlotParser {
 
     /**
      * Create a new identity parser.

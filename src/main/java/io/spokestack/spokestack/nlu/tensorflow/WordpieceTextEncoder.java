@@ -24,7 +24,7 @@ import java.util.concurrent.ThreadFactory;
  * produce the same results on CJK input as other Wordpiece tokenizers.
  * </p>
  */
-public class WordpieceTextEncoder implements TextEncoder {
+final class WordpieceTextEncoder implements TextEncoder {
     private static final String UNKNOWN = "[UNK]";
     private static final String SUFFIX_MARKER = "##";
 
@@ -41,7 +41,7 @@ public class WordpieceTextEncoder implements TextEncoder {
      *                   resource file.
      * @param nluContext Context used to surface loading errors.
      */
-    public WordpieceTextEncoder(SpeechConfig config, NLUContext nluContext) {
+    WordpieceTextEncoder(SpeechConfig config, NLUContext nluContext) {
         this(config, nluContext, Thread::new);
     }
 
@@ -55,7 +55,7 @@ public class WordpieceTextEncoder implements TextEncoder {
      * @param threadFactory Thread factory used for creating a resource loading
      *                      thread.
      */
-    public WordpieceTextEncoder(SpeechConfig config, NLUContext nluContext,
+    WordpieceTextEncoder(SpeechConfig config, NLUContext nluContext,
                                 ThreadFactory threadFactory) {
         String vocabFile = config.getString("wordpiece-vocab-path");
         this.context = nluContext;

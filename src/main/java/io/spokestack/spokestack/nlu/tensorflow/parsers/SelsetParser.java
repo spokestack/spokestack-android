@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * A parser that resolves selset values to their canonical names.
  */
-public class SelsetParser implements SlotParser {
+public final class SelsetParser implements SlotParser {
 
     /**
      * Create a new selset parser.

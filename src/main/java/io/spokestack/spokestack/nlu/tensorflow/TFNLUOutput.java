@@ -12,7 +12,7 @@ import java.util.Map;
  * An internal class to contain the business logic for turning raw model outputs
  * into usable intents/slots.
  */
-class TFNLUOutput {
+final class TFNLUOutput {
 
     TFNLUOutput() {
     }
