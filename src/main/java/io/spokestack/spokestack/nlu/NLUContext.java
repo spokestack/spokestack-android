@@ -4,8 +4,8 @@ import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.util.EventTracer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Context for NLU operations, including request metadata and a facility for
@@ -15,20 +15,21 @@ public final class NLUContext {
 
     private final EventTracer tracer;
     private final List<TraceListener> listeners;
-    private Map<String, Object> requestMetadata;
+    private HashMap<String, Object> requestMetadata;
 
     /**
      * Create a new dispatcher.
      *
      * @param config the dispatcher's configuration
      */
-    NLUContext(SpeechConfig config) {
+    public NLUContext(SpeechConfig config) {
         int traceLevel = config.getInteger(
               "trace-level",
-              EventTracer.Level.NONE.value());
+              EventTracer.Level.ERROR.value());
 
         this.tracer = new EventTracer(traceLevel);
         this.listeners = new ArrayList<>();
+        this.requestMetadata = new HashMap<>();
     }
 
     /**
@@ -43,7 +44,7 @@ public final class NLUContext {
     /**
      * @return the metadata for the current request.
      */
-    public Map<String, Object> getRequestMetadata() {
+    public HashMap<String, Object> getRequestMetadata() {
         return requestMetadata;
     }
 
@@ -51,8 +52,15 @@ public final class NLUContext {
      * Set the metadata for the current request.
      * @param metadata the metadata for the current request.
      */
-    public void setRequestMetadata(Map<String, Object> metadata) {
+    public void setRequestMetadata(HashMap<String, Object> metadata) {
         this.requestMetadata = metadata;
+    }
+
+    /**
+     * Resets state held by the context object, including request metadata.
+     */
+    public void reset() {
+        this.requestMetadata.clear();
     }
 
     /**
@@ -86,6 +94,25 @@ public final class NLUContext {
     }
 
     /**
+     * Traces an error level message.
+     *
+     * @param format trace message format string
+     * @param params trace message format parameters
+     */
+    public void traceError(String format, Object... params) {
+        trace(EventTracer.Level.ERROR, format, params);
+    }
+
+    /**
+     * indicates whether a message will be traced at a level.
+     * @param level tracing level
+     * @return true if tracing will occur, false otherwise
+     */
+    public boolean canTrace(EventTracer.Level level) {
+        return this.tracer.canTrace(level);
+    }
+
+    /**
      * Raises a trace event.
      *
      * @param level  tracing level
@@ -98,19 +125,20 @@ public final class NLUContext {
           Object... params) {
         if (this.tracer.canTrace(level)) {
             String message = String.format(format, params);
-            dispatchTrace(message);
+            dispatchTrace(level, message);
         }
     }
 
     /**
      * Dispatches an NLU trace message.
      *
+     * @param level the severity level of the trace
      * @param message the trace message to publish
      */
-    public void dispatchTrace(String message) {
+    public void dispatchTrace(EventTracer.Level level, String message) {
         for (TraceListener listener : this.listeners) {
             try {
-                listener.onTrace(message);
+                listener.onTrace(level, message);
             } catch (Exception e) {
                 // failed traces fail in silence
             }

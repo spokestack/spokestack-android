@@ -1,5 +1,7 @@
 package io.spokestack.spokestack.nlu;
 
+import java.util.Objects;
+
 /**
  * A slot extracted during intent classification.
  *
@@ -10,32 +12,71 @@ package io.spokestack.spokestack.nlu;
  * </p>
  */
 public final class Slot {
-    private final String slotName;
-    private final Object slotValue;
+    private final String name;
+    private final String rawValue;
+    private final Object value;
 
     /**
      * Create a new slot.
      *
-     * @param name  The slot's name.
-     * @param value The slot's value.
+     * @param n   The slot's name.
+     * @param original The slot's original string value.
+     * @param parsed The slot's parsed value.
      */
-    public Slot(String name, Object value) {
-        this.slotName = name;
-        this.slotValue = value;
+    public Slot(String n, String original, Object parsed) {
+        this.name = n;
+        this.rawValue = original;
+        this.value = parsed;
     }
 
     /**
      * @return The slot's name.
      */
     public String getName() {
-        return slotName;
+        return name;
     }
 
     /**
-     * @return The slot's value.
+     * @return The slot's original value in the user utterance, before being
+     * processed by any parsers.
+     */
+    public String getRawValue() {
+        return rawValue;
+    }
+
+    /**
+     * @return The slot's parsed value.
      */
     public Object getValue() {
-        return slotValue;
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Slot slot = (Slot) o;
+        return getName().equals(slot.getName())
+              && getRawValue().equals(slot.getRawValue())
+              && getValue().equals(slot.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getName(), getValue());
+    }
+
+    @Override
+    public String toString() {
+        return "Slot{"
+              + "name=\"" + name
+              + "\", rawValue=" + rawValue
+              + ", value=" + value
+              + '}';
     }
 }
 
