@@ -3,6 +3,7 @@ package io.spokestack.spokestack.nlu.tensorflow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * A simple data class that represents both the text of tokens produced from a
@@ -10,6 +11,7 @@ import java.util.List;
  */
 final class EncodedTokens {
 
+    private final Pattern punctRegex = Pattern.compile("^\\p{P}+|\\p{P}+$");
     private final List<String> originalTokens;
     private final List<Integer> ids;
     private List<Integer> originalIndices;
@@ -76,14 +78,21 @@ final class EncodedTokens {
      * end of that original token.
      * </p>
      *
-     * @param start The position, inclusive, of the first token to recover.
-     * @param stop  The position, exclusive, of the last token to recover.
+     * <p>
+     * Because this method is commonly used to extract a portion of the input
+     * string to parse as a slot value, leading and trailing punctuation can
+     * optionally be removed from the returned string.
+     * </p>
+     *
+     * @param start     The position, inclusive, of the first token to recover.
+     * @param stop      The position, exclusive, of the last token to recover.
+     * @param trimPunct Whether leading/trailing punctuation should be trimmed.
      * @return The portion of the original string represented by the range of
      * supplied token IDs.
      * @throws IndexOutOfBoundsException if a requested index falls outside the
      *                                   length of the token id array.
      */
-    public String decodeRange(int start, int stop) {
+    public String decodeRange(int start, int stop, boolean trimPunct) {
         if (stop < start || start < 0 || stop > this.ids.size()) {
             String message = String.format(
                   "Invalid token range: (%s, %s] for %s total tokens",
@@ -95,7 +104,12 @@ final class EncodedTokens {
         int lastToken = this.originalIndices.get(stop - 1);
         // add one to compensate for the half-open interval of subList
         int toIndex = Math.min(lastToken + 1, this.originalTokens.size());
-        return String.join(" ",
+        String joined = String.join(" ",
               this.originalTokens.subList(firstToken, toIndex));
+        if (trimPunct) {
+            return punctRegex.matcher(joined).replaceAll("");
+        } else {
+            return joined;
+        }
     }
 }

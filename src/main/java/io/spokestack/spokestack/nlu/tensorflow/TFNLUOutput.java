@@ -75,7 +75,7 @@ final class TFNLUOutput {
         Map<String, String> slots = new HashMap<>();
         for (Map.Entry<Integer, Integer> slotRange : slotLocations.entrySet()) {
             String value = encoded.decodeRange(slotRange.getKey(),
-                  slotRange.getValue());
+                  slotRange.getValue(), true);
             String slotName = tagLabels[slotRange.getKey()].substring(2);
             slots.put(slotName, value);
         }
