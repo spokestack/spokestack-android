@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -30,19 +29,22 @@ public class EncodedTokensTest {
         List<Integer> originalIndices = Arrays.asList(0, 1, 2, 3, 4, 5, 5);
         encoded.setOriginalIndices(originalIndices);
         // valid range
-        assertEquals(text, encoded.decodeRange(0, 7));
+        assertEquals(text, encoded.decodeRange(0, 7, false));
+        String trimmed = "I made the WORST decision";
+        assertEquals(trimmed, encoded.decodeRange(0, 7, true));
 
         // invalid ranges
         final EncodedTokens finalEncoded = encoded;
         assertThrows(IndexOutOfBoundsException.class,
-              () -> finalEncoded.decodeRange(-1, 3));
+              () -> finalEncoded.decodeRange(-1, 3, false));
         assertThrows(IndexOutOfBoundsException.class,
-              () -> finalEncoded.decodeRange(0, 8));
+              () -> finalEncoded.decodeRange(0, 8, false));
         assertThrows(IndexOutOfBoundsException.class,
-              () -> finalEncoded.decodeRange(3, 2));
+              () -> finalEncoded.decodeRange(3, 2, false));
 
         text = "I";
-        assertEquals(text, encoded.decodeRange(0, 1));
+        assertEquals(text, encoded.decodeRange(0, 1, false));
+        assertEquals(text, encoded.decodeRange(0, 1, true));
 
         text = Normalizer.normalize("thé\t\tearl grey", Normalizer.Form.NFD);
         spacedTokens = text.split(INITIAL_SPLIT_RE);
@@ -51,8 +53,8 @@ public class EncodedTokensTest {
         originalIndices = Arrays.asList(0, 1, 2);
         encoded.setOriginalIndices(originalIndices);
         String expected = text.replaceAll(INITIAL_SPLIT_RE, " ");
-        assertEquals(expected, encoded.decodeRange(0, 3));
-        assertEquals("earl", encoded.decodeRange(1, 2));
+        assertEquals(expected, encoded.decodeRange(0, 3, false));
+        assertEquals("earl", encoded.decodeRange(1, 2, false));
 
         text = "\"(the)\" weird-est punctuation";
         spacedTokens = text.split(INITIAL_SPLIT_RE);
@@ -60,6 +62,7 @@ public class EncodedTokensTest {
         encoded.addTokenIds(Arrays.asList(0, 0, 0, 0, 0, 0, 0));
         originalIndices = Arrays.asList(0, 0, 0, 0, 0, 1, 2);
         encoded.setOriginalIndices(originalIndices);
-        assertEquals("\"(the)\"", encoded.decodeRange(0, 5));
+        assertEquals("\"(the)\"", encoded.decodeRange(0, 5, false));
+        assertEquals("the", encoded.decodeRange(0, 5, true));
     }
 }

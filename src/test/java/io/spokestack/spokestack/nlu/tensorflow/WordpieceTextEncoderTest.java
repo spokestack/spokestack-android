@@ -94,8 +94,10 @@ public class WordpieceTextEncoderTest {
         assertEquals(expectedIds, encoded.getIds());
 
         // a couple round trips to verify proper index tracking
-        assertEquals("\"(these)\"", encoded.decodeRange(0, 2));
-        assertEquals("\"(these)\" decisions", encoded.decodeRange(0, 9));
+        assertEquals("\"(these)\"", encoded.decodeRange(0, 2, false));
+        assertEquals("these", encoded.decodeRange(0, 2, true));
+        assertEquals("\"(these)\" decisions", encoded.decodeRange(0, 9, false));
+        assertEquals("these)\" decisions", encoded.decodeRange(0, 9, true));
     }
 
     static class ControllableFactory implements ThreadFactory {
