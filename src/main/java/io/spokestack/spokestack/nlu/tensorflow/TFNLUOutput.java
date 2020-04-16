@@ -77,7 +77,13 @@ final class TFNLUOutput {
             String value = encoded.decodeRange(slotRange.getKey(),
                   slotRange.getValue(), true);
             String slotName = tagLabels[slotRange.getKey()].substring(2);
-            slots.put(slotName, value);
+            String curValue = slots.get(slotName);
+            if (curValue != null) {
+                curValue += " " + value;
+                slots.put(slotName, curValue);
+            } else {
+                slots.put(slotName, value);
+            }
         }
         return slots;
     }

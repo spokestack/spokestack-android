@@ -107,6 +107,35 @@ public class TensorflowNLUTest {
         assertEquals(slots, result.getSlots());
         assertEquals(utterance, result.getUtterance());
         assertTrue(result.getContext().isEmpty());
+
+        // simulate two different spans being tagged as the same slot
+        // in this example, "bad" doesn't get tagged as part of the noun phrase
+        // (which is incorrect, but we're just testing the slot extraction
+        // logic here)
+        utterance = "this bad code is for test 1";
+        intentResult = buildIntentResult(2, env.metadata.getIntents().length);
+        tagResult = new float[utterance.split(" ").length
+                    * env.metadata.getTags().length];
+        setTag(tagResult, env.metadata.getTags().length, 0, 1);
+        setTag(tagResult, env.metadata.getTags().length, 2, 1);
+        setTag(tagResult, env.metadata.getTags().length, 6, 3);
+        env.testModel.setOutputs(intentResult, tagResult);
+        result = env.classify(utterance).get();
+
+        slots = new HashMap<>();
+        slots.put("noun_phrase",
+              new Slot("noun_phrase", "this code", "this code"));
+        slots.put("test_num", new Slot("test_num", "1", 1));
+
+        assertNull(result.getError());
+        assertEquals("describe_test", result.getIntent());
+        assertEquals(10.0, result.getConfidence());
+        for (String slotName : slots.keySet()) {
+            assertEquals(slots.get(slotName), result.getSlots().get(slotName));
+        }
+        assertEquals(slots, result.getSlots());
+        assertEquals(utterance, result.getUtterance());
+        assertTrue(result.getContext().isEmpty());
     }
 
     private float[] buildIntentResult(int index, int numIntents) {
