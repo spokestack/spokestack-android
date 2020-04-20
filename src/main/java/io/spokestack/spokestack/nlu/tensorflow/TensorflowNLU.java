@@ -220,7 +220,8 @@ public final class TensorflowNLU implements NLUService {
               this.context,
               encoded,
               this.nluModel.outputs(1));
-        Map<String, Slot> parsedSlots = outputParser.parseSlots(intent, slots);
+        Map<String, Slot> parsedSlots =
+              outputParser.parseSlots(this.context, intent, slots);
         nluContext.traceDebug("Slots: %s", parsedSlots.toString());
 
         return new NLUResult.Builder(utterance)

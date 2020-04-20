@@ -1,11 +1,11 @@
 {
   "intents": [
     {
-      "name": "accept.proposal",
+      "name": "accept",
       "slots": []
     },
     {
-      "name": "reject.proposal",
+      "name": "reject",
       "slots": []
     },
     {
