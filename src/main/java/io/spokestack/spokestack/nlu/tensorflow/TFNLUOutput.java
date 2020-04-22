@@ -135,24 +135,28 @@ final class TFNLUOutput {
      * Parse raw slot values into objects according to the slot parsers
      * registered for this model.
      *
+     * @param context  The context used to communicate trace events.
      * @param intent     The intent for which slots are being parsed.
      * @param slotValues A map of slot name to raw string value output from the
      *                   model.
      * @return A map of slot name to parsed slot values.
      */
     public Map<String, Slot> parseSlots(
+          @NonNull NLUContext context,
           @NonNull Metadata.Intent intent,
           @NonNull Map<String, String> slotValues) {
         Map<String, Slot> parsed = parseImplicitSlots(intent);
         for (String slotName : slotValues.keySet()) {
             Metadata.Slot metaSlot = intent.getSlot(slotName);
+            String slotVal = slotValues.get(slotName);
             if (metaSlot == null) {
-                String message = String.format("no %s slot in %s intent",
+                context.traceWarn("no %s slot in %s intent",
                       slotName, intent.getName());
-                throw new IllegalArgumentException(message);
+                Slot defaultParse = new Slot(slotName, slotVal, slotVal);
+                parsed.put(slotName, defaultParse);
+                continue;
             }
-            Slot parsedValue =
-                  parseSlotValue(metaSlot, slotValues.get(slotName));
+            Slot parsedValue = parseSlotValue(metaSlot, slotVal);
             parsed.put(parsedValue.getName(), parsedValue);
         }
 

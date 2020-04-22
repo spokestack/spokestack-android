@@ -94,6 +94,16 @@ public final class NLUContext {
     }
 
     /**
+     * Traces a warning level message.
+     *
+     * @param format trace message format string
+     * @param params trace message format parameters
+     */
+    public void traceWarn(String format, Object... params) {
+        trace(EventTracer.Level.WARN, format, params);
+    }
+
+    /**
      * Traces an error level message.
      *
      * @param format trace message format string

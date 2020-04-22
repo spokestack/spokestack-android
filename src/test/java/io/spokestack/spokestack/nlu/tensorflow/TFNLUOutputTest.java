@@ -7,6 +7,7 @@ import io.spokestack.spokestack.nlu.NLUContext;
 import io.spokestack.spokestack.nlu.Slot;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;
+import io.spokestack.spokestack.util.EventTracer;
 import io.spokestack.spokestack.util.Tuple;
 import org.junit.Before;
 import org.junit.Test;
@@ -109,15 +110,16 @@ public class TFNLUOutputTest {
 
     @Test
     public void parseSlots() {
+        NLUContext context = new NLUContext(new SpeechConfig());
         // no slots, null implicit_slots
-        Metadata.Intent intent = getTargetIntent("accept.proposal");
+        Metadata.Intent intent = getTargetIntent("accept");
 
         TFNLUOutput outputParser = new TFNLUOutput(metadata);
         outputParser.registerSlotParsers(getSlotParsers());
 
         Map<String, Slot> expected = new HashMap<>();
         Map<String, Slot> result =
-              outputParser.parseSlots(intent, new HashMap<>());
+              outputParser.parseSlots(context, intent, new HashMap<>());
         assertEquals(expected, result);
 
         intent = getTargetIntent("slot_features");
@@ -133,7 +135,7 @@ public class TFNLUOutputTest {
         Slot captureNameSlot = new Slot("test_num", "9", 9);
         expected.put("test_num", captureNameSlot);
 
-        result = outputParser.parseSlots(intent, slotValues);
+        result = outputParser.parseSlots(context, intent, slotValues);
         assertEquals(expected, result);
 
         // explicit values override implicit ones
@@ -144,8 +146,29 @@ public class TFNLUOutputTest {
         implicitSlot = new Slot("feature_1", "overridden", "overridden");
         expected.put("feature_1", implicitSlot);
 
-        result = outputParser.parseSlots(intent, slotValues);
+        result = outputParser.parseSlots(context, intent, slotValues);
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void testSpuriousSlot() {
+        SpeechConfig config = new SpeechConfig();
+        config.put("trace-level", 0);
+        NLUContext context = new NLUContext(config);
+        TraceListener listener = new TraceListener();
+        context.addTraceListener(listener);
+        Metadata.Intent intent = getTargetIntent("accept");
+
+        Map<String, Slot> expected = new HashMap<>();
+        expected.put("extra", new Slot("extra", "extraValue", "extraValue"));
+        Map<String, String> slotVals = new HashMap<>();
+        slotVals.put("extra", "extraValue");
+        Map<String, Slot> result =
+              outputParser.parseSlots(context, intent, slotVals);
+        assertEquals(expected, result);
+        // check the warning message
+        assertEquals(EventTracer.Level.WARN, listener.lastLevel);
+        assertEquals("no extra slot in accept intent", listener.lastMessage);
     }
 
     private Metadata.Intent getTargetIntent(String name) {
@@ -154,7 +177,7 @@ public class TFNLUOutputTest {
                 return in;
             }
         }
-        return null;
+        throw new IllegalArgumentException("intent " + name + " not found!");
     }
 
     private Map<String, SlotParser> getSlotParsers() {
@@ -162,5 +185,18 @@ public class TFNLUOutputTest {
         parsers.put("integer", new IntegerParser());
         parsers.put("entity", new IdentityParser());
         return parsers;
+    }
+
+    static class TraceListener
+          implements io.spokestack.spokestack.nlu.TraceListener {
+
+        private EventTracer.Level lastLevel;
+        private String lastMessage;
+
+        @Override
+        public void onTrace(EventTracer.Level level, String message) {
+           this.lastLevel = level;
+           this.lastMessage = message;
+        }
     }
 }
