@@ -1,6 +1,8 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.nlu.NLUContext;
+import io.spokestack.spokestack.nlu.Slot;
 import io.spokestack.spokestack.util.Tuple;
 
 import java.nio.ByteBuffer;
@@ -14,21 +16,32 @@ import java.util.Map;
  */
 final class TFNLUOutput {
 
-    TFNLUOutput() {
+    private final Metadata metadata;
+    private Map<String, SlotParser> slotParsers;
+
+    TFNLUOutput(Metadata nluMetadata) {
+        this.metadata = nluMetadata;
+        this.slotParsers = new HashMap<>();
+    }
+
+    /**
+     * Set the parsers that should be used for a collection of slot types.
+     * @param parsers A map of slot type to the parser used for that type.
+     */
+    public void registerSlotParsers(Map<String, SlotParser> parsers) {
+        this.slotParsers = parsers;
     }
 
     /**
      * Extract the intent from the model's output tensor.
      *
-     * @param metadata The metadata for the current NLU model.
      * @param output   The output tensor containing the intent prediction.
      * @return A tuple consisting of the intent from the model's output tensor
      * and the model's posterior probability (confidence value) for that
      * prediction.
      */
-    public Tuple<Metadata.Intent, Float> getIntent(
-          Metadata metadata, ByteBuffer output) {
-        Metadata.Intent[] intents = metadata.getIntents();
+    public Tuple<Metadata.Intent, Float> getIntent(ByteBuffer output) {
+        Metadata.Intent[] intents = this.metadata.getIntents();
         Tuple<Integer, Float> prediction = bufferArgMax(output, intents.length);
         return new Tuple<>(intents[prediction.first()], prediction.second());
     }
@@ -38,7 +51,6 @@ final class TFNLUOutput {
      * model's slot tag output tensor.
      *
      * @param context  The context used to communicate trace events.
-     * @param metadata The metadata for the current NLU model.
      * @param encoded  The original encoded input, used to determine string
      *                 values for model output.
      * @param output   The output tensor containing slot tag predictions.
@@ -46,11 +58,10 @@ final class TFNLUOutput {
      */
     public Map<String, String> getSlots(
           NLUContext context,
-          Metadata metadata,
           EncodedTokens encoded,
           ByteBuffer output) {
         int numTokens = encoded.getIds().size();
-        String[] tagLabels = getLabels(metadata, output, numTokens);
+        String[] tagLabels = getLabels(output, numTokens);
         context.traceDebug("Tag labels: %s", Arrays.toString(tagLabels));
         Map<Integer, Integer> slotLocations = new HashMap<>();
         Integer curSlotStart = null;
@@ -88,13 +99,12 @@ final class TFNLUOutput {
         return slots;
     }
 
-    String[] getLabels(Metadata metadata, ByteBuffer output,
-                       int numTokens) {
-        int numTags = metadata.getTags().length;
+    String[] getLabels(ByteBuffer output, int numTokens) {
+        int numTags = this.metadata.getTags().length;
         String[] labels = new String[numTokens];
         for (int i = 0; i < labels.length; i++) {
             Tuple<Integer, Float> labelled = bufferArgMax(output, numTags);
-            labels[i] = metadata.getTags()[labelled.first()];
+            labels[i] = this.metadata.getTags()[labelled.first()];
         }
         return labels;
     }
@@ -119,5 +129,55 @@ final class TFNLUOutput {
             }
         }
         return new Tuple<>(maxIndex, maxValue);
+    }
+
+    /**
+     * Parse raw slot values into objects according to the slot parsers
+     * registered for this model.
+     *
+     * @param intent     The intent for which slots are being parsed.
+     * @param slotValues A map of slot name to raw string value output from the
+     *                   model.
+     * @return A map of slot name to parsed slot values.
+     */
+    public Map<String, Slot> parseSlots(
+          @NonNull Metadata.Intent intent,
+          @NonNull Map<String, String> slotValues) {
+        Map<String, Slot> parsed = parseImplicitSlots(intent);
+        for (String slotName : slotValues.keySet()) {
+            Metadata.Slot metaSlot = intent.getSlot(slotName);
+            if (metaSlot == null) {
+                String message = String.format("no %s slot in %s intent",
+                      slotName, intent.getName());
+                throw new IllegalArgumentException(message);
+            }
+            Slot parsedValue =
+                  parseSlotValue(metaSlot, slotValues.get(slotName));
+            parsed.put(parsedValue.getName(), parsedValue);
+        }
+
+        return parsed;
+    }
+
+    private Map<String, Slot> parseImplicitSlots(Metadata.Intent intent) {
+        Map<String, Slot> slots = new HashMap<>();
+        for (Metadata.Slot slot : intent.getImplicitSlots()) {
+            Slot parsed = new Slot(slot.getName(),
+                  String.valueOf(slot.getValue()), slot.getValue());
+            slots.put(slot.getName(), parsed);
+        }
+        return slots;
+    }
+
+    private Slot parseSlotValue(Metadata.Slot metaSlot, String slotValue) {
+        SlotParser parser = this.slotParsers.get(metaSlot.getType());
+        String slotName = metaSlot.getName();
+        try {
+            Object parsed = parser.parse(metaSlot.getFacets(), slotValue);
+            return new Slot(slotName, slotValue, parsed);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Error parsing slot "
+                  + slotName, e);
+        }
     }
 }

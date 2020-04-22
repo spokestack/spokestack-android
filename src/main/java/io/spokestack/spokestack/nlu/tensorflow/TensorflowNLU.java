@@ -67,13 +67,11 @@ public final class TensorflowNLU implements NLUService {
     private final TextEncoder textEncoder;
 
     private TensorflowModel nluModel = null;
-    private TFNLUOutput outputParser;
-    private Map<String, SlotParser> slotParsers;
+    private TFNLUOutput outputParser = null;
     private NLUContext context;
     private int maxTokens;
     private int sepTokenId;
     private int padTokenId;
-    private Metadata metadata;
 
     private Thread loadThread;
     private volatile boolean ready = false;
@@ -90,7 +88,6 @@ public final class TensorflowNLU implements NLUService {
         String metadataPath = builder.config.getString("nlu-metadata-path");
         this.context = builder.context;
         this.textEncoder = builder.textEncoder;
-        this.outputParser = new TFNLUOutput();
         this.loadThread = builder.threadFactory.newThread(
               () -> {
                   loadModel(builder.modelLoader, metadataPath, modelPath);
@@ -102,14 +99,15 @@ public final class TensorflowNLU implements NLUService {
     }
 
     private void initParsers(Map<String, String> parserClasses) {
-        this.slotParsers = new HashMap<>();
+        Map<String, SlotParser> slotParsers = new HashMap<>();
         for (String slotType : parserClasses.keySet()) {
             try {
                 SlotParser parser = (SlotParser) Class
                       .forName(parserClasses.get(slotType))
                       .getConstructor()
                       .newInstance();
-                this.slotParsers.put(slotType, parser);
+                slotParsers.put(slotType, parser);
+                this.outputParser.registerSlotParsers(slotParsers);
             } catch (Exception e) {
                 this.context.traceError("Error loading slot parsers: %s",
                       e.getLocalizedMessage());
@@ -123,13 +121,14 @@ public final class TensorflowNLU implements NLUService {
         try (FileReader fileReader = new FileReader(metadataPath);
              JsonReader reader = new JsonReader(fileReader)) {
             Gson gson = new Gson();
-            this.metadata = gson.fromJson(reader, Metadata.class);
+            Metadata metadata = gson.fromJson(reader, Metadata.class);
 
             this.nluModel = loader
                   .setPath(modelPath)
                   .load();
             this.maxTokens = this.nluModel.inputs(0).capacity()
                   / this.nluModel.getInputSize();
+            this.outputParser = new TFNLUOutput(metadata);
             this.ready = true;
         } catch (IOException e) {
             this.context.traceError("Error loading NLU model: %s",
@@ -213,17 +212,15 @@ public final class TensorflowNLU implements NLUService {
 
         // interpret model outputs
         Tuple<Metadata.Intent, Float> prediction = outputParser.getIntent(
-              this.metadata,
               this.nluModel.outputs(0));
         Metadata.Intent intent = prediction.first();
         nluContext.traceDebug("Intent: %s", intent.getName());
 
         Map<String, String> slots = outputParser.getSlots(
               this.context,
-              metadata,
               encoded,
               this.nluModel.outputs(1));
-        Map<String, Slot> parsedSlots = parseSlots(intent, slots);
+        Map<String, Slot> parsedSlots = outputParser.parseSlots(intent, slots);
         nluContext.traceDebug("Slots: %s", parsedSlots.toString());
 
         return new NLUResult.Builder(utterance)
@@ -255,36 +252,6 @@ public final class TensorflowNLU implements NLUService {
             }
         }
         return padded;
-    }
-
-    private Map<String, Slot> parseSlots(
-          Metadata.Intent intent,
-          Map<String, String> slotValues) {
-        Map<String, Slot> parsed = new HashMap<>();
-        for (String slotName : slotValues.keySet()) {
-            Metadata.Slot metaSlot = intent.getSlot(slotName);
-            if (metaSlot == null) {
-                String message = String.format("no %s slot in %s intent",
-                      slotName, intent.getName());
-                throw new IllegalArgumentException(message);
-            }
-            Slot parsedValue = parseValue(metaSlot, slotValues.get(slotName));
-            parsed.put(slotName, parsedValue);
-        }
-
-        return parsed;
-    }
-
-    private Slot parseValue(Metadata.Slot metaSlot, String slotValue) {
-        SlotParser parser = this.slotParsers.get(metaSlot.getType());
-        String slotName = metaSlot.getName();
-        try {
-            Object parsed = parser.parse(metaSlot.getFacets(), slotValue);
-            return new Slot(slotName, slotValue, parsed);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Error parsing slot "
-                  + slotName, e);
-        }
     }
 
     /**
