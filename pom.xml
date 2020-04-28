@@ -102,6 +102,15 @@
          <scope>provided</scope>
       </dependency>
 
+      <!-- mozilla deepspeech  -->
+      <dependency>
+         <groupId>org.mozilla.deepspeech</groupId>
+         <artifactId>libdeepspeech</artifactId>
+         <version>0.7.0-alpha.2</version>
+         <type>aar</type>
+         <scope>provided</scope>
+      </dependency>
+
       <!-- google speech api -->
       <dependency>
          <groupId>com.google.cloud</groupId>
