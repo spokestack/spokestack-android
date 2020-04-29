@@ -27,8 +27,8 @@ public abstract class TTSCallback implements Callback {
     public void onResponse(@NonNull Call call, Response httpResponse)
           throws IOException {
         if (!httpResponse.isSuccessful()) {
-            if (httpResponse.code() == 403) {
-                onError("Invalid API secret");
+            if (httpResponse.code() == 401 || httpResponse.code() == 403) {
+                onError("Invalid credentials");
             } else {
                 onError("Synthesis error: HTTP " + httpResponse.code());
             }
@@ -36,27 +36,36 @@ public abstract class TTSCallback implements Callback {
             String responseJson = httpResponse.body().string();
             String requestId = httpResponse.header("x-request-id");
 
-            AudioResponse audioResponse =
-                  createAudioResponse(responseJson, requestId);
-            onSynthesisResponse(audioResponse);
+            SpokestackSynthesisResponse response =
+                  gson.fromJson(responseJson,
+                        SpokestackSynthesisResponse.class);
+
+            // GraphQL errors are wrapped in an HTTP 200 response, so they have
+            // to be handled in the "success" path
+            String error = response.getError();
+            if (error != null) {
+                onError("Synthesis error: " + error);
+            } else {
+                AudioResponse audioResponse =
+                      createAudioResponse(response, requestId);
+                onSynthesisResponse(audioResponse);
+            }
         }
     }
 
     /**
      * Use data in the HTTP response to create an {@link AudioResponse}.
      *
-     * @param responseJson The response body as a JSON string.
-     * @param requestId The request ID from the response header.
-     *                  May be {@code null}.
+     * @param response  The parsed response object with a valid URL.
+     * @param requestId The request ID from the response header. May be {@code
+     *                  null}.
      * @return An {@link AudioResponse} containing the URI where synthesized
      * audio is available and any additional metadata.
      */
-    protected AudioResponse createAudioResponse(@NonNull String responseJson,
-                                                @Nullable String requestId) {
-        SpokestackSynthesisResponse result =
-              gson.fromJson(responseJson,
-                    SpokestackSynthesisResponse.class);
-        Uri audioUri = Uri.parse(result.getUrl());
+    protected AudioResponse createAudioResponse(
+          @NonNull SpokestackSynthesisResponse response,
+          @Nullable String requestId) {
+        Uri audioUri = Uri.parse(response.getUrl());
 
         HashMap<String, Object> metadata = new HashMap<>();
         metadata.put("id", requestId);

@@ -7,6 +7,7 @@ package io.spokestack.spokestack.tts;
 public class SpokestackSynthesisResponse {
 
     private ResponseData data;
+    private ResponseError[] errors;
 
     /**
      * @return The URL where synthesized audio can be streamed.
@@ -31,6 +32,23 @@ public class SpokestackSynthesisResponse {
     }
 
     /**
+     * @return A concatenation of all error messages from the response.
+     */
+    public String getError() {
+        if (errors == null || errors.length == 0) {
+            return null;
+        }
+        StringBuilder errorBuilder = new StringBuilder();
+        for (int i = 0; i < errors.length; i++) {
+            if (i > 0) {
+                errorBuilder.append("; ");
+            }
+            errorBuilder.append(errors[i].message);
+        }
+        return errorBuilder.toString();
+    }
+
+    /**
      * Wrapper class used for deserializing synthesis responses.
      */
     private static class ResponseData {
@@ -44,5 +62,12 @@ public class SpokestackSynthesisResponse {
      */
     private static class ResponseMethod {
         private String url;
+    }
+
+    /**
+     * Wrapper class used for deserializing GraphQL errors.
+     */
+    private static class ResponseError {
+        private String message;
     }
 }
