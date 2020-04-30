@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
+import android.os.SystemClock;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import io.spokestack.spokestack.SpeechConfig;
@@ -8,7 +9,11 @@ import io.spokestack.spokestack.nlu.Slot;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
 import io.spokestack.spokestack.util.EventTracer;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -24,8 +29,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(SystemClock.class)
 public class TensorflowNLUTest {
+
+    @Before
+    public void before() {
+        mockStatic(SystemClock.class);
+    }
 
     @Test
     public void initialization() throws Exception {

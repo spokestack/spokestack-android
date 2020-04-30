@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
+import android.os.SystemClock;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import io.spokestack.spokestack.SpeechConfig;
@@ -129,11 +130,20 @@ public final class TensorflowNLU implements NLUService {
             this.maxTokens = this.nluModel.inputs(0).capacity()
                   / this.nluModel.getInputSize();
             this.outputParser = new TFNLUOutput(metadata);
+            warmup();
             this.ready = true;
         } catch (IOException e) {
             this.context.traceError("Error loading NLU model: %s",
                   e.getLocalizedMessage());
         }
+    }
+
+    private void warmup() {
+        this.nluModel.inputs(0).rewind();
+        for (int i = 0; i < maxTokens; i++) {
+            this.nluModel.inputs(0).putInt(0);
+        }
+        this.nluModel.run();
     }
 
     /**
@@ -164,11 +174,11 @@ public final class TensorflowNLU implements NLUService {
         AsyncResult<NLUResult> asyncResult = new AsyncResult<>(
               () -> {
                   try {
-                      long start = System.nanoTime();
+                      long start = SystemClock.elapsedRealtime();
                       NLUResult result = tfClassify(utterance, nluContext);
                       if (nluContext.canTrace(EventTracer.Level.PERF)) {
-                          nluContext.tracePerf("classification: %-5.2fms",
-                                (System.nanoTime() - start) / 1000000.0);
+                          nluContext.tracePerf("Classification: %5dms",
+                                (SystemClock.elapsedRealtime() - start));
                       }
                       return result;
                   } catch (Exception e) {
@@ -203,11 +213,11 @@ public final class TensorflowNLU implements NLUService {
             this.nluModel.inputs(0).putInt(tokenId);
         }
 
-        long start = System.nanoTime();
+        long start = SystemClock.elapsedRealtime();
         this.nluModel.run();
         if (nluContext.canTrace(EventTracer.Level.PERF)) {
-            nluContext.tracePerf("Inference: %-5.2fms",
-                  (System.nanoTime() - start) / 1000000.0);
+            nluContext.tracePerf("Inference: %5dms",
+                  (SystemClock.elapsedRealtime() - start));
         }
 
         // interpret model outputs
@@ -217,11 +227,11 @@ public final class TensorflowNLU implements NLUService {
         nluContext.traceDebug("Intent: %s", intent.getName());
 
         Map<String, String> slots = outputParser.getSlots(
-              this.context,
+              nluContext,
               encoded,
               this.nluModel.outputs(1));
         Map<String, Slot> parsedSlots =
-              outputParser.parseSlots(this.context, intent, slots);
+              outputParser.parseSlots(nluContext, intent, slots);
         nluContext.traceDebug("Slots: %s", parsedSlots.toString());
 
         return new NLUResult.Builder(utterance)
