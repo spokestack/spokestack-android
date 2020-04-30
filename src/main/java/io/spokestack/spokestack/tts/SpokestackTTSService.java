@@ -91,14 +91,18 @@ public final class SpokestackTTSService extends TTSService {
     private class SpokestackCallback extends TTSCallback {
         @Override
         public void onFailure(@NonNull Call call, IOException e) {
-            TTSEvent event = new TTSEvent(TTSEvent.Type.ERROR);
-            event.setError(e);
-            dispatch(event);
+            raiseError(e);
         }
 
         @Override
         public void onError(String message) {
-            // no-op; we're throwing the error directly
+            raiseError(new IOException(message));
+        }
+
+        private void raiseError(Exception error) {
+            TTSEvent event = new TTSEvent(TTSEvent.Type.ERROR);
+            event.setError(error);
+            dispatch(event);
         }
 
         @Override

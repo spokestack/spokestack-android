@@ -30,7 +30,6 @@ import static org.mockito.Mockito.when;
 
 public class SpokestackTTSClientTest {
     private Response invalidResponse;
-    private Response errorResponse;
     private static final String AUDIO_URL =
           "https://spokestack.io/tts/test.mp3";
     private static final Gson gson = new Gson();
@@ -52,15 +51,8 @@ public class SpokestackTTSClientTest {
         invalidResponse = new Response.Builder()
               .request(request)
               .protocol(okhttp3.Protocol.HTTP_1_1)
-              .code(403)
+              .code(401)
               .message("Unauthorized")
-              .body(mock(ResponseBody.class))
-              .build();
-        errorResponse = new Response.Builder()
-              .request(request)
-              .protocol(okhttp3.Protocol.HTTP_1_1)
-              .code(419)
-              .message("Unacceptable")
               .body(mock(ResponseBody.class))
               .build();
     }
@@ -86,7 +78,7 @@ public class SpokestackTTSClientTest {
 
         // invalid API secret
         CountDownLatch latch = new CountDownLatch(1);
-        callback = new TestCallback("Invalid API secret", latch);
+        callback = new TestCallback("Invalid credentials", latch);
         client = new SpokestackTTSClient(callback, httpClient);
         client.setCredentials("invalid", "invalider");
         client.synthesize(request);
@@ -95,7 +87,7 @@ public class SpokestackTTSClientTest {
 
         // invalid ssml
         latch = new CountDownLatch(1);
-        callback = new TestCallback("Synthesis error: HTTP 419", latch);
+        callback = new TestCallback("Synthesis error: invalid_ssml", latch);
         client = new SpokestackTTSClient(callback, httpClient);
         client.setCredentials("id", "secret");
         SynthesisRequest invalidSSML = new SynthesisRequest.Builder("just text")
@@ -183,8 +175,8 @@ public class SpokestackTTSClientTest {
     }
 
     static class TestCallback extends TTSCallback {
-        private String errorMessage;
-        private CountDownLatch countDownLatch;
+        private final String errorMessage;
+        private final CountDownLatch countDownLatch;
         boolean errorReceived = false;
         AudioResponse audioResponse;
 
@@ -208,7 +200,8 @@ public class SpokestackTTSClientTest {
 
         @Override
         protected AudioResponse createAudioResponse(
-              @NonNull String responseJson, @Nullable String requestId) {
+              @NonNull SpokestackSynthesisResponse response,
+              @Nullable String requestId) {
             HashMap<String, Object> metadata = new HashMap<>();
             metadata.put("id", requestId);
             return new AudioResponse(metadata, Uri.EMPTY);
@@ -234,6 +227,10 @@ public class SpokestackTTSClientTest {
               "{\"data\": {\"synthesizeText\": {\"url\": \""
                     + AUDIO_URL + "\"}}}";
 
+        private static final String ERROR_JSON =
+              "{\"data\": null, "
+                    + "\"errors\": [{\"message\": \"invalid_ssml\" }]}";
+
         @NotNull
         @Override
         public Response intercept(@NotNull Chain chain) throws IOException {
@@ -243,15 +240,17 @@ public class SpokestackTTSClientTest {
                 return invalidResponse;
             }
             if (hasInvalidBody(request)) {
-                return errorResponse;
+                // simulate a GraphQL error, which are wrapped in HTTP 200s
+                return createResponse(request, ERROR_JSON);
             }
-            return createResponse(request);
+            return createResponse(request, TEXT_JSON);
         }
 
-        private Response createResponse(Request request) throws IOException {
+        private Response createResponse(Request request, String body)
+              throws IOException {
             ResponseBody responseBody = mock(ResponseBody.class);
             BufferedSource source = mock(BufferedSource.class);
-            when(source.readString(any(Charset.class))).thenReturn(TEXT_JSON);
+            when(source.readString(any(Charset.class))).thenReturn(body);
             when(responseBody.source()).thenReturn(source);
             Response.Builder builder = new Response.Builder()
                   .request(request)
