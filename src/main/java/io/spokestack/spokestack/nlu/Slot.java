@@ -61,8 +61,13 @@ public final class Slot {
         }
         Slot slot = (Slot) o;
         return getName().equals(slot.getName())
-              && getRawValue().equals(slot.getRawValue())
-              && getValue().equals(slot.getValue());
+              && nullOrEqual(getRawValue(), slot.getRawValue())
+              && nullOrEqual(getValue(), slot.getValue());
+    }
+
+    private boolean nullOrEqual(Object obj1, Object obj2) {
+        return (obj1 == null && obj2 == null)
+            || (obj1 != null && obj1.equals(obj2));
     }
 
     @Override
@@ -79,4 +84,3 @@ public final class Slot {
               + '}';
     }
 }
-
