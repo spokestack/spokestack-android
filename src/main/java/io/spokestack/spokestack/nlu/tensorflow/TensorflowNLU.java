@@ -55,11 +55,6 @@ import java.util.concurrent.ThreadFactory;
  *      <b>wordpiece-vocab-path</b> (string, required): file system path to the
  *      wordpiece vocabulary file used by the wordpiece token encoder.
  *   </li>
- *   <li>
- *      <b>nlu-input-length</b> (integer, optional): Padded length of the
- *      model's input sequences. Defaults to 128 and should only be changed if
- *      this parameter is explicitly set to a different value at training time.
- *   </li>
  * </ul>
  */
 public final class TensorflowNLU implements NLUService {
