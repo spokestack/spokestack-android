@@ -166,7 +166,6 @@ public class TensorflowNLUTest {
         return new SpeechConfig()
               .put("nlu-model-path", "model-path")
               .put("nlu-metadata-path", "src/test/resources/nlu.json")
-              .put("nlu-input-length", 100)
               .put("wordpiece-vocab-path", "src/test/resources/vocab.txt");
     }
 
@@ -203,16 +202,16 @@ public class TensorflowNLUTest {
 
         public TestEnv(SpeechConfig config) throws Exception {
             // fetch configuration parameters
-            int inputLength = config.getInteger("nlu-input-length");
             String metadataPath = config.getString("nlu-metadata-path");
             this.metadata = loadMetadata(metadataPath);
 
             // create/mock tensorflow-lite models
+            int maxTokens = 100;
             this.loader = spy(TensorflowModel.Loader.class);
             this.testModel = mock(TensorflowNLUTest.TestModel.class);
 
             doReturn(ByteBuffer
-                  .allocateDirect(inputLength * metadata.getIntents().length * 4)
+                  .allocateDirect(maxTokens * metadata.getIntents().length * 4)
                   .order(ByteOrder.nativeOrder()))
                   .when(this.testModel).inputs(0);
             doReturn(ByteBuffer
@@ -220,7 +219,7 @@ public class TensorflowNLUTest {
                   .order(ByteOrder.nativeOrder()))
                   .when(this.testModel).outputs(0);
             doReturn(ByteBuffer
-                  .allocateDirect(inputLength * metadata.getTags().length * 4)
+                  .allocateDirect(maxTokens * metadata.getTags().length * 4)
                   .order(ByteOrder.nativeOrder()))
                   .when(this.testModel).outputs(1);
             doReturn(4).when(this.testModel).getInputSize();
