@@ -135,47 +135,49 @@ final class TFNLUOutput {
      * Parse raw slot values into objects according to the slot parsers
      * registered for this model.
      *
-     * @param context  The context used to communicate trace events.
      * @param intent     The intent for which slots are being parsed.
      * @param slotValues A map of slot name to raw string value output from the
      *                   model.
      * @return A map of slot name to parsed slot values.
      */
     public Map<String, Slot> parseSlots(
-          @NonNull NLUContext context,
           @NonNull Metadata.Intent intent,
           @NonNull Map<String, String> slotValues) {
         Map<String, Slot> parsed = parseImplicitSlots(intent);
-        for (String slotName : slotValues.keySet()) {
-            Metadata.Slot metaSlot = intent.getSlot(slotName);
-            String slotVal = slotValues.get(slotName);
-            if (metaSlot == null) {
-                context.traceWarn("no %s slot in %s intent",
-                      slotName, intent.getName());
-                Slot defaultParse = new Slot(slotName, slotVal, slotVal);
-                parsed.put(slotName, defaultParse);
-                continue;
+        for (Metadata.Slot metaSlot : intent.getSlots()) {
+            // can't use the captureName here because the model output won't
+            // know it
+            String name = metaSlot.getName();
+            String slotVal = slotValues.get(name);
+            if (slotVal == null) {
+                String captureName = metaSlot.getCaptureName();
+                if (!parsed.containsKey(captureName)) {
+                    Slot emptySlot = new Slot(captureName, null, null);
+                    parsed.put(captureName, emptySlot);
+                }
+                // else leave the existing (implicit) slot alone
+            } else {
+                Slot parsedValue = parseSlotValue(metaSlot, slotVal);
+                parsed.put(parsedValue.getName(), parsedValue);
             }
-            Slot parsedValue = parseSlotValue(metaSlot, slotVal);
-            parsed.put(parsedValue.getName(), parsedValue);
         }
-
         return parsed;
     }
 
     private Map<String, Slot> parseImplicitSlots(Metadata.Intent intent) {
         Map<String, Slot> slots = new HashMap<>();
         for (Metadata.Slot slot : intent.getImplicitSlots()) {
-            Slot parsed = new Slot(slot.getName(),
+            String name = slot.getCaptureName();
+            Slot parsed = new Slot(name,
                   String.valueOf(slot.getValue()), slot.getValue());
-            slots.put(slot.getName(), parsed);
+            slots.put(name, parsed);
         }
         return slots;
     }
 
     private Slot parseSlotValue(Metadata.Slot metaSlot, String slotValue) {
         SlotParser parser = this.slotParsers.get(metaSlot.getType());
-        String slotName = metaSlot.getName();
+        String slotName = metaSlot.getCaptureName();
         try {
             Object parsed = parser.parse(metaSlot.getFacets(), slotValue);
             return new Slot(slotName, slotValue, parsed);

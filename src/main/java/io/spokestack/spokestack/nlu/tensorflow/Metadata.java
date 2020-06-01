@@ -45,7 +45,6 @@ final class Metadata {
         private final Slot[] implicitSlots;
         private final String name;
         private final Slot[] slots;
-        private Map<String, Slot> slotIndex;
 
         Intent(String intentName, Slot[] slotMetas, Slot[] implicitSlotMetas) {
             this.name = intentName;
@@ -64,14 +63,8 @@ final class Metadata {
             return new Slot[0];
         }
 
-        public Slot getSlot(String slotName) {
-            if (slotIndex == null) {
-                slotIndex = new HashMap<>();
-                for (Slot slot : slots) {
-                    slotIndex.put(slot.name, slot);
-                }
-            }
-            return slotIndex.get(slotName);
+        public Slot[] getSlots() {
+            return slots;
         }
     }
 
@@ -111,10 +104,14 @@ final class Metadata {
             this.facets = sFacets;
         }
 
-        public String getName() {
+        public String getCaptureName() {
             if (captureName != null) {
                 return captureName;
             }
+            return name;
+        }
+
+        public String getName() {
             return name;
         }
 

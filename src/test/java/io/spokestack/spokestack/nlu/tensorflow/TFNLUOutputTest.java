@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TFNLUOutputTest {
 
@@ -110,7 +111,6 @@ public class TFNLUOutputTest {
 
     @Test
     public void parseSlots() {
-        NLUContext context = new NLUContext(new SpeechConfig());
         // no slots, null implicit_slots
         Metadata.Intent intent = getTargetIntent("accept");
 
@@ -119,7 +119,7 @@ public class TFNLUOutputTest {
 
         Map<String, Slot> expected = new HashMap<>();
         Map<String, Slot> result =
-              outputParser.parseSlots(context, intent, new HashMap<>());
+              outputParser.parseSlots(intent, new HashMap<>());
         assertEquals(expected, result);
 
         intent = getTargetIntent("slot_features");
@@ -135,7 +135,7 @@ public class TFNLUOutputTest {
         Slot captureNameSlot = new Slot("test_num", "9", 9);
         expected.put("test_num", captureNameSlot);
 
-        result = outputParser.parseSlots(context, intent, slotValues);
+        result = outputParser.parseSlots(intent, slotValues);
         assertEquals(expected, result);
 
         // explicit values override implicit ones
@@ -146,29 +146,20 @@ public class TFNLUOutputTest {
         implicitSlot = new Slot("feature_1", "overridden", "overridden");
         expected.put("feature_1", implicitSlot);
 
-        result = outputParser.parseSlots(context, intent, slotValues);
+        // not present in slot tagger output, but included in client output
+        expected.put("test_num", new Slot("test_num", null, null));
+
+        result = outputParser.parseSlots(intent, slotValues);
         assertEquals(expected, result);
     }
 
     @Test
     public void testSpuriousSlot() {
-        SpeechConfig config = new SpeechConfig();
-        config.put("trace-level", 0);
-        NLUContext context = new NLUContext(config);
-        TraceListener listener = new TraceListener();
-        context.addTraceListener(listener);
         Metadata.Intent intent = getTargetIntent("accept");
-
-        Map<String, Slot> expected = new HashMap<>();
-        expected.put("extra", new Slot("extra", "extraValue", "extraValue"));
         Map<String, String> slotVals = new HashMap<>();
         slotVals.put("extra", "extraValue");
-        Map<String, Slot> result =
-              outputParser.parseSlots(context, intent, slotVals);
-        assertEquals(expected, result);
-        // check the warning message
-        assertEquals(EventTracer.Level.WARN, listener.lastLevel);
-        assertEquals("no extra slot in accept intent", listener.lastMessage);
+        Map<String, Slot> result = outputParser.parseSlots(intent, slotVals);
+        assertTrue(result.isEmpty());
     }
 
     private Metadata.Intent getTargetIntent(String name) {
