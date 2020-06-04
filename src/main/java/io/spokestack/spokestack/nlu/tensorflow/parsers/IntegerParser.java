@@ -117,23 +117,27 @@ public final class IntegerParser implements SlotParser {
                 int parsed = Integer.parseInt(token);
                 parsedInts.add(parsed);
             } catch (NumberFormatException nfe) {
-                parseReduce(token, parsedInts);
+                List<Integer> reduced = parseReduce(token, parsedInts);
+                if (reduced == null) {
+                    return null;
+                }
             }
         }
         int result = sum(parsedInts);
         if (isInRange(result, range)) {
             return result;
         }
-        throw new IllegalArgumentException("number out of range: " + result);
+        return null;
     }
 
-    private void parseReduce(String numStr, List<Integer> soFar) {
+    private List<Integer> parseReduce(String numStr, List<Integer> soFar) {
         String toParse = numStr;
         if (toParse.endsWith("th")) {
             toParse = toParse.substring(0, toParse.length() - 2);
         }
         if (!WORD_TO_NUM.containsKey(toParse)) {
-            throw new IllegalArgumentException("Invalid integer: " + toParse);
+            // invalid number, but don't throw an error
+            return null;
         }
 
         if (MULTIPLIERS.containsKey(toParse)) {
@@ -143,6 +147,7 @@ public final class IntegerParser implements SlotParser {
         } else {
             soFar.add(WORD_TO_NUM.get(toParse));
         }
+        return soFar;
     }
 
     private List<Integer> collapse(int multiplier, List<Integer> soFar) {
@@ -160,7 +165,7 @@ public final class IntegerParser implements SlotParser {
         return collapsed;
     }
 
-    private int sum(List<Integer> parsed) {
+    private Integer sum(List<Integer> parsed) {
         int sum = 0;
         for (Integer num : parsed) {
             sum += num;

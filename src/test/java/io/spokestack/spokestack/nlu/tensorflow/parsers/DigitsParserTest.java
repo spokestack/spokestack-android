@@ -4,8 +4,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DigitsParserTest {
 
@@ -14,19 +13,13 @@ public class DigitsParserTest {
         DigitsParser parser = new DigitsParser();
         HashMap<String, Object> metadata = new HashMap<>();
 
-        assertThrows(IllegalArgumentException.class, () -> {
-            parser.parse(metadata, "invalid");
-        });
+        assertNull(parser.parse(metadata, "invalid"));
 
         metadata.put("count", 10D);
-        assertThrows(IllegalArgumentException.class, () -> {
-            parser.parse(metadata, "123456789");
-        });
+        assertNull(parser.parse(metadata, "123456789"));
 
         metadata.put("count", 1D);
-        assertThrows(IllegalArgumentException.class, () -> {
-            parser.parse(metadata, "thirty");
-        });
+        assertNull(parser.parse(metadata, "thirty"));
     }
 
     @Test
