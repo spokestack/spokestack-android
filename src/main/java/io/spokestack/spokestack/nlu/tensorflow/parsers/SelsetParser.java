@@ -28,7 +28,7 @@ public final class SelsetParser implements SlotParser {
         }
 
         if (selections == null) {
-            throw new IllegalArgumentException("invalid selset facets");
+            return null;
         }
 
         String normalized = rawValue.toLowerCase();
@@ -45,6 +45,6 @@ public final class SelsetParser implements SlotParser {
                 }
             }
         }
-        throw new IllegalArgumentException("invalid alias: " + rawValue);
+        return null;
     }
 }

@@ -5,8 +5,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class IntegerParserTest {
 
@@ -14,19 +13,14 @@ public class IntegerParserTest {
     public void testParse() {
         IntegerParser parser = new IntegerParser();
         HashMap<String, Object> metadata = new HashMap<>();
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(metadata, "invalid"));
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(metadata, ""));
+        assertNull(parser.parse(metadata, "invalid"));
+        assertNull(parser.parse(metadata, ""));
 
         // out of range
         metadata.put("range", Arrays.asList(1D, 11D));
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(metadata, "twelve"));
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(metadata, "12"));
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(metadata, "1000000000000"));
+        assertNull(parser.parse(metadata, "twelve"));
+        assertNull(parser.parse(metadata, "12"));
+        assertNull(parser.parse(metadata, "1000000000000"));
 
         assertEquals(10, parser.parse(metadata, "Ten"));
         assertEquals(10, parser.parse(metadata, "10"));

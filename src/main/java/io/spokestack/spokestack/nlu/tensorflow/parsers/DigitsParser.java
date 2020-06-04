@@ -109,8 +109,7 @@ public final class DigitsParser implements SlotParser {
             || (numDigits != null && resultBuilder.length() == numDigits)) {
             return resultBuilder.toString();
         }
-        throw new IllegalArgumentException(
-              "invalid digit string: " + resultBuilder.toString());
+        return null;
     }
 
     private String parseSingle(String numStr, String next) {

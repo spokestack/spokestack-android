@@ -8,8 +8,7 @@ import org.junit.Test;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SelsetParserTest {
     private static final String CONFIG_JSON =
@@ -33,14 +32,11 @@ public class SelsetParserTest {
     public void invalidParses() {
         // bad config
         HashMap<String, Object> emptyMeta = new HashMap<>();
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(emptyMeta, "foo"));
+        assertNull(parser.parse(emptyMeta, "foo"));
 
         // invalid input
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(metadata, "invalid"));
-        assertThrows(IllegalArgumentException.class, () ->
-              parser.parse(metadata, ""));
+        assertNull(parser.parse(metadata, "invalid"));
+        assertNull(parser.parse(metadata, ""));
     }
 
     @Test

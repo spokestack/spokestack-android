@@ -152,7 +152,7 @@ final class TFNLUOutput {
             if (slotVal == null) {
                 String captureName = metaSlot.getCaptureName();
                 if (!parsed.containsKey(captureName)) {
-                    Slot emptySlot = new Slot(captureName, null, null);
+                    Slot emptySlot = new Slot(captureName, slotVal, null);
                     parsed.put(captureName, emptySlot);
                 }
                 // else leave the existing (implicit) slot alone
