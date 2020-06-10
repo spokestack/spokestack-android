@@ -208,6 +208,7 @@ public class SpokestackTTSOutput extends SpeechOutput
                   0,
                   this.playerState.window
             );
+            dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_COMPLETE));
         }
     }
 

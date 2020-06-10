@@ -21,6 +21,12 @@ public final class TTSEvent {
         AUDIO_AVAILABLE,
 
         /**
+         * The Spokestack-managed media player has finished playing all queued
+         * prompts.
+         */
+        PLAYBACK_COMPLETE,
+
+        /**
          * An error has occurred during synthesis or output.
          */
         ERROR
