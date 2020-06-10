@@ -22,7 +22,7 @@ public final class TTSEvent {
 
         /**
          * The Spokestack-managed media player has finished playing all queued
-         * prompts.
+         * TTS synthesis requests.
          */
         PLAYBACK_COMPLETE,
 
