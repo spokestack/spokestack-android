@@ -164,15 +164,18 @@ public final class TTSManager implements AutoCloseable {
 
         this.ttsService =
               createComponent(this.ttsServiceClass, TTSService.class);
-        for (TTSListener listener : this.listeners) {
-            this.ttsService.addListener(listener);
-        }
         if (this.outputClass != null && this.output == null) {
             this.output = createComponent(this.outputClass, SpeechOutput.class);
             this.output.setAndroidContext(appContext);
             this.ttsService.addListener(this.output);
             if (this.lifecycle != null) {
                 this.registerLifecycle(this.lifecycle);
+            }
+        }
+        for (TTSListener listener : this.listeners) {
+            this.ttsService.addListener(listener);
+            if (this.output != null) {
+                this.output.addListener(listener);
             }
         }
     }
