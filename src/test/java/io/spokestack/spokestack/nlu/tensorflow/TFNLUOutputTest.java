@@ -62,7 +62,7 @@ public class TFNLUOutputTest {
     @Test
     public void getSlots() {
         ByteBuffer output = ByteBuffer
-              .allocateDirect(5 * metadata.getTags().length * 4)
+              .allocateDirect(6 * metadata.getTags().length * 4)
               .order(ByteOrder.nativeOrder());
         output.rewind();
 
@@ -91,7 +91,33 @@ public class TFNLUOutputTest {
 
         Map<String, String> result =
               outputParser.getSlots(context, encoded, output);
+        assertEquals(expected, result);
 
+        // invalid but parseable tag sequence
+        tagPosteriors = setTagPosteriors(
+              Arrays.asList("o", "i_feature_1", "i_feature_1", "o", "o", "b_feature_2"));
+        output.rewind();
+        for (Float val : tagPosteriors) {
+            output.putFloat(val);
+        }
+        output.rewind();
+
+        expected = new HashMap<>();
+        expected.put("feature_1", "longer utterance");
+        expected.put("feature_2", "2");
+
+        context = new NLUContext(new SpeechConfig());
+        utterance = "a longer utterance for test 2";
+        split = utterance.split(" ");
+        encoded = new EncodedTokens(split);
+        indices = new ArrayList<>();
+        for (int i = 0; i < split.length; i++) {
+            indices.add(i);
+        }
+        encoded.addTokenIds(indices);
+        encoded.setOriginalIndices(indices);
+
+        result = outputParser.getSlots(context, encoded, output);
         assertEquals(expected, result);
     }
 
@@ -186,8 +212,8 @@ public class TFNLUOutputTest {
 
         @Override
         public void onTrace(EventTracer.Level level, String message) {
-           this.lastLevel = level;
-           this.lastMessage = message;
+            this.lastLevel = level;
+            this.lastMessage = message;
         }
     }
 }
