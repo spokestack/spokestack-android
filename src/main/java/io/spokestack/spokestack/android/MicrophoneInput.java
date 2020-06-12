@@ -6,6 +6,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 
+import io.spokestack.spokestack.SpeechContext;
 import io.spokestack.spokestack.SpeechInput;
 import io.spokestack.spokestack.SpeechConfig;
 
@@ -68,9 +69,10 @@ public final class MicrophoneInput implements SpeechInput {
 
     /**
      * reads a frame from the microphone.
+     * @param context the current speech context
      * @param frame the frame buffer to fill
      */
-    public void read(ByteBuffer frame) {
+    public void read(SpeechContext context, ByteBuffer frame) {
         int read = this.recorder.read(frame, frame.capacity());
         if (read != frame.capacity())
             throw new IllegalStateException();

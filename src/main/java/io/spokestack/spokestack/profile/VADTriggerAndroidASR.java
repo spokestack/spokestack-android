@@ -21,7 +21,7 @@ public class VADTriggerAndroidASR implements PipelineProfile {
     public SpeechPipeline.Builder apply(SpeechPipeline.Builder builder) {
         return builder
               .setInputClass(
-                    "io.spokestack.spokestack.android.MicrophoneInput")
+                    "io.spokestack.spokestack.android.PreASRMicrophoneInput")
               .addStageClass(
                     "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
               .addStageClass(
@@ -31,7 +31,6 @@ public class VADTriggerAndroidASR implements PipelineProfile {
                     "io.spokestack.spokestack.webrtc.VoiceActivityDetector")
               .addStageClass(
                     "io.spokestack.spokestack.webrtc.VoiceActivityTrigger")
-              .addStageClass("io.spokestack.spokestack.ActivationTimeout")
               .addStageClass(
                     "io.spokestack.spokestack.android.AndroidSpeechRecognizer");
     }

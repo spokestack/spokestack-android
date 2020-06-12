@@ -19,8 +19,10 @@ import java.nio.ByteBuffer;
 public interface SpeechInput extends AutoCloseable {
     /**
      * reads a set of samples into a frame buffer.
+     *
+     * @param context the current speech context
      * @param frame the frame buffer to fill
      * @throws Exception on error
      */
-    void read(ByteBuffer frame) throws Exception;
+    void read(SpeechContext context, ByteBuffer frame) throws Exception;
 }
