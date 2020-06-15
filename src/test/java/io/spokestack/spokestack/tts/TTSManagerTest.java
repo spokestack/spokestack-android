@@ -108,6 +108,32 @@ public class TTSManagerTest implements TTSListener {
         assertEquals(errorMsg, lastEvent.getError().getMessage());
     }
 
+    @Test
+    public void testStop() throws Exception {
+        TTSManager manager = new TTSManager.Builder()
+              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
+              .setProperty("spokestack-id", "test")
+              .setConfig(new SpeechConfig())
+              .setAndroidContext(context)
+              .addTTSListener(this)
+              .build();
+
+        // stopping playback with no registered output class does nothing
+        manager.stopPlayback();
+
+        manager = new TTSManager.Builder()
+              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
+              .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
+              .setProperty("spokestack-id", "test")
+              .setConfig(new SpeechConfig())
+              .setAndroidContext(context)
+              .addTTSListener(this)
+              .build();
+
+        manager.stopPlayback();
+        assertEquals("stop", events.remove(), "stop not called on output");
+    }
+
     @Override
     public void eventReceived(TTSEvent event) {
         lastEvent = event;
@@ -153,6 +179,11 @@ public class TTSManagerTest implements TTSListener {
         @Override
         public void audioReceived(AudioResponse response) {
             events.add("audioReceived");
+        }
+
+        @Override
+        public void stopPlayback() {
+            events.add("stop");
         }
 
         @Override

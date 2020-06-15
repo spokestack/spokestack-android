@@ -21,6 +21,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -125,6 +127,8 @@ public class SpokestackTTSOutputTest {
     @Test
     public void testPlayerStateChange() {
         SpokestackTTSOutput ttsOutput = spiedOutput();
+        Listener listener = new Listener();
+        ttsOutput.addListener(listener);
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
         assertTrue(ttsOutput.getPlayerState().hasContent);
 
@@ -134,8 +138,15 @@ public class SpokestackTTSOutputTest {
         ttsOutput.onPlayerStateChanged(false, Player.STATE_BUFFERING);
         assertTrue(ttsOutput.getPlayerState().hasContent);
 
+        ttsOutput.stopPlayback();
+        assertFalse(ttsOutput.getPlayerState().shouldPlay);
+        assertFalse(ttsOutput.getPlayerState().hasContent);
+
         ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
         assertFalse(ttsOutput.getPlayerState().hasContent);
+        assertEquals(1, listener.events.size());
+        assertEquals(TTSEvent.Type.PLAYBACK_COMPLETE,
+              listener.events.get(0).type);
     }
 
     @Test
@@ -212,6 +223,15 @@ public class SpokestackTTSOutputTest {
         ExoPlayer createPlayer(int usage, int contentType,
                                Context context) {
             return exoPlayer;
+        }
+    }
+
+    private static class Listener implements TTSListener {
+        List<TTSEvent> events = new ArrayList<>();
+
+        @Override
+        public void eventReceived(TTSEvent event) {
+            this.events.add(event);
         }
     }
 }
