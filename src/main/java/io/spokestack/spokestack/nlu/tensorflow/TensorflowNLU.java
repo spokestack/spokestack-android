@@ -68,6 +68,8 @@ public final class TensorflowNLU implements NLUService {
     private int maxTokens;
     private int sepTokenId;
     private int padTokenId;
+    private float confidenceThreshold;
+    private String fallbackIntent;
 
     private Thread loadThread;
     private volatile boolean ready = false;
@@ -92,6 +94,8 @@ public final class TensorflowNLU implements NLUService {
         this.loadThread.start();
         this.padTokenId = this.textEncoder.encodeSingle("[PAD]");
         this.sepTokenId = this.textEncoder.encodeSingle("[SEP]");
+        this.confidenceThreshold = builder.confidenceThreshold;
+        this.fallbackIntent = builder.fallbackIntent;
     }
 
     private void initParsers(Map<String, String> parserClasses) {
@@ -218,6 +222,15 @@ public final class TensorflowNLU implements NLUService {
         // interpret model outputs
         Tuple<Metadata.Intent, Float> prediction = outputParser.getIntent(
               this.nluModel.outputs(0));
+        float confidence = prediction.second();
+
+        if (confidence < this.confidenceThreshold) {
+            return new NLUResult.Builder(utterance)
+                  .withIntent(this.fallbackIntent)
+                  .withConfidence(confidence)
+                  .build();
+        }
+
         Metadata.Intent intent = prediction.first();
         nluContext.traceDebug("Intent: %s", intent.getName());
 
@@ -230,7 +243,7 @@ public final class TensorflowNLU implements NLUService {
 
         return new NLUResult.Builder(utterance)
               .withIntent(intent.getName())
-              .withConfidence(prediction.second())
+              .withConfidence(confidence)
               .withSlots(parsedSlots)
               .build();
     }
@@ -270,6 +283,8 @@ public final class TensorflowNLU implements NLUService {
         private TensorflowModel.Loader modelLoader;
         private ThreadFactory threadFactory;
         private TextEncoder textEncoder;
+        private float confidenceThreshold;
+        private String fallbackIntent;
 
         /**
          * Creates a new builder instance.
@@ -325,6 +340,24 @@ public final class TensorflowNLU implements NLUService {
          */
         public Builder setTextEncoder(TextEncoder encoder) {
             this.textEncoder = encoder;
+            return this;
+        }
+
+        /**
+         * Sets a confidence threshold for classification, below which the
+         * specified fallback intent will be returned.
+         *
+         * @param confidence the lowest confidence value that will be accepted
+         *                   as a valid classification.
+         * @param fallback   the name of the intent that will be returned if the
+         *                   model's confidence is below {@code confidence}.
+         * @return this
+         */
+        public Builder setConfidenceThreshold(float confidence,
+                                              String fallback) {
+
+            this.confidenceThreshold = confidence;
+            this.fallbackIntent = fallback;
             return this;
         }
 

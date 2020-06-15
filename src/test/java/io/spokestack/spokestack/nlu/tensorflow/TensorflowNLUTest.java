@@ -82,7 +82,7 @@ public class TensorflowNLUTest {
 
         StringBuilder tooManyTokens = new StringBuilder();
         for (int i = 0; i <= env.nlu.getMaxTokens(); i++) {
-           tooManyTokens.append("a ");
+            tooManyTokens.append("a ");
         }
         utterance = tooManyTokens.toString();
         result = env.classify(utterance).get();
@@ -95,8 +95,9 @@ public class TensorflowNLUTest {
         assertTrue(result.getSlots().isEmpty());
 
         utterance = "this code is for test 1";
+        float conf = 0.75f;
         float[] intentResult =
-              buildIntentResult(2, env.metadata.getIntents().length);
+              buildIntentResult(2, env.metadata.getIntents().length, conf);
         float[] tagResult =
               new float[utterance.split(" ").length
                     * env.metadata.getTags().length];
@@ -113,7 +114,7 @@ public class TensorflowNLUTest {
 
         assertNull(result.getError());
         assertEquals("describe_test", result.getIntent());
-        assertEquals(10.0, result.getConfidence());
+        assertEquals(conf, result.getConfidence());
         for (String slotName : slots.keySet()) {
             assertEquals(slots.get(slotName), result.getSlots().get(slotName));
         }
@@ -126,9 +127,10 @@ public class TensorflowNLUTest {
         // (which is incorrect, but we're just testing the slot extraction
         // logic here)
         utterance = "this bad code is for test 1";
-        intentResult = buildIntentResult(2, env.metadata.getIntents().length);
+        intentResult =
+              buildIntentResult(2, env.metadata.getIntents().length, conf);
         tagResult = new float[utterance.split(" ").length
-                    * env.metadata.getTags().length];
+              * env.metadata.getTags().length];
         setTag(tagResult, env.metadata.getTags().length, 0, 1);
         setTag(tagResult, env.metadata.getTags().length, 2, 1);
         setTag(tagResult, env.metadata.getTags().length, 6, 3);
@@ -142,7 +144,7 @@ public class TensorflowNLUTest {
 
         assertNull(result.getError());
         assertEquals("describe_test", result.getIntent());
-        assertEquals(10.0, result.getConfidence());
+        assertEquals(conf, result.getConfidence());
         for (String slotName : slots.keySet()) {
             assertEquals(slots.get(slotName), result.getSlots().get(slotName));
         }
@@ -151,9 +153,37 @@ public class TensorflowNLUTest {
         assertTrue(result.getContext().isEmpty());
     }
 
-    private float[] buildIntentResult(int index, int numIntents) {
+    @Test
+    public void testConfidenceThreshold() throws Exception {
+        TestEnv env = new TestEnv(testConfig());
+        env.nluBuilder.setConfidenceThreshold(0.5f, "fallback");
+
+        String utterance = "how far is it to the moon?";
+        float conf = 0.3f;
+        float[] intentResult =
+              buildIntentResult(1, env.metadata.getIntents().length, conf);
+
+        // include some tags in the result to make sure they're ignored
+        float[] tagResult =
+              new float[utterance.split(" ").length
+                    * env.metadata.getTags().length];
+        setTag(tagResult, env.metadata.getTags().length, 0, 1);
+        setTag(tagResult, env.metadata.getTags().length, 1, 2);
+        env.testModel.setOutputs(intentResult, tagResult);
+        NLUResult result = env.classify(utterance).get();
+
+        assertNull(result.getError());
+        assertEquals("fallback", result.getIntent());
+        assertEquals(conf, result.getConfidence());
+        assertTrue(result.getSlots().isEmpty());
+        assertEquals(utterance, result.getUtterance());
+        assertTrue(result.getContext().isEmpty());
+    }
+
+    private float[] buildIntentResult(int index, int numIntents,
+                                      float confidence) {
         float[] result = new float[numIntents];
-        result[index] = 10;
+        result[index] = confidence;
         return result;
     }
 
