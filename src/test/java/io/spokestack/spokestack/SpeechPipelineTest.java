@@ -206,7 +206,6 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         transact(false);
         assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
         assertTrue(pipeline.getContext().isActive());
-        this.events.clear();
         transact(false);
         assertEquals(SpeechContext.Event.DEACTIVATE, this.events.get(0));
         assertFalse(pipeline.getContext().isActive());
@@ -217,7 +216,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         Input.send();
         if (!managed) {
             while (this.events.isEmpty()) {
-                Thread.sleep(0);
+                Thread.sleep(1);
             }
         }
     }
