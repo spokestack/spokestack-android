@@ -57,18 +57,18 @@ public class MockRecognizer {
               .getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES))
               .thenReturn(confidences);
 
+        recognitionListener.onReadyForSpeech(null);
+        recognitionListener.onRmsChanged(0);
+        recognitionListener.onBufferReceived(new byte[]{});
+        recognitionListener.onBeginningOfSpeech();
+        recognitionListener.onPartialResults(results);
+        recognitionListener.onEndOfSpeech();
+        recognitionListener.onEvent(0, null);
+
         if (this.isSuccessful) {
             recognitionListener.onResults(results);
         } else {
             recognitionListener.onError(4);
         }
-
-        recognitionListener.onReadyForSpeech(null);
-        recognitionListener.onBeginningOfSpeech();
-        recognitionListener.onRmsChanged(0);
-        recognitionListener.onBufferReceived(new byte[]{});
-        recognitionListener.onEndOfSpeech();
-        recognitionListener.onPartialResults(results);
-        recognitionListener.onEvent(0, null);
     }
 }

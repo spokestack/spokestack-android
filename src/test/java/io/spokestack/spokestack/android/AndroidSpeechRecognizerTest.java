@@ -1,6 +1,5 @@
 package io.spokestack.spokestack.android;
 
-import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
 import android.os.Bundle;
@@ -30,7 +29,6 @@ import static org.powermock.api.mockito.PowerMockito.*;
 public class AndroidSpeechRecognizerTest {
 
     private ContextWrapper emptyAppContext = mock(ContextWrapper.class);
-    private ContextWrapper mockContext = mock(ContextWrapper.class);
     private SpeechRecognizer successfulRecognizer = mock(SpeechRecognizer.class);
     private SpeechRecognizer unsuccessfulRecognizer = mock(SpeechRecognizer.class);
 
@@ -43,13 +41,12 @@ public class AndroidSpeechRecognizerTest {
         // matchers have so far been ineffective at returning the intended
         // objects
         when(SpeechRecognizer.createSpeechRecognizer(any()))
-              .thenReturn(successfulRecognizer, unsuccessfulRecognizer);
+              .thenReturn(successfulRecognizer, unsuccessfulRecognizer,
+                    successfulRecognizer);
         whenNew(Intent.class).withAnyArguments().thenReturn(mock(Intent.class));
         configureRecognizer(successfulRecognizer, new MockRecognizer(true));
         configureRecognizer(unsuccessfulRecognizer, new MockRecognizer(false));
         when(emptyAppContext.getApplicationContext()).thenReturn(null);
-        when(mockContext.getApplicationContext())
-              .thenReturn(mock(Context.class));
     }
 
     private void configureRecognizer(SpeechRecognizer target,
@@ -73,11 +70,11 @@ public class AndroidSpeechRecognizerTest {
     public void testProcess() {
         SpeechConfig config = new SpeechConfig();
         config.put("trace-level", EventTracer.Level.DEBUG.value());
+        config.put("min-active", 500);
         AndroidSpeechRecognizer speechRecognizer =
               spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
         doReturn(null).when(speechRecognizer).createRecognitionIntent();
         SpeechContext context = new SpeechContext(config);
-        context.setAndroidContext(mockContext);
         EventListener listener = new EventListener();
         context.addOnSpeechEventListener(listener);
         ByteBuffer frame = ByteBuffer.allocateDirect(32);
@@ -116,8 +113,69 @@ public class AndroidSpeechRecognizerTest {
         speechRecognizer.close();
     }
 
+    @Test
+    public void testContextManagement() {
+        SpeechConfig config = new SpeechConfig();
+        config.put("trace-level", EventTracer.Level.DEBUG.value());
+        config.put("min-active", 500);
+        AndroidSpeechRecognizer speechRecognizer =
+              spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
+        doReturn(null).when(speechRecognizer).createRecognitionIntent();
+        AndroidSpeechRecognizer.SpokestackListener asrListener =
+              speechRecognizer.getListener();
+        SpeechContext context = new SpeechContext(config);
+        EventListener eventListener = new EventListener();
+        context.addOnSpeechEventListener(eventListener);
+        ByteBuffer frame = ByteBuffer.allocateDirect(32);
+
+        // listener not created before the first frame is processed
+        assertNull(asrListener);
+
+        speechRecognizer.process(context, frame);
+        asrListener = speechRecognizer.getListener();
+        assertNotNull(asrListener);
+        assertFalse(context.isActive());
+        assertFalse(context.isSpeech());
+
+        asrListener.onBeginningOfSpeech();
+        assertTrue(context.isActive());
+        assertTrue(context.isSpeech());
+
+        asrListener.onEndOfSpeech();
+        assertFalse(context.isActive());
+        assertFalse(context.isSpeech());
+
+        // restart speech, then throw some errors
+        asrListener.onBeginningOfSpeech();
+        assertTrue(context.isActive());
+        assertTrue(context.isSpeech());
+
+        asrListener.onError(
+              SpeechRecognizerError.Description.SPEECH_TIMEOUT.ordinal());
+        assertFalse(context.isActive());
+        assertFalse(context.isSpeech());
+        assertNull(eventListener.error);
+        int numTraces = eventListener.traces.size();
+        assertEquals(eventListener.traces.get(numTraces - 1),
+              EventListener.TIMEOUT);
+
+        context.setActive(true);
+        context.setSpeech(true);
+
+        asrListener.onError(
+              SpeechRecognizerError.Description.SERVER_ERROR.ordinal());
+        assertFalse(context.isActive());
+        assertFalse(context.isSpeech());
+        assertEquals(SpeechRecognizerError.class, eventListener.error.getClass());
+        String expectedError =
+              SpeechRecognizerError.Description.SERVER_ERROR.toString();
+        assertTrue(eventListener.error.getMessage().contains(expectedError));
+    }
+
 
     private static class EventListener implements OnSpeechEventListener {
+        static final String TIMEOUT = "timeout";
+
         String transcript;
         List<String> traces = new ArrayList<>();
         double confidence;
@@ -141,6 +199,9 @@ public class AndroidSpeechRecognizerTest {
                     break;
                 case ERROR:
                     this.error = context.getError();
+                    break;
+                case TIMEOUT:
+                    this.traces.add(TIMEOUT);
                     break;
                 case TRACE:
                     this.traces.add(context.getMessage());
