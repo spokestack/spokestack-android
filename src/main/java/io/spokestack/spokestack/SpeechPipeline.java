@@ -224,12 +224,14 @@ public final class SpeechPipeline implements AutoCloseable {
             this.context.getBuffer().addLast(frame);
 
             // fill the frame from the input
-            this.input.read(frame);
+            this.input.read(this.context, frame);
 
             // dispatch the frame to the stages
-            for (SpeechProcessor stage : this.stages) {
-                frame.rewind();
-                stage.process(this.context, frame);
+            if (!this.context.isManaged()) {
+                for (SpeechProcessor stage : this.stages) {
+                    frame.rewind();
+                    stage.process(this.context, frame);
+                }
             }
         } catch (Exception e) {
             raiseError(e);
