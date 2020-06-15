@@ -68,7 +68,7 @@ public class SpokestackTTSOutput extends SpeechOutput
     private TaskHandler taskHandler;
     private PlayerFactory playerFactory;
     private ExoPlayer mediaPlayer;
-    private ConcatenatingMediaSource mediaSource;
+    private final ConcatenatingMediaSource mediaSource;
     private Context appContext;
     private PlayerState playerState;
 
@@ -190,6 +190,16 @@ public class SpokestackTTSOutput extends SpeechOutput
         playContent();
     }
 
+    @Override
+    public void stopPlayback() {
+        this.taskHandler.run(() -> {
+            if (this.mediaPlayer != null) {
+                mediaPlayer.stop(true);
+            }
+        });
+        resetPlayerState();
+    }
+
     @NotNull
     MediaSource createMediaSource(Uri audioUri) {
         String userAgent = Util.getUserAgent(this.appContext, "spokestack");
@@ -202,18 +212,17 @@ public class SpokestackTTSOutput extends SpeechOutput
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         if (playbackState == Player.STATE_ENDED) {
-            this.playerState = new PlayerState(
-                  false,
-                  this.playerState.shouldPlay,
-                  0,
-                  this.playerState.window
-            );
+            resetPlayerState();
             dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_COMPLETE));
         }
     }
 
+    private void resetPlayerState() {
+        this.playerState = new PlayerState(false, false, 0, 0);
+    }
+
     @Override
-    public void onPlayerError(ExoPlaybackException error) {
+    public void onPlayerError(@NotNull ExoPlaybackException error) {
         TTSEvent event = new TTSEvent(TTSEvent.Type.ERROR);
         event.setError(error);
         dispatch(event);
@@ -377,18 +386,21 @@ public class SpokestackTTSOutput extends SpeechOutput
     // similarly, implementing these listener methods maintains backwards
     // compatibility for ExoPlayer
 
-    @Override public void onTimelineChanged(Timeline timeline, int reason) { }
+    @Override public void onTimelineChanged(@NotNull Timeline timeline,
+                                            int reason) { }
 
     @Override
     // it's deprecated, but it's still a default method, so we have to
     // implement it for older versions of Android
     @SuppressWarnings("deprecation")
-    public void onTimelineChanged(Timeline timeline,
+    public void onTimelineChanged(@NotNull Timeline timeline,
                                   @Nullable Object manifest, int reason) { }
 
     @Override
-    public void onTracksChanged(TrackGroupArray trackGroups,
-                                TrackSelectionArray trackSelections) { }
+    public void onTracksChanged(@NotNull TrackGroupArray trackGroups,
+                                @NotNull TrackSelectionArray trackSelections) {
+
+    }
 
     @Override public void onLoadingChanged(boolean isLoading) { }
 
@@ -407,7 +419,7 @@ public class SpokestackTTSOutput extends SpeechOutput
 
     @Override
     public void onPlaybackParametersChanged(
-          PlaybackParameters playbackParameters) { }
+          @NotNull PlaybackParameters playbackParameters) { }
 
     @Override public void onSeekProcessed() { }
 }

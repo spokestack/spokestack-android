@@ -64,21 +64,27 @@ final class TFNLUOutput {
         String[] tagLabels = getLabels(output, numTokens);
         context.traceDebug("Tag labels: %s", Arrays.toString(tagLabels));
         Map<Integer, Integer> slotLocations = new HashMap<>();
-        Integer curSlotStart = null;
+        Tuple<String, Integer> curSlot = null;
         for (int i = 0; i < tagLabels.length; i++) {
             String label = tagLabels[i];
             if (label.equals("o")) {
-                if (curSlotStart != null) {
-                    curSlotStart = null;
+                if (curSlot != null) {
+                    slotLocations.put(curSlot.second(), i);
+                    curSlot = null;
                 }
             } else {
-                if (label.startsWith("b")) {
-                    curSlotStart = i;
-                }
-
-                // add both b_ and i_ tagged tokens to the current slot
-                if (curSlotStart != null) {
-                    slotLocations.put(curSlotStart, i + 1);
+                String slotName = label.substring(2);
+                if (curSlot == null) {
+                    curSlot = new Tuple<>(slotName, i);
+                    slotLocations.put(curSlot.second(), i + 1);
+                } else {
+                    if (slotName.equals(curSlot.first())) {
+                        // if we're already processing a slot with the same
+                        // name, extend its end index
+                        slotLocations.put(curSlot.second(), i + 1);
+                    } else {
+                        curSlot = new Tuple<>(slotName, i);
+                    }
                 }
             }
         }

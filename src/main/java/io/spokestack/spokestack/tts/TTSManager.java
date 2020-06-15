@@ -110,6 +110,15 @@ public final class TTSManager implements AutoCloseable {
     }
 
     /**
+     * Stops playback of any playing or queued synthesis results.
+     */
+    public void stopPlayback() {
+        if (this.output != null) {
+            this.output.stopPlayback();
+        }
+    }
+
+    /**
      * Registers the currently active lifecycle with the manager, allowing any
      * output classes to handle media player components based on system
      * lifecycle events.

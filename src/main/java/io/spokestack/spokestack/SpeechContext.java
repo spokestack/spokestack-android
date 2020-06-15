@@ -53,6 +53,7 @@ public final class SpeechContext {
     private Deque<ByteBuffer> buffer;
     private boolean speech;
     private boolean active;
+    private boolean managed;
     private String transcript = "";
     private double confidence;
     private Throwable error;
@@ -144,6 +145,24 @@ public final class SpeechContext {
             dispatch(Event.DEACTIVATE);
         }
         return this;
+    }
+
+    /**
+     * @return whether the context is being managed externally.
+     */
+    public boolean isManaged() {
+        return managed;
+    }
+
+    /**
+     * signals whether the speech context is being externally managed (audio is
+     * not being read from the microphone by Spokestack's speech pipeline).
+     *
+     * @param value {@code true} if audio is being managed by an external
+     *                component.
+     */
+    public void setManaged(boolean value) {
+        this.managed = value;
     }
 
     /** @return the current speech transcript. */

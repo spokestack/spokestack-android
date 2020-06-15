@@ -49,7 +49,7 @@ public class TFWakewordAndroidASR implements PipelineProfile {
     public SpeechPipeline.Builder apply(SpeechPipeline.Builder builder) {
         return builder
               .setInputClass(
-                    "io.spokestack.spokestack.android.MicrophoneInput")
+                    "io.spokestack.spokestack.android.PreASRMicrophoneInput")
               .addStageClass(
                     "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
               .setProperty("ans-policy", "aggressive")
@@ -65,8 +65,6 @@ public class TFWakewordAndroidASR implements PipelineProfile {
                     "io.spokestack.spokestack.wakeword.WakewordTrigger")
               .setProperty("wake-threshold", 0.9)
               .setProperty("pre-emphasis", 0.97)
-              .addStageClass("io.spokestack.spokestack.ActivationTimeout")
-              .setProperty("active-min", 2000)
               .addStageClass(
                     "io.spokestack.spokestack.android.AndroidSpeechRecognizer");
     }

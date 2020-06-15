@@ -22,7 +22,9 @@ import io.spokestack.spokestack.tts.TTSListener;
  * thus, if a TTS subsystem has an output class, additional listeners are not
  * required. {@code SpeechOutput} components do publish their own events using
  * the same interface, however, so an app may wish to include a listener
- * component to receive media player events or errors.
+ * component to receive media player events or errors. A separate listener is
+ * also useful for re-opening the microphone (activating the speech pipeline)
+ * when playback is complete.
  * </p>
  *
  * <p>
@@ -50,6 +52,12 @@ public abstract class SpeechOutput extends TTSComponent
      *                 audio.
      */
     public abstract void audioReceived(AudioResponse response);
+
+    /**
+     * Stops playback of any currently playing and queued synthesis results and
+     * clears the play queue.
+     */
+    public abstract void stopPlayback();
 
     /**
      * Sets the output's Android context.

@@ -56,10 +56,25 @@ import java.util.ArrayList;
  * {@link SpeechRecognizerError}s and have an appropriate fallback strategy in
  * place.
  * </p>
+ *
+ * <p>
+ * This pipeline component supports the following configuration property, though
+ * it should be left at its default setting in most circumstances:
+ * </p>
+ * <ul>
+ *   <li>
+ *      <b>active-min</b> (integer): the minimum length of time, in
+ *      milliseconds, that the recognizer will wait for speech before timing
+ *      out.
+ *   </li>
+ * </ul>
  */
 public class AndroidSpeechRecognizer implements SpeechProcessor {
+    private final int minActive;
+
     private boolean streaming;
     private SpeechRecognizer speechRecognizer;
+    private SpokestackListener listener;
     private TaskHandler taskHandler;
 
     /**
@@ -70,6 +85,7 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
     @SuppressWarnings("unused")
     public AndroidSpeechRecognizer(SpeechConfig speechConfig) {
         this.streaming = false;
+        this.minActive = speechConfig.getInteger("active-min", 0);
         this.taskHandler = new TaskHandler(true);
     }
 
@@ -85,6 +101,13 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
                             TaskHandler handler) {
         this(speechConfig);
         this.taskHandler = handler;
+    }
+
+    /**
+     * @return The internal {@code RecognitionListener}. Used for testing.
+     */
+    SpokestackListener getListener() {
+        return this.listener;
     }
 
     @Override
@@ -108,8 +131,8 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
             Context androidContext = context.getAndroidContext();
             this.speechRecognizer =
                   SpeechRecognizer.createSpeechRecognizer(androidContext);
-            this.speechRecognizer.setRecognitionListener(
-                  new SpokestackListener(context));
+            this.listener = new SpokestackListener(context);
+            this.speechRecognizer.setRecognitionListener(this.listener);
         });
     }
 
@@ -124,6 +147,11 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        if (this.minActive > 0) {
+            intent.putExtra(
+                  RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,
+                  this.minActive);
+        }
         // added in API level 23
         intent.putExtra("android.speech.extra.PREFER_OFFLINE", true);
         return intent;
@@ -138,7 +166,7 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
      * An internal listener used to dispatch events from the Android speech
      * recognizer to the Spokestack {@link SpeechContext}.
      */
-    private static class SpokestackListener implements RecognitionListener {
+    static class SpokestackListener implements RecognitionListener {
         private final SpeechContext context;
 
         SpokestackListener(SpeechContext speechContext) {
@@ -147,8 +175,16 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
 
         @Override
         public void onError(int error) {
-            this.context.setError(new SpeechRecognizerError(error));
-            this.context.dispatch(SpeechContext.Event.ERROR);
+            SpeechRecognizerError speechErr = new SpeechRecognizerError(error);
+            if (speechErr.description
+                  == SpeechRecognizerError.Description.SPEECH_TIMEOUT) {
+                this.context.dispatch(SpeechContext.Event.TIMEOUT);
+            } else {
+                this.context.setError(speechErr);
+                this.context.dispatch(SpeechContext.Event.ERROR);
+            }
+            this.context.setSpeech(false);
+            this.context.setActive(false);
         }
 
         @Override
@@ -180,6 +216,8 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
 
         @Override
         public void onBeginningOfSpeech() {
+            this.context.setActive(true);
+            this.context.setSpeech(true);
             this.context.traceDebug("AndroidSpeechRecognizer begin speech");
         }
 
@@ -196,6 +234,8 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         @Override
         public void onEndOfSpeech() {
             this.context.traceDebug("AndroidSpeechRecognizer end speech");
+            this.context.setSpeech(false);
+            this.context.setActive(false);
         }
 
         @Override

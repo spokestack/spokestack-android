@@ -133,12 +133,12 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         });
 
         // first frame
-        transact();
+        transact(false);
         assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
         assertTrue(pipeline.getContext().isActive());
 
         // next frame
-        transact();
+        transact(false);
         assertEquals(SpeechContext.Event.DEACTIVATE, this.events.get(0));
         assertFalse(pipeline.getContext().isActive());
 
@@ -170,7 +170,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .build();
         pipeline.start();
 
-        transact();
+        transact(false);
         assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
         this.events.clear();
 
@@ -179,11 +179,46 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
     }
 
-    private void transact() throws Exception {
+    @Test
+    public void testContextManagement() throws Exception {
+        SpeechPipeline pipeline = new SpeechPipeline.Builder()
+              .setInputClass("io.spokestack.spokestack.SpeechPipelineTest$ManagedInput")
+              .addStageClass("io.spokestack.spokestack.SpeechPipelineTest$Stage")
+              .addOnSpeechEventListener(this)
+              .build();
+        pipeline.start();
+
+        // no activation event because stages don't run
+        pipeline.getContext().setManaged(true);
+        transact(true);
+        assertTrue(this.events.isEmpty());
+        assertFalse(pipeline.getContext().isActive());
+
+        // still no event, and the external activation isn't overridden by the
+        // stage, which would normally deactivate on the second frame
+        pipeline.getContext().setActive(true);
+        transact(true);
+        assertTrue(this.events.isEmpty());
+        assertTrue(pipeline.getContext().isActive());
+
+        // turn off external management and get the expected activations/events
+        pipeline.getContext().setManaged(false);
+        transact(false);
+        assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
+        assertTrue(pipeline.getContext().isActive());
+        transact(false);
+        assertEquals(SpeechContext.Event.DEACTIVATE, this.events.get(0));
+        assertFalse(pipeline.getContext().isActive());
+    }
+
+    private void transact(boolean managed) throws Exception {
         this.events.clear();
         Input.send();
-        while (this.events.isEmpty())
-            Thread.sleep(0);
+        if (!managed) {
+            while (this.events.isEmpty()) {
+                Thread.sleep(1);
+            }
+        }
     }
 
     public void onEvent(SpeechContext.Event event, SpeechContext context) {
@@ -205,7 +240,8 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             counter = -1;
         }
 
-        public void read(ByteBuffer frame) throws InterruptedException {
+        public void read(SpeechContext context, ByteBuffer frame)
+              throws InterruptedException {
             if (!stopped) {
                 semaphore.acquire();
                 frame.putInt(0, ++counter);
@@ -219,6 +255,19 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         public static void stop() {
             stopped = true;
             semaphore.release();
+        }
+    }
+
+    private static class ManagedInput extends Input {
+        public ManagedInput(SpeechConfig config) {
+            super(config);
+        }
+
+        @Override
+        public void read(SpeechContext context, ByteBuffer frame) throws InterruptedException {
+            if (!context.isManaged()) {
+                super.read(context, frame);
+            }
         }
     }
 
@@ -259,7 +308,8 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             throw new Exception("fail");
         }
 
-        public void read(ByteBuffer frame) throws Exception {
+        public void read(SpeechContext context, ByteBuffer frame)
+              throws Exception {
             throw new Exception("fail");
         }
     }
