@@ -48,9 +48,9 @@ public final class ActivationTimeout implements SpeechProcessor {
      */
     public ActivationTimeout(SpeechConfig config) {
         int frameWidth = config.getInteger("frame-width");
-        this.minActive = config .getInteger("active-min", DEFAULT_ACTIVE_MIN)
+        this.minActive = config.getInteger("active-min", DEFAULT_ACTIVE_MIN)
               / frameWidth;
-        this.maxActive = config .getInteger("active-max", DEFAULT_ACTIVE_MAX)
+        this.maxActive = config.getInteger("active-max", DEFAULT_ACTIVE_MAX)
               / frameWidth;
     }
 
@@ -66,7 +66,7 @@ public final class ActivationTimeout implements SpeechProcessor {
     }
 
     private void deactivate(SpeechContext context) {
-        this.activeLength = 0;
+        reset();
         context.setActive(false);
     }
 

@@ -7,6 +7,11 @@ package io.spokestack.spokestack.android;
 public class SpeechRecognizerError extends Exception {
 
     /**
+     * The description of the Android system error code.
+     */
+    public final Description description;
+
+    /**
      * Create a new SpeechRecognizerError from an error code provided by the
      * Android system.
      *
@@ -15,13 +20,14 @@ public class SpeechRecognizerError extends Exception {
     public SpeechRecognizerError(int errorCode) {
         super("SpeechRecognizer error code " + errorCode + ": "
               + SpeechRecognizerError.errorDescription(errorCode));
+        this.description = SpeechRecognizerError.errorDescription(errorCode);
     }
 
-    private static String errorDescription(int errorCode) {
+    private static Description errorDescription(int errorCode) {
         if (errorCode < Description.VALUES.length) {
-            return Description.VALUES[errorCode].toString();
+            return Description.VALUES[errorCode];
         } else {
-            return Description.UNKNOWN_ERROR.toString();
+            return Description.UNKNOWN_ERROR;
         }
     }
 
