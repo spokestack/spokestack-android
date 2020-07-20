@@ -5,6 +5,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
@@ -230,7 +231,7 @@ public class SpokestackTTSOutputTest {
         List<TTSEvent> events = new ArrayList<>();
 
         @Override
-        public void eventReceived(TTSEvent event) {
+        public void eventReceived(@NonNull TTSEvent event) {
             this.events.add(event);
         }
     }
