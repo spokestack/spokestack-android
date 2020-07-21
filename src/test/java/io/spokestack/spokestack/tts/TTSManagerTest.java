@@ -3,6 +3,7 @@ package io.spokestack.spokestack.tts;
 
 import android.content.Context;
 import android.net.Uri;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
@@ -135,7 +136,7 @@ public class TTSManagerTest implements TTSListener {
     }
 
     @Override
-    public void eventReceived(TTSEvent event) {
+    public void eventReceived(@NonNull TTSEvent event) {
         lastEvent = event;
     }
 

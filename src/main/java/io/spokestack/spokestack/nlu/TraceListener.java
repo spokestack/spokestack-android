@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.nlu;
 
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.util.EventTracer;
 
 /**
@@ -13,5 +14,5 @@ public interface TraceListener {
      * @param level The trace event's severity level.
      * @param message the trace event's message.
      */
-    void onTrace(EventTracer.Level level, String message);
+    void onTrace(@NonNull EventTracer.Level level, @NonNull String message);
 }

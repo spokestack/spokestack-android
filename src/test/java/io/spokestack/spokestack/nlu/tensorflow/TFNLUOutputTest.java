@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
+import androidx.annotation.NonNull;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import io.spokestack.spokestack.SpeechConfig;
@@ -211,7 +212,7 @@ public class TFNLUOutputTest {
         private String lastMessage;
 
         @Override
-        public void onTrace(EventTracer.Level level, String message) {
+        public void onTrace(@NonNull EventTracer.Level level, @NonNull String message) {
             this.lastLevel = level;
             this.lastMessage = message;
         }

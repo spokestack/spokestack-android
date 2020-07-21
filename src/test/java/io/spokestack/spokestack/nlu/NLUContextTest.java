@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.nlu;
 
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.util.EventTracer;
 import org.junit.Test;
@@ -51,7 +52,7 @@ public class NLUContextTest implements TraceListener {
     }
 
     @Override
-    public void onTrace(EventTracer.Level level, String message) {
+    public void onTrace(@NonNull EventTracer.Level level, @NonNull String message) {
         this.message = message;
     }
 }
