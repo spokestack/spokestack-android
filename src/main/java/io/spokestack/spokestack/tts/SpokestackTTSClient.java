@@ -2,17 +2,12 @@ package io.spokestack.spokestack.tts;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.spokestack.spokestack.util.Base64;
+import io.spokestack.spokestack.util.Crypto;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +25,6 @@ public final class SpokestackTTSClient {
     private String ttsUrl = "https://api.spokestack.io/v1";
     private static final MediaType APPLICATION_JSON =
           MediaType.parse("application/json");
-    private static final String HMAC_TYPE = "HmacSHA256";
     private static final String GRAPHQL_QUERY =
           "query AndroidSynthesize($voice: String!, $%1$s: String!) {"
                 + "%2$s(voice: $voice, %1$s: $%1$s) {"
@@ -97,8 +91,7 @@ public final class SpokestackTTSClient {
      * Set the API ID used for synthesis requests.
      *
      * @param apiId     The ID used for synthesis requests.
-     * @param apiSecret The secret key used to sign synthesis
-     *                  requests.
+     * @param apiSecret The secret key used to sign synthesis requests.
      */
     public void setCredentials(String apiId, String apiSecret) {
         this.ttsApiId = apiId;
@@ -161,11 +154,12 @@ public final class SpokestackTTSClient {
             return;
         }
 
-        String bodyJson = gson.toJson(variables);
-        String fullBody =
-              "{\"query\": \"" + queryString + "\", "
-                    + "\"variables\": " + bodyJson + "}";
-        RequestBody postBody = RequestBody.create(fullBody, APPLICATION_JSON);
+        Map<String, Object> fullBody = new HashMap<>();
+        fullBody.put("query", queryString);
+        fullBody.put("variables", variables);
+        String fullBodyJson = gson.toJson(fullBody);
+        RequestBody postBody =
+              RequestBody.create(fullBodyJson, APPLICATION_JSON);
 
         Request.Builder builder = new Request.Builder();
 
@@ -173,7 +167,7 @@ public final class SpokestackTTSClient {
             builder = builder.addHeader(header.getKey(), header.getValue());
         }
 
-        String authHeader = signRequest(fullBody);
+        String authHeader = signRequest(fullBodyJson);
         if (authHeader == null) {
             // the error is dispatched to the callback by signRequest
             return;
@@ -193,17 +187,8 @@ public final class SpokestackTTSClient {
     String signRequest(String body) {
         String base64Signature = null;
         try {
-            Mac hmacAlgo = Mac.getInstance(HMAC_TYPE);
-            byte[] keyBytes =
-                  this.ttsApiSecret.getBytes(StandardCharsets.UTF_8);
-            SecretKeySpec keySpec = new SecretKeySpec(keyBytes, HMAC_TYPE);
-            hmacAlgo.init(keySpec);
-            byte[] macData = hmacAlgo.doFinal(
-                  body.getBytes(StandardCharsets.UTF_8));
-            base64Signature = Base64.encode(macData);
-        } catch (NoSuchAlgorithmException e) {
-            this.ttsCallback.onError("Invalid HMAC algorithm");
-        } catch (InvalidKeyException e) {
+            base64Signature = Crypto.signBody(body, this.ttsApiSecret);
+        } catch (IllegalArgumentException e) {
             this.ttsCallback.onError("Invalid API secret");
         }
 
