@@ -24,7 +24,7 @@ import java.util.Map;
  * </p>
  */
 public class SpokestackCloudClient {
-    private static final int MESSAGE_BUFFER_SIZE = 1500;
+    private static final int MESSAGE_BUFFER_SIZE = 1280;
     private static final int N_BEST = 1;
     private static final String SOCKET_URL =
           "wss://api.spokestack.io/v1/asr/websocket";
@@ -153,16 +153,12 @@ public class SpokestackCloudClient {
             if (response.error != null) {
                 String err = String.format("ASR error: %s", response.error);
                 this.listener.onError(new Exception(err));
-                return;
-            }
-            String speech = "";
-            float confidence = 0.0f;
-            if (response.status.equals("ok") && response.isFinal
+            } else if (response.status.equals("ok") && response.isFinal
                   && response.hypotheses.length > 0) {
-                speech = response.hypotheses[0].transcript;
-                confidence = response.hypotheses[0].confidence;
+                String speech = response.hypotheses[0].transcript;
+                float confidence = response.hypotheses[0].confidence;
+                this.listener.onSpeech(speech, confidence);
             }
-            this.listener.onSpeech(speech, confidence);
         }
 
         @Override

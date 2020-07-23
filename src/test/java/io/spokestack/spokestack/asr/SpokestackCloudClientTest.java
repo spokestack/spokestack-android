@@ -214,10 +214,9 @@ public class SpokestackCloudClientTest
               "ok", null, true, new SpokestackASRResponse.Hypothesis[0]
         );
         listener.onMessage(this.socket, gson.toJson(response));
-        assertEquals("", this.transcript);
+        assertNull(this.transcript);
         assertEquals(0.0f, this.confidence, 1e-5);
         assertNull(this.error);
-        this.confidence = 1.0f;
 
         // non-final recognition
         SpokestackASRResponse.Hypothesis hypothesis =
@@ -225,9 +224,12 @@ public class SpokestackCloudClientTest
         SpokestackASRResponse.Hypothesis[] hypotheses = {hypothesis};
         response = new SpokestackASRResponse("ok", null, false, hypotheses);
         listener.onMessage(this.socket, gson.toJson(response));
-        assertEquals("", this.transcript);
+        assertNull(this.transcript);
         assertEquals(0.0f, this.confidence, 1e-5);
         assertNull(this.error);
+
+        // set a fake value to make sure it gets updated on a final recognition
+        this.confidence = 1.0f;
 
         // final recognition
         response = new SpokestackASRResponse("ok", null, true, hypotheses);
