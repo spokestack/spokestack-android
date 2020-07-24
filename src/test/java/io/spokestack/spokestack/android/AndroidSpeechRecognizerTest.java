@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.speech.SpeechRecognizer;
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.OnSpeechEventListener;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
@@ -191,7 +192,8 @@ public class AndroidSpeechRecognizerTest {
         }
 
         @Override
-        public void onEvent(SpeechContext.Event event, SpeechContext context) {
+        public void onEvent(@NonNull SpeechContext.Event event,
+                            @NonNull SpeechContext context) {
             switch (event) {
                 case RECOGNIZE:
                     this.transcript = context.getTranscript();

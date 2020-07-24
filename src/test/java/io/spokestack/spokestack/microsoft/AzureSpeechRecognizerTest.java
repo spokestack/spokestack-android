@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.microsoft;
 
+import androidx.annotation.NonNull;
 import com.microsoft.cognitiveservices.speech.CancellationErrorCode;
 import com.microsoft.cognitiveservices.speech.CancellationReason;
 import com.microsoft.cognitiveservices.speech.ResultReason;
@@ -187,7 +188,8 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
         return context;
     }
 
-    public void onEvent(SpeechContext.Event event, SpeechContext context) {
+    public void onEvent(@NonNull SpeechContext.Event event,
+                        @NonNull SpeechContext context) {
         this.event = event;
     }
 }

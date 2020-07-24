@@ -3,6 +3,7 @@ package io.spokestack.spokestack.google;
 import java.util.*;
 import java.nio.ByteBuffer;
 
+import androidx.annotation.NonNull;
 import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -151,7 +152,8 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
         return context;
     }
 
-    public void onEvent(SpeechContext.Event event, SpeechContext context) {
+    public void onEvent(@NonNull SpeechContext.Event event,
+                        @NonNull SpeechContext context) {
         this.event = event;
     }
 

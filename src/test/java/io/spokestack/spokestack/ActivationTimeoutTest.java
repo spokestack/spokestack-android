@@ -1,5 +1,6 @@
 package io.spokestack.spokestack;
 
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
 import io.spokestack.spokestack.wakeword.WakewordTrigger;
 import io.spokestack.spokestack.wakeword.WakewordTriggerTest;
@@ -102,7 +103,7 @@ public class ActivationTimeoutTest {
             this.timeout.close();
         }
 
-        public void onEvent(SpeechContext.Event event, SpeechContext context) {
+        public void onEvent(@NonNull SpeechContext.Event event, @NonNull SpeechContext context) {
             this.event = event;
         }
     }

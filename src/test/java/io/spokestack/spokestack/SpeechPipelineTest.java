@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.nio.ByteBuffer;
 
+import androidx.annotation.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -221,7 +222,8 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         }
     }
 
-    public void onEvent(SpeechContext.Event event, SpeechContext context) {
+    public void onEvent(@NonNull SpeechContext.Event event,
+                        @NonNull SpeechContext context) {
         this.events.add(event);
     }
 
@@ -264,7 +266,8 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         }
 
         @Override
-        public void read(SpeechContext context, ByteBuffer frame) throws InterruptedException {
+        public void read(SpeechContext context, ByteBuffer frame)
+              throws InterruptedException {
             if (!context.isManaged()) {
                 super.read(context, frame);
             }
