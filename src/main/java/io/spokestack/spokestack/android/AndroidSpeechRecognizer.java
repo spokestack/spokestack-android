@@ -152,8 +152,6 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
                   RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,
                   this.minActive);
         }
-        // added in API level 23
-        intent.putExtra("android.speech.extra.PREFER_OFFLINE", true);
         return intent;
     }
 
