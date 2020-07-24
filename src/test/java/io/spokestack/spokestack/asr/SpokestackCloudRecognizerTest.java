@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.asr;
 
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.OnSpeechEventListener;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
@@ -124,7 +125,8 @@ public class SpokestackCloudRecognizerTest implements OnSpeechEventListener {
         return context;
     }
 
-    public void onEvent(SpeechContext.Event event, SpeechContext context) {
+    public void onEvent(@NonNull SpeechContext.Event event,
+                        @NonNull SpeechContext context) {
         this.event = event;
     }
 }

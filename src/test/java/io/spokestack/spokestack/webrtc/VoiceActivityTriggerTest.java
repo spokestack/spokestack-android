@@ -1,5 +1,6 @@
 import java.nio.ByteBuffer;
 
+import androidx.annotation.NonNull;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,7 +54,8 @@ public class VoiceActivityTriggerTest implements OnSpeechEventListener {
         return ByteBuffer.allocateDirect(samples * 2);
     }
 
-    public void onEvent(SpeechContext.Event event, SpeechContext context) {
+    public void onEvent(@NonNull SpeechContext.Event event,
+                        @NonNull SpeechContext context) {
         this.event = event;
     }
 }

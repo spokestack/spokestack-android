@@ -3,6 +3,7 @@ package io.spokestack.spokestack;
 import java.util.*;
 import java.nio.ByteBuffer;
 
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.util.EventTracer;
 import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -123,7 +124,8 @@ public class SpeechContextTest implements OnSpeechEventListener {
         // listener error
         context.addOnSpeechEventListener(this);
         context.addOnSpeechEventListener(new OnSpeechEventListener() {
-            public void onEvent(Event event, SpeechContext context)
+            public void onEvent(@NonNull Event event,
+                                @NonNull SpeechContext context)
                     throws Exception{
                 throw new Exception("failed");
             }
@@ -213,7 +215,7 @@ public class SpeechContextTest implements OnSpeechEventListener {
         assertNull(this.event);
     }
 
-    public void onEvent(Event event, SpeechContext context) {
+    public void onEvent(@NonNull Event event, @NonNull SpeechContext context) {
         this.event = event;
         this.context = context;
     }
