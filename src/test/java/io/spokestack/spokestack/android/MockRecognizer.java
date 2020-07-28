@@ -61,7 +61,6 @@ public class MockRecognizer {
         recognitionListener.onRmsChanged(0);
         recognitionListener.onBufferReceived(new byte[]{});
         recognitionListener.onBeginningOfSpeech();
-        recognitionListener.onPartialResults(results);
         recognitionListener.onEndOfSpeech();
         recognitionListener.onEvent(0, null);
 
@@ -70,5 +69,27 @@ public class MockRecognizer {
         } else {
             recognitionListener.onError(4);
         }
+    }
+
+    public static Bundle speechResults(String transcript) {
+        return MockRecognizer.speechResults(transcript, null);
+    }
+
+    public static Bundle speechResults(String transcript, Float confidence) {
+        Bundle results = mock(Bundle.class);
+        ArrayList<String> nBest =
+              new ArrayList<>( Arrays.asList(TRANSCRIPT, transcript));
+        when(results
+              .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
+              .thenReturn(nBest);
+        float[] confidences = null;
+        if (confidence != null) {
+            confidences = new float[]{confidence};
+        }
+
+        when(results
+              .getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES))
+              .thenReturn(confidences);
+        return results;
     }
 }

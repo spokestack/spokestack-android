@@ -50,6 +50,7 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
 
     private SpeechConfig speechConfig;
     private SpeechContext.Event event;
+    private SpeechRecognitionEventArgs partialRecognitionEvent;
     private SpeechRecognitionEventArgs recognitionEvent;
     private SpeechRecognitionCanceledEventArgs canceledEvent;
 
@@ -84,11 +85,19 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
         speechConfig = createConfig();
 
         // speech recognition and cancellation events
-        recognitionEvent = PowerMockito.mock(SpeechRecognitionEventArgs.class);
+        partialRecognitionEvent =
+              PowerMockito.mock(SpeechRecognitionEventArgs.class);
         SpeechRecognitionResult result = mock(SpeechRecognitionResult.class);
-        doReturn("test").when(result).getText();
-        doReturn(ResultReason.RecognizedSpeech).when(result).getReason();
-        when(recognitionEvent.getResult()).thenReturn(result);
+        doReturn("partial").when(result).getText();
+        doReturn(ResultReason.RecognizingSpeech).when(result).getReason();
+        when(partialRecognitionEvent.getResult()).thenReturn(result);
+
+        recognitionEvent = PowerMockito.mock(SpeechRecognitionEventArgs.class);
+        SpeechRecognitionResult finalResult =
+              mock(SpeechRecognitionResult.class);
+        doReturn("test").when(finalResult).getText();
+        doReturn(ResultReason.RecognizedSpeech).when(finalResult).getReason();
+        when(recognitionEvent.getResult()).thenReturn(finalResult);
 
         canceledEvent = PowerMockito.mock(SpeechRecognitionCanceledEventArgs.class);
         doReturn(CancellationReason.Error).when(canceledEvent).getReason();
@@ -148,6 +157,12 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
         SpeechContext context = createContext(config);
 
         // recognition
+        new AzureSpeechRecognizer.RecognitionListener(context)
+              .onEvent(mockRecognizer, partialRecognitionEvent);
+        assertEquals("partial", context.getTranscript());
+        assertEquals(1.0, context.getConfidence());
+        assertEquals(SpeechContext.Event.PARTIAL_RECOGNIZE, this.event);
+
         new AzureSpeechRecognizer.RecognitionListener(context)
               .onEvent(mockRecognizer, recognitionEvent);
         assertEquals("test", context.getTranscript());

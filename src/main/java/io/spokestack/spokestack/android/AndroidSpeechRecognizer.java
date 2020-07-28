@@ -147,6 +147,7 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         if (this.minActive > 0) {
             intent.putExtra(
                   RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,
@@ -186,12 +187,24 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         }
 
         @Override
+        public void onPartialResults(Bundle partialResults) {
+            dispatchRecognition(partialResults, true);
+        }
+
+        @Override
         public void onResults(Bundle results) {
+            dispatchRecognition(results, false);
+        }
+
+        private void dispatchRecognition(Bundle results, boolean isPartial) {
+            SpeechContext.Event event = (isPartial)
+                  ? SpeechContext.Event.PARTIAL_RECOGNIZE
+                  : SpeechContext.Event.RECOGNIZE;
             String transcript = extractTranscript(results);
             float confidence = extractConfidence(results);
             this.context.setTranscript(transcript);
             this.context.setConfidence(confidence);
-            this.context.dispatch(SpeechContext.Event.RECOGNIZE);
+            this.context.dispatch(event);
         }
 
         private String extractTranscript(Bundle results) {
@@ -203,7 +216,10 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         private float extractConfidence(Bundle results) {
             float[] confidences = results.getFloatArray(
                   SpeechRecognizer.CONFIDENCE_SCORES);
-            return confidences.length > 0 ? confidences[0] : 0.0f;
+            if (confidences == null || confidences.length == 0) {
+                return 0.0f;
+            }
+            return confidences[0];
         }
 
         @Override
@@ -234,13 +250,6 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
             this.context.traceDebug("AndroidSpeechRecognizer end speech");
             this.context.setSpeech(false);
             this.context.setActive(false);
-        }
-
-        @Override
-        public void onPartialResults(Bundle partialResults) {
-            String transcript = extractTranscript(partialResults);
-            this.context.traceDebug(
-                  "AndroidSpeechRecognizer partial results: %s", transcript);
         }
 
         @Override

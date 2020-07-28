@@ -25,6 +25,8 @@ public final class SpeechContext {
         ACTIVATE("activate"),
         /** speech recognition has become inactive. */
         DEACTIVATE("deactivate"),
+        /** a partial speech result was received. */
+        PARTIAL_RECOGNIZE("partial_recognize"),
         /** speech was recognized. */
         RECOGNIZE("recognize"),
         /** the activation timeout expired. */

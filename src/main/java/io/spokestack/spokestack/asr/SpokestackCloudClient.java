@@ -153,11 +153,11 @@ public class SpokestackCloudClient {
             if (response.error != null) {
                 String err = String.format("ASR error: %s", response.error);
                 this.listener.onError(new Exception(err));
-            } else if (response.status.equals("ok") && response.isFinal
+            } else if (response.status.equals("ok")
                   && response.hypotheses.length > 0) {
                 String speech = response.hypotheses[0].transcript;
                 float confidence = response.hypotheses[0].confidence;
-                this.listener.onSpeech(speech, confidence);
+                this.listener.onSpeech(speech, confidence, response.isFinal);
             }
         }
 
@@ -273,12 +273,11 @@ public class SpokestackCloudClient {
     public interface Listener {
         /**
          * called when a speech transcription is received.
-         *
-         * @param transcript the speech transcript, or "" if no speech was
-         *                   detected
+         *  @param transcript the speech transcript
          * @param confidence the recognizer's confidence in {@code transcript}
+         * @param isFinal    flag representing whether the result is final
          */
-        void onSpeech(String transcript, float confidence);
+        void onSpeech(String transcript, float confidence, boolean isFinal);
 
         /**
          * called when a speech detection error occurred.
