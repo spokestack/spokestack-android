@@ -74,7 +74,7 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
     // Azure speech requires little-endian (wav-format) data, so we buffer
     // audio frames internally to avoid mutating data coming from the speech
     // context
-    private ByteBuffer buffer;
+    private final ByteBuffer buffer;
 
     /**
      * initializes a new recognizer instance.
@@ -203,7 +203,7 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
      */
     static class RecognitionListener
           implements EventHandler<SpeechRecognitionEventArgs> {
-        private SpeechContext speechContext;
+        private final SpeechContext speechContext;
 
         RecognitionListener(SpeechContext context) {
             this.speechContext = context;
@@ -213,13 +213,21 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
         public void onEvent(
               Object sender,
               SpeechRecognitionEventArgs recognitionArgs) {
-            if (recognitionArgs.getResult().getReason()
-                  == ResultReason.RecognizedSpeech) {
-                String transcript = recognitionArgs.getResult().getText();
-                this.speechContext.setTranscript(transcript);
-                this.speechContext.setConfidence(1.0);
-                this.speechContext.dispatch(SpeechContext.Event.RECOGNIZE);
+            ResultReason reason = recognitionArgs.getResult().getReason();
+            String transcript = recognitionArgs.getResult().getText();
+            if (reason == ResultReason.RecognizingSpeech) {
+                dispatchResult(transcript,
+                      SpeechContext.Event.PARTIAL_RECOGNIZE);
+            } else if (reason == ResultReason.RecognizedSpeech) {
+                dispatchResult(transcript, SpeechContext.Event.RECOGNIZE);
             }
+        }
+
+        private void dispatchResult(String transcript,
+                                    SpeechContext.Event event) {
+            this.speechContext.setTranscript(transcript);
+            this.speechContext.setConfidence(1.0);
+            this.speechContext.dispatch(event);
         }
     }
 
@@ -229,7 +237,7 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
     static class CancellationListener
           implements EventHandler<SpeechRecognitionCanceledEventArgs> {
 
-        private SpeechContext speechContext;
+        private final SpeechContext speechContext;
 
         CancellationListener(SpeechContext context) {
             this.speechContext = context;

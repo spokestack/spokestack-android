@@ -20,6 +20,7 @@ public class SpokestackCloudClientTest
     private okhttp3.WebSocket socket;
     private String transcript;
     private float confidence;
+    private boolean isFinal;
     private Throwable error;
 
     @Before
@@ -218,17 +219,19 @@ public class SpokestackCloudClientTest
         assertEquals(0.0f, this.confidence, 1e-5);
         assertNull(this.error);
 
+        // set a fake value to make sure it gets updated by recognition
+        this.confidence = 1.0f;
+
         // non-final recognition
         SpokestackASRResponse.Hypothesis hypothesis =
               new SpokestackASRResponse.Hypothesis("test", 0.75f);
         SpokestackASRResponse.Hypothesis[] hypotheses = {hypothesis};
         response = new SpokestackASRResponse("ok", null, false, hypotheses);
         listener.onMessage(this.socket, gson.toJson(response));
-        assertNull(this.transcript);
-        assertEquals(0.0f, this.confidence, 1e-5);
+        assertEquals("test", this.transcript);
+        assertEquals(0.75f, this.confidence, 1e-5);
+        assertFalse(this.isFinal);
         assertNull(this.error);
-
-        // set a fake value to make sure it gets updated on a final recognition
         this.confidence = 1.0f;
 
         // final recognition
@@ -236,12 +239,14 @@ public class SpokestackCloudClientTest
         listener.onMessage(this.socket, gson.toJson(response));
         assertEquals("test", this.transcript);
         assertEquals(0.75f, this.confidence, 1e-5);
+        assertTrue(this.isFinal);
         assertNull(this.error);
     }
 
-    public void onSpeech(String transcript, float confidence) {
+    public void onSpeech(String transcript, float confidence, boolean isFinal) {
         this.transcript = transcript;
         this.confidence = confidence;
+        this.isFinal = isFinal;
     }
 
     public void onError(Throwable e) {

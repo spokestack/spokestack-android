@@ -130,10 +130,15 @@ public final class SpokestackCloudRecognizer implements SpeechProcessor {
      * speech recognizer listener.
      */
     private class Listener implements SpokestackCloudClient.Listener {
-        public void onSpeech(String transcript, float confidence) {
+        public void onSpeech(String transcript,
+                             float confidence,
+                             boolean isFinal) {
             context.setTranscript(transcript);
             context.setConfidence(confidence);
-            context.dispatch(SpeechContext.Event.RECOGNIZE);
+            SpeechContext.Event event = (isFinal)
+                  ? SpeechContext.Event.RECOGNIZE
+                  : SpeechContext.Event.PARTIAL_RECOGNIZE;
+            context.dispatch(event);
         }
 
         public void onError(Throwable e) {

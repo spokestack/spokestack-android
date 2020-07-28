@@ -63,8 +63,13 @@ public class SpokestackCloudRecognizerTest implements OnSpeechEventListener {
 
 
         // responses
-        listener.onSpeech("test", 0.9f);
-        assertEquals("test", context.getTranscript());
+        listener.onSpeech("test one", 0.9f, false);
+        assertEquals("test one", context.getTranscript());
+        assertEquals(0.9f, context.getConfidence(), 1e-5);
+        assertEquals(SpeechContext.Event.PARTIAL_RECOGNIZE, this.event);
+
+        listener.onSpeech("test two", 0.9f, true);
+        assertEquals("test two", context.getTranscript());
         assertEquals(0.9f, context.getConfidence(), 1e-5);
         assertEquals(SpeechContext.Event.RECOGNIZE, this.event);
 

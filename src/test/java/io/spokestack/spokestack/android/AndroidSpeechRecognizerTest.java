@@ -23,15 +23,22 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.powermock.api.mockito.PowerMockito.doAnswer;
+import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SpeechRecognizer.class, Bundle.class})
 public class AndroidSpeechRecognizerTest {
 
-    private ContextWrapper emptyAppContext = mock(ContextWrapper.class);
-    private SpeechRecognizer successfulRecognizer = mock(SpeechRecognizer.class);
-    private SpeechRecognizer unsuccessfulRecognizer = mock(SpeechRecognizer.class);
+    private final ContextWrapper emptyAppContext = mock(ContextWrapper.class);
+    private final SpeechRecognizer successfulRecognizer =
+          mock(SpeechRecognizer.class);
+    private final SpeechRecognizer unsuccessfulRecognizer =
+          mock(SpeechRecognizer.class);
 
     @Before
     public void before() throws Exception {
@@ -83,18 +90,32 @@ public class AndroidSpeechRecognizerTest {
         // ASR inactive
         speechRecognizer.process(context, frame);
         assertNull(listener.transcript);
+        assertFalse(listener.receivedPartial);
         assertNull(listener.error);
 
         // ASR active
+        AndroidSpeechRecognizer.SpokestackListener asrListener =
+              speechRecognizer.getListener();
+
+        // partial result
+        listener.clear();
+        Bundle results = MockRecognizer.speechResults("partial");
+        asrListener.onPartialResults(results);
+        assertEquals(MockRecognizer.TRANSCRIPT, listener.transcript);
+        assertTrue(listener.receivedPartial);
+        assertNull(listener.error);
+
+        // full result
         listener.clear();
         context.setActive(true);
         speechRecognizer.process(context, frame);
         assertEquals(MockRecognizer.TRANSCRIPT, listener.transcript);
+        assertFalse(listener.receivedPartial);
         assertNull(listener.error);
 
         // make sure all the events fired, but only once because they
         // shouldn't fire when ASR is inactive
-        assertEquals(7, listener.traces.size());
+        assertEquals(6, listener.traces.size());
 
         // ASR received an error
         listener.clear();
@@ -181,6 +202,7 @@ public class AndroidSpeechRecognizerTest {
         List<String> traces = new ArrayList<>();
         double confidence;
         Throwable error;
+        boolean receivedPartial;
 
         EventListener() {
         }
@@ -189,12 +211,15 @@ public class AndroidSpeechRecognizerTest {
             this.transcript = null;
             this.confidence = 0.0;
             this.error = null;
+            this.receivedPartial = false;
         }
 
         @Override
         public void onEvent(@NonNull SpeechContext.Event event,
                             @NonNull SpeechContext context) {
             switch (event) {
+                case PARTIAL_RECOGNIZE:
+                    this.receivedPartial = true;
                 case RECOGNIZE:
                     this.transcript = context.getTranscript();
                     this.confidence = context.getConfidence();

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 import androidx.annotation.NonNull;
 import org.junit.Test;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
 
 import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.*;
@@ -60,17 +60,32 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
 
         // responses
         client.getResponses().onNext(StreamingRecognizeResponse.newBuilder()
-            .addResults(StreamingRecognitionResult.newBuilder()
-                .addAlternatives(SpeechRecognitionAlternative.newBuilder()
-                    .setTranscript("test")
-                    .setConfidence((float)0.75)
+              .addResults(StreamingRecognitionResult.newBuilder()
+                    .setIsFinal(false)
+                    .addAlternatives(SpeechRecognitionAlternative.newBuilder()
+                          .setTranscript("test")
+                          .setConfidence((float) 0.95)
+                          .build())
                     .build())
-                .build())
-            .build()
+              .build()
+        );
+        assertEquals("test", context.getTranscript());
+        assertEquals(0.95, context.getConfidence(), 1e-5);
+        assertEquals(SpeechContext.Event.PARTIAL_RECOGNIZE, this.event);
+
+        client.getResponses().onNext(StreamingRecognizeResponse.newBuilder()
+              .addResults(StreamingRecognitionResult.newBuilder()
+                    .setIsFinal(true)
+                    .addAlternatives(SpeechRecognitionAlternative.newBuilder()
+                          .setTranscript("final test")
+                          .setConfidence((float) 0.75)
+                          .build())
+                    .build())
+              .build()
         );
         client.getResponses().onCompleted();
-        assertEquals("test", context.getTranscript());
-        assertEquals(0.75, context.getConfidence());
+        assertEquals("final test", context.getTranscript());
+        assertEquals(0.75, context.getConfidence(), 1e-5);
         assertEquals(SpeechContext.Event.RECOGNIZE, this.event);
 
         // shutdown
@@ -102,7 +117,7 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
         // event
         client.getResponses().onCompleted();
         assertEquals("", context.getTranscript());
-        assertEquals(0, context.getConfidence());
+        assertEquals(0, context.getConfidence(), 1e-5);
         assertEquals(SpeechContext.Event.TIMEOUT, this.event);
 
         // shutdown
@@ -111,7 +126,6 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testError() throws Exception {
         SpeechConfig config = createConfig();
         SpeechContext context = createContext(config);
@@ -129,7 +143,7 @@ public class GoogleSpeechRecognizerTest implements OnSpeechEventListener {
         client.getResponses().onError(new Exception("test error"));
         assertEquals("test error", context.getError().getMessage());
         assertEquals("", context.getTranscript());
-        assertEquals(0, context.getConfidence());
+        assertEquals(0, context.getConfidence(), 1e-5);
         assertEquals(SpeechContext.Event.ERROR, this.event);
     }
 
