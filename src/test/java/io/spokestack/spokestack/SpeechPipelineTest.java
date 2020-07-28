@@ -6,6 +6,7 @@ import java.util.concurrent.Semaphore;
 import java.nio.ByteBuffer;
 
 import androidx.annotation.NonNull;
+import io.spokestack.spokestack.util.EventTracer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -118,6 +119,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .setProperty("sample-rate", 16000)
             .setProperty("frame-width", 20)
             .setProperty("buffer-width", 300)
+            .setProperty("trace-level", EventTracer.Level.INFO.value())
             .addOnSpeechEventListener(this)
             .build();
 
@@ -128,10 +130,9 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         assertEquals(0, Input.counter);
         assertTrue(Stage.open);
 
-        // invalid restart
-        assertThrows(IllegalStateException.class, new Executable() {
-            public void execute() throws Exception { pipeline.start(); }
-        });
+        // idempotent restart
+        pipeline.start();
+        assertEquals(SpeechContext.Event.TRACE, this.events.get(0));
 
         // first frame
         transact(false);
