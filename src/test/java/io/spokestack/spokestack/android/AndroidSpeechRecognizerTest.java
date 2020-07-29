@@ -181,6 +181,15 @@ public class AndroidSpeechRecognizerTest {
         assertEquals(eventListener.traces.get(numTraces - 1),
               EventListener.TIMEOUT);
 
+        // recognition match -> timeout (presumed Google bug)
+        eventListener.clear();
+        asrListener.onError(
+              SpeechRecognizerError.Description.NO_RECOGNITION_MATCH.ordinal());
+        assertNull(eventListener.error);
+        numTraces = eventListener.traces.size();
+        assertEquals(eventListener.traces.get(numTraces - 1),
+              EventListener.TIMEOUT);
+
         context.setActive(true);
         context.setSpeech(true);
 

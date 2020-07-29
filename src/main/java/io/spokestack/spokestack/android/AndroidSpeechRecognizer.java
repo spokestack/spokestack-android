@@ -175,8 +175,8 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         @Override
         public void onError(int error) {
             SpeechRecognizerError speechErr = new SpeechRecognizerError(error);
-            if (speechErr.description
-                  == SpeechRecognizerError.Description.SPEECH_TIMEOUT) {
+            this.context.traceDebug("AndroidSpeechRecognizer error " + error);
+            if (isTimeout(speechErr.description)) {
                 this.context.dispatch(SpeechContext.Event.TIMEOUT);
             } else {
                 this.context.setError(speechErr);
@@ -184,6 +184,17 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
             }
             this.context.setSpeech(false);
             this.context.setActive(false);
+        }
+
+        private boolean isTimeout(
+              SpeechRecognizerError.Description description) {
+            // the NO_RECOGNITION_MATCH condition appears to be a bug on
+            // Google's part that cropped up since this class was written,
+            // but we'll leave the workaround in place unless/until they fix it
+            return description
+                  == SpeechRecognizerError.Description.SPEECH_TIMEOUT
+                  || description
+                  == SpeechRecognizerError.Description.NO_RECOGNITION_MATCH;
         }
 
         @Override
