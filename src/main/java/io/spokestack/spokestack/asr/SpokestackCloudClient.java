@@ -83,6 +83,16 @@ public class SpokestackCloudClient {
 
         Request request = new Request.Builder().url(SOCKET_URL).build();
         this.socket = this.client.newWebSocket(request, new SocketListener());
+    }
+
+    /**
+     * sends an initial empty request message to authenticate with the server.
+     */
+    public void init() {
+        if (this.socket == null) {
+            throw new IllegalStateException("disconnected_init");
+        }
+
         this.socket.send(this.authMessage);
     }
 

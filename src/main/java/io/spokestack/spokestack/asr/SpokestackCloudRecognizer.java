@@ -108,6 +108,7 @@ public final class SpokestackCloudRecognizer implements SpeechProcessor {
         if (!this.client.isConnected()) {
             this.client.connect();
         }
+        this.client.init();
         this.active = true;
         this.idleCount = 0;
 
