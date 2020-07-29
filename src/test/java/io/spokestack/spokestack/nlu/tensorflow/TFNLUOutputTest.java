@@ -155,11 +155,12 @@ public class TFNLUOutputTest {
         slotValues.put("feature_2", "9");
 
         expected = new HashMap<>();
-        Slot implicitSlot = new Slot("feature_1", "default", "default");
+        Slot implicitSlot =
+              new Slot("feature_1", "entity", "default", "default");
         // no value is present in the output, so the implicit value is used
         expected.put("feature_1", implicitSlot);
         // note the name override
-        Slot captureNameSlot = new Slot("test_num", "9", 9);
+        Slot captureNameSlot = new Slot("test_num", "integer", "9", 9);
         expected.put("test_num", captureNameSlot);
 
         result = outputParser.parseSlots(intent, slotValues);
@@ -170,11 +171,12 @@ public class TFNLUOutputTest {
         slotValues.put("feature_1", "overridden");
 
         expected = new HashMap<>();
-        implicitSlot = new Slot("feature_1", "overridden", "overridden");
+        implicitSlot =
+              new Slot("feature_1", "entity", "overridden", "overridden");
         expected.put("feature_1", implicitSlot);
 
         // not present in slot tagger output, but included in client output
-        expected.put("test_num", new Slot("test_num", null, null));
+        expected.put("test_num", new Slot("test_num", "integer", null, null));
 
         result = outputParser.parseSlots(intent, slotValues);
         assertEquals(expected, result);
