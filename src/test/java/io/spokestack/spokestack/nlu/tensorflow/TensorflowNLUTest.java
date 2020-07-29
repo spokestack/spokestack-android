@@ -108,8 +108,8 @@ public class TensorflowNLUTest {
 
         Map<String, Slot> slots = new HashMap<>();
         slots.put("noun_phrase",
-              new Slot("noun_phrase", "this code", "this code"));
-        slots.put("test_num", new Slot("test_num", "1", 1));
+              new Slot("noun_phrase", "entity", "this code", "this code"));
+        slots.put("test_num", new Slot("test_num", "integer", "1", 1));
 
         assertNull(result.getError());
         assertEquals("describe_test", result.getIntent());
@@ -137,8 +137,8 @@ public class TensorflowNLUTest {
 
         slots = new HashMap<>();
         slots.put("noun_phrase",
-              new Slot("noun_phrase", "this code", "this code"));
-        slots.put("test_num", new Slot("test_num", "1", 1));
+              new Slot("noun_phrase", "entity", "this code", "this code"));
+        slots.put("test_num", new Slot("test_num", "integer", "1", 1));
 
         assertNull(result.getError());
         assertEquals("describe_test", result.getIntent());
