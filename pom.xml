@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>io.spokestack</groupId>
    <artifactId>spokestack-android</artifactId>
-   <version>7.0.0</version>
+   <version>7.0.1-SNAPSHOT</version>
    <packaging>aar</packaging>
    <name>Spokestack Library for Android</name>
    <description>Core library of the Spokestack framework for Android</description>
@@ -31,7 +31,7 @@
       <connection>scm:git:git://github.com/spokestack/spokestack-android.git</connection>
       <developerConnection>scm:git:git@github.com:spokestack/spokestack-android.git</developerConnection>
       <url>https://github.com/spokestack/spokestack-android</url>
-      <tag>spokestack-android-7.0.0</tag>
+      <tag>HEAD</tag>
    </scm>
 
    <prerequisites>
