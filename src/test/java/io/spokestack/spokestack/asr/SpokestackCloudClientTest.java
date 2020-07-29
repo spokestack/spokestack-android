@@ -10,6 +10,7 @@ import org.mockito.ArgumentCaptor;
 import java.nio.ByteBuffer;
 
 import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -105,12 +106,15 @@ public class SpokestackCloudClientTest
         // default connection
         assertFalse(client.isConnected());
 
+        // init before connect
+        assertThrows(IllegalStateException.class, client::init);
+
         // valid connection
         client.connect();
         assertTrue(client.isConnected());
 
-        // TODO failed auth
-        // successful auth
+        // no errors on init after connection
+        assertDoesNotThrow(client::init);
 
         // failed reconnection
         assertThrows(IllegalStateException.class, client::connect);
@@ -118,6 +122,9 @@ public class SpokestackCloudClientTest
         // valid disconnection
         client.disconnect();
         assertFalse(client.isConnected());
+
+        // init after disconnect
+        assertThrows(IllegalStateException.class, client::init);
 
         // safe redisconnection
         client.disconnect();
