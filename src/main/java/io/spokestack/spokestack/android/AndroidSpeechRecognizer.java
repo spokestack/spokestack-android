@@ -118,6 +118,7 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
 
         if (context.isActive()) {
             if (!this.streaming) {
+                context.setManaged(true);
                 begin();
                 this.streaming = true;
             }
@@ -182,8 +183,7 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
                 this.context.setError(speechErr);
                 this.context.dispatch(SpeechContext.Event.ERROR);
             }
-            this.context.setSpeech(false);
-            this.context.setActive(false);
+            relinquishContext();
         }
 
         private boolean isTimeout(
@@ -205,6 +205,7 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         @Override
         public void onResults(Bundle results) {
             dispatchRecognition(results, false);
+            relinquishContext();
         }
 
         private void dispatchRecognition(Bundle results, boolean isPartial) {
@@ -233,6 +234,12 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
             return confidences[0];
         }
 
+        private void relinquishContext() {
+            this.context.setSpeech(false);
+            this.context.setActive(false);
+            this.context.setManaged(false);
+        }
+
         @Override
         public void onReadyForSpeech(Bundle params) {
             this.context.traceDebug(
@@ -241,7 +248,6 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
 
         @Override
         public void onBeginningOfSpeech() {
-            this.context.setActive(true);
             this.context.setSpeech(true);
             this.context.traceDebug("AndroidSpeechRecognizer begin speech");
         }
@@ -260,7 +266,6 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         public void onEndOfSpeech() {
             this.context.traceDebug("AndroidSpeechRecognizer end speech");
             this.context.setSpeech(false);
-            this.context.setActive(false);
         }
 
         @Override

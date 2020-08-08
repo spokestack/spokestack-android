@@ -84,7 +84,6 @@ public final class PreASRMicrophoneInput implements SpeechInput {
         if (this.recorder != null) {
             this.recorder.release();
             this.recorder = null;
-            context.setManaged(true);
         }
         this.recording = false;
     }
@@ -97,7 +96,6 @@ public final class PreASRMicrophoneInput implements SpeechInput {
               AudioFormat.ENCODING_PCM_16BIT,
               this.bufferSize
         );
-        context.setManaged(false);
         this.recorder.startRecording();
         this.recording = true;
     }

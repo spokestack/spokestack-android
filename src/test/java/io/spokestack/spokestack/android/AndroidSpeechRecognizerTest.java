@@ -160,16 +160,13 @@ public class AndroidSpeechRecognizerTest {
         assertFalse(context.isSpeech());
 
         asrListener.onBeginningOfSpeech();
-        assertTrue(context.isActive());
         assertTrue(context.isSpeech());
 
         asrListener.onEndOfSpeech();
-        assertFalse(context.isActive());
         assertFalse(context.isSpeech());
 
         // restart speech, then throw some errors
         asrListener.onBeginningOfSpeech();
-        assertTrue(context.isActive());
         assertTrue(context.isSpeech());
 
         asrListener.onError(
