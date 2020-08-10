@@ -103,13 +103,21 @@ public final class GoogleSpeechRecognizer implements SpeechProcessor {
             .build();
     }
 
+    @Override
+    public void reset() {
+        if (this.request != null) {
+            this.request.onCompleted();
+        }
+    }
+
     /**
      * releases the resources associated with the recognizer.
-     * @throws Exception on error
      */
-    public void close() throws Exception {
-        if (this.request != null)
+    @Override
+    public void close() {
+        if (this.request != null) {
             this.request.onCompleted();
+        }
         this.client.close();
     }
 

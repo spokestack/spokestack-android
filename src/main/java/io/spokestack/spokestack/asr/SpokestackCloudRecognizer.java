@@ -78,9 +78,19 @@ public final class SpokestackCloudRecognizer implements SpeechProcessor {
               .build();
     }
 
+    @Override
+    public void reset() {
+        if (this.client.isConnected()) {
+            this.client.disconnect();
+        }
+        this.idleCount = 0;
+        this.active = false;
+    }
+
     /**
      * releases the resources associated with the recognizer.
      */
+    @Override
     public void close() {
         this.client.close();
     }

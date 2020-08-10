@@ -101,6 +101,10 @@ public class AutomaticGainControl implements SpeechProcessor {
         destroy(this.agcHandle);
     }
 
+    @Override
+    public void reset() {
+    }
+
     /**
      * processes a frame of audio.
      * @param context the current speech context

@@ -71,14 +71,12 @@ public final class ActivationTimeout implements SpeechProcessor {
     }
 
     @Override
-    public void close() {
-        reset();
+    public void reset() {
+        close();
     }
 
-    /**
-     * Reset the trigger's activity timer.
-     */
-    public void reset() {
+    @Override
+    public void close() {
         this.activeLength = 0;
     }
 }

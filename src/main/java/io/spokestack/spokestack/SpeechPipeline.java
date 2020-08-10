@@ -75,6 +75,7 @@ public final class SpeechPipeline implements AutoCloseable {
     private List<SpeechProcessor> stages;
     private Thread thread;
     private boolean running;
+    private boolean managed;
 
     /**
      * initializes a new speech pipeline instance.
@@ -228,9 +229,18 @@ public final class SpeechPipeline implements AutoCloseable {
             // fill the frame from the input
             this.input.read(this.context, frame);
 
-            // dispatch the frame to the stages
-            if (!this.context.isManaged()) {
+            // when leaving the managed state, reset all stages internally
+            boolean isManaged = this.context.isManaged();
+            if (this.managed && !isManaged) {
                 for (SpeechProcessor stage : this.stages) {
+                    stage.reset();
+                }
+            }
+            this.managed = isManaged;
+
+            // dispatch the frame to the stages
+            for (SpeechProcessor stage : this.stages) {
+                if (!this.managed) {
                     frame.rewind();
                     stage.process(this.context, frame);
                 }

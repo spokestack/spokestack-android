@@ -106,9 +106,15 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
         return config;
     }
 
+    @Override
+    public void reset() {
+        close();
+    }
+
     /**
      * releases the resources associated with the recognizer.
      */
+    @Override
     public void close() {
         if (this.audioStream != null) {
             this.audioStream.close();
