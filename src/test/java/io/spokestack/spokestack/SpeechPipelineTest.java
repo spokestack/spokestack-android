@@ -282,6 +282,10 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             open = true;
         }
 
+        public void reset() {
+            close();
+        }
+
         public void close() {
             open = false;
         }
@@ -322,6 +326,10 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         public FailStage(SpeechConfig config) {
         }
 
+        public void reset() throws Exception {
+            close();
+        }
+
         public void close() throws Exception {
             throw new Exception("fail");
         }
@@ -335,6 +343,10 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
     public static class ConfigRequiredStage implements SpeechProcessor {
         public ConfigRequiredStage(SpeechConfig config) {
             config.getString("required-property");
+        }
+
+        public void reset() throws Exception {
+            close();
         }
 
         public void close() throws Exception {

@@ -46,4 +46,9 @@ public class VoiceActivityTrigger implements SpeechProcessor {
             this.isSpeech = context.isSpeech();
         }
     }
+
+    @Override
+    public void reset() {
+        this.isSpeech = false;
+    }
 }

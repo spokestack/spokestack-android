@@ -315,6 +315,25 @@ public final class WakewordTrigger implements SpeechProcessor {
         this.detectModel.close();
     }
 
+    @Override
+    public void reset() {
+        // empty the sample buffer, so that only contiguous
+        // speech samples are written to it
+        this.sampleWindow.reset();
+
+        // reset and fill the other buffers,
+        // which prevents them from lagging the detection
+        this.frameWindow.reset().fill(0);
+        this.encodeWindow.reset().fill(0);
+
+        // reset the encoder states
+        while (this.encodeModel.states().hasRemaining())
+            this.encodeModel.states().putFloat(0);
+
+        // reset the maximum posterior
+        this.posteriorMax = 0;
+    }
+
     /**
      * processes a frame of audio.
      * @param context the current speech context
@@ -337,7 +356,7 @@ public final class WakewordTrigger implements SpeechProcessor {
         if (vadFall) {
             if (!context.isActive())
                 trace(context);
-            reset(context);
+            reset();
         }
     }
 
@@ -458,24 +477,6 @@ public final class WakewordTrigger implements SpeechProcessor {
     private void activate(SpeechContext context) {
         trace(context);
         context.setActive(true);
-    }
-
-    private void reset(SpeechContext context) {
-        // empty the sample buffer, so that only contiguous
-        // speech samples are written to it
-        this.sampleWindow.reset();
-
-        // reset and fill the other buffers,
-        // which prevents them from lagging the detection
-        this.frameWindow.reset().fill(0);
-        this.encodeWindow.reset().fill(0);
-
-        // reset the encoder states
-        while (this.encodeModel.states().hasRemaining())
-            this.encodeModel.states().putFloat(0);
-
-        // reset the maximum posterior
-        this.posteriorMax = 0;
     }
 
     private void trace(SpeechContext context) {

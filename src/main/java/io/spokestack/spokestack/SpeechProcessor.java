@@ -24,4 +24,10 @@ public interface SpeechProcessor extends AutoCloseable {
      * @throws Exception on error
      */
     void process(SpeechContext context, ByteBuffer frame) throws Exception;
+
+    /**
+     * resets all state internal to the stage.
+     * @throws Exception on error
+     */
+    void reset() throws Exception;
 }
