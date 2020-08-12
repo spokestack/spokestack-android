@@ -165,8 +165,10 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
     @Override
     public void close() {
         this.taskHandler.run(() -> {
-            this.speechRecognizer.destroy();
-            this.speechRecognizer = null;
+            if (this.speechRecognizer != null) {
+                this.speechRecognizer.destroy();
+                this.speechRecognizer = null;
+            }
         });
     }
 
