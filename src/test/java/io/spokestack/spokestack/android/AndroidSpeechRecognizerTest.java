@@ -75,6 +75,29 @@ public class AndroidSpeechRecognizerTest {
     }
 
     @Test
+    public void testClose() {
+        SpeechConfig config = new SpeechConfig();
+        config.put("trace-level", EventTracer.Level.DEBUG.value());
+        config.put("min-active", 500);
+        AndroidSpeechRecognizer speechRecognizer =
+              spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
+        doReturn(null).when(speechRecognizer).createRecognitionIntent();
+
+        // closing before establishing a recognizer is safe
+        assertDoesNotThrow(speechRecognizer::close);
+
+        SpeechContext context = new SpeechContext(config);
+        context.setActive(true);
+        ByteBuffer frame = ByteBuffer.allocateDirect(32);
+
+        // ASR active
+        speechRecognizer.process(context, frame);
+
+        // closing still safe
+        assertDoesNotThrow(speechRecognizer::close);
+    }
+
+    @Test
     public void testProcess() {
         SpeechConfig config = new SpeechConfig();
         config.put("trace-level", EventTracer.Level.DEBUG.value());
