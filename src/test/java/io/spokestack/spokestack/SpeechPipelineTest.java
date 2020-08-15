@@ -144,10 +144,16 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         assertEquals(SpeechContext.Event.DEACTIVATE, this.events.get(0));
         assertFalse(pipeline.getContext().isActive());
 
+        // third frame reactivates the context
+        transact(false);
+        assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
+        assertTrue(pipeline.getContext().isActive());
+
         // shutdown
         Input.stop();
         pipeline.close();
         assertFalse(pipeline.isRunning());
+        assertFalse(pipeline.getContext().isActive());
         assertEquals(-1, Input.counter);
         assertFalse(Stage.open);
     }

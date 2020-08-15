@@ -226,6 +226,7 @@ public final class SpeechContext {
     public SpeechContext reset() {
         setSpeech(false);
         setActive(false);
+        setManaged(false);
         setTranscript("");
         setConfidence(0);
         setError(null);
