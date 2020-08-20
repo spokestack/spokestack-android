@@ -1,9 +1,9 @@
-package io.spokestack.spokestack.wakeword;
+package io.spokestack.spokestack;
 
 /**
  * a simple circular buffer of floating point values.
  */
-final class RingBuffer {
+public final class RingBuffer {
     private final float[] data;     // data buffer (n + 1) elements
     private int rpos;               // current read position
     private int wpos;               // current write position
@@ -12,7 +12,7 @@ final class RingBuffer {
      * constructs a new ring buffer instance.
      * @param capacity the maximum number of elements to store
      */
-    RingBuffer(int capacity) {
+    public RingBuffer(int capacity) {
         this.data = new float[capacity + 1];
         this.wpos = 0;
         this.rpos = 0;

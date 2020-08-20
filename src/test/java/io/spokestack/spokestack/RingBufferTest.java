@@ -1,4 +1,4 @@
-package io.spokestack.spokestack.wakeword;
+package io.spokestack.spokestack;
 
 import java.util.*;
 

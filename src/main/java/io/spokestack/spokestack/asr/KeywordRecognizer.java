@@ -1,4 +1,4 @@
-package io.spokestack.spokestack.wakeword;
+package io.spokestack.spokestack.asr;
 
 import io.spokestack.spokestack.RingBuffer;
 import io.spokestack.spokestack.SpeechConfig;
@@ -9,16 +9,14 @@ import org.jtransforms.fft.FloatFFT_1D;
 
 import java.nio.ByteBuffer;
 
-
 /**
- * wakeword Detection pipeline component
+ * keyword recognition pipeline component
  *
  * <p>
- * WakewordTrigger is a speech pipeline component that provides wakeword
- * detection for activating downstream components. It uses a Tensorflow-Lite
- * binary classifier to detect keyword phrases. Once a wakeword phrase is
- * detected, the pipeline is activated. The pipeline remains active until the
- * user stops talking or the activation timeout is reached.
+ * KeywordRecognizer is a speech pipeline component that provides the ability
+ * to recognize one or more keyword phrases during pipeline activation. Its
+ * behavior is similar to the other speech recognizer components, albeit for
+ * a limited vocabulary (usually just a few words/phrases).
  * </p>
  *
  * <p>
@@ -40,33 +38,25 @@ import java.nio.ByteBuffer;
  *
  * <p>
  * The "detect" Tensorflow model takes the encoded sliding window and outputs
- * a single posterior value in the range [0, 1]. Values closer to 1 indicate
- * a detected keyword phrase, values closer to 0 indicate non-keyword speech.
- * This classifier is commonly implemented as an attention mechanism over the
- * encoder window.
+ * a set of independent posterior values in the range [0, 1], one per keyword
+ * class.
  * </p>
  *
  * <p>
- * The detector's outputs are then compared against a configured threshold,
- * in order to determine whether to activate the pipeline. If the posterior
- * is greater than the thresold, the activation occurs.
+ * During detection, the highest scoring posterior is chosen as the
+ * recognized class, and if its value is higher than the configured
+ * threshold, that class is reported to the client through the speech
+ * recognition event. Otherwise, the empty transcript ("") is reported. Note
+ * that the detection model is only run on the frame in which the speech
+ * context is deactivated, similar to the end-of-utterance mechanism used by
+ * the other speech recognizers.
  * </p>
  *
  * <p>
- * Activations have configurable minimum/maximum lengths. The minimum length
- * prevents the activation from being aborted if the user pauses after saying
- * the wakeword (which untriggers the VAD). The maximum activation length
- * allows the activation to timeout if the user doesn't say anything after
- * saying the wakeword.
- * </p>
- *
- * <p>
- * The wakeword detector can be used in a multi-turn dialogue system. In
- * such an environment, the user is not expected to say the wakeword during
- * each turn. Therefore, an application can manually activate the pipeline
- * by calling <b>setActive</b> (after a system turn), and the wakeword
- * detector will apply its minimum/maximum activation lengths to control
- * the duration of the activation.
+ * The keyword recognizer can be used as a stand-alone speech recognizer,
+ * using the VAD/timeout (or other activator) to manage activations.
+ * Alternatively, the recognizer can be used along with a wakeword detector
+ * to manage activations, in a two-stage wakeword/recognizer pattern.
  * </p>
  *
  * <p>
@@ -74,122 +64,97 @@ import java.nio.ByteBuffer;
  * </p>
  * <ul>
  *   <li>
- *      <b>wake-filter-path</b> (string, required): file system path to the
+ *      <b>keyword-filter-path</b> (string, required): file system path to the
  *      "filter" Tensorflow-Lite model, which is used to calculate a mel
  *      spectrogram frame from the linear STFT; its inputs should be shaped
  *      [fft-width], and its outputs [mel-width]
  *   </li>
  *   <li>
- *      <b>wake-encode-path</b> (string, required): file system path to the
+ *      <b>keyword-encode-path</b> (string, required): file system path to the
  *      "encode" Tensorflow-Lite model, which is used to perform each
  *      autoregressive step over the mel frames; its inputs should be shaped
  *      [mel-length, mel-width], and its outputs [encode-width], with an
  *      additional state input/output shaped [state-width]
  *   </li>
  *   <li>
- *      <b>wake-detect-path</b> (string, required): file system path to the
+ *      <b>keyword-detect-path</b> (string, required): file system path to the
  *      "detect" Tensorflow-Lite model; its inputs shoudld be shaped
- *      [encode-length, encode-width], and its outputs [1]
+ *      [encode-length, encode-width], and its outputs [len(classes)]
  *   </li>
  *   <li>
- *      <b>wake-active-min</b> (integer): the minimum length of an activation,
- *      in milliseconds, used to ignore a VAD deactivation after the wakeword
+ *      <b>keywod-pre-emphasis</b> (double): the pre-emphasis filter weight
+ *      to apply to the audio signal (0 for no pre-emphasis)
  *   </li>
  *   <li>
- *      <b>wake-active-max</b> (integer): the maximum length of an activation,
- *      in milliseconds, used to time out the activation
+ *      <b>keyword-fft-window-size</b> (integer): the size of the signal
+ *      window used to calculate the STFT, in number of samples - should be a
+ *      power of 2 for maximum efficiency
  *   </li>
  *   <li>
- *      <b>rms-target</b> (double): the desired linear Root Mean Squared (RMS)
- *      signal energy, which is used for signal normalization and should be
- *      tuned to the RMS target used during training
+ *      <b>keyword-fft-window-type</b> (string): the name of the windowing
+ *      function to apply to each audio frame before calculating the STFT;
+ *      currently the "hann" window is supported
  *   </li>
  *   <li>
- *      <b>rms-alpha</b> (double): the Exponentially-Weighted Moving Average
- *      (EWMA) update rate for the current RMS signal energy (0 for no
- *      RMS normalization)
+ *      <b>keyword-fft-hop-length</b> (integer): the length of time to skip
+ *      each time the overlapping STFT is calculated, in milliseconds
  *   </li>
  *   <li>
- *      <b>pre-emphasis</b> (double): the pre-emphasis filter weight to apply
- *      to the normalized audio signal (0 for no pre-emphasis)
+ *      <b>keyword-mel-frame-length</b> (integer): the length of the mel
+ *      spectrogram used as an input to the encoder, in milliseconds
  *   </li>
  *   <li>
- *      <b>fft-window-size</b> (integer): the size of the signal window used
- *      to calculate the STFT, in number of samples - should be a power of
- *      2 for maximum efficiency
+ *      <b>keyword-mel-frame-width</b> (integer): the size of each mel
+ *      spectrogram frame, in number of filterbank components
  *   </li>
  *   <li>
- *      <b>fft-window-type</b> (string): the name of the windowing function
- *      to apply to each audio frame before calculating the STFT; currently
- *      the "hann" window is supported
- *   </li>
- *   <li>
- *      <b>fft-hop-length</b> (integer): the length of time to skip each
- *      time the overlapping STFT is calculated, in milliseconds
- *   </li>
- *   <li>
- *      <b>mel-frame-length</b> (integer): the length of the mel spectrogram
- *      used as an input to the encoder, in milliseconds
- *   </li>
- *   <li>
- *      <b>mel-frame-width</b> (integer): the size of each mel spectrogram
- *      frame, in number of filterbank components
- *   </li>
- *   <li>
- *      <b>wake-encode-length</b> (integer): the length of the sliding
+ *      <b>keyword-encode-length</b> (integer): the length of the sliding
  *      window of encoder output used as an input to the classifier, in
  *      milliseconds
  *   </li>
  *   <li>
- *      <b>wake-encode-width</b> (integer): the size of the encoder output,
+ *      <b>keyword-encode-width</b> (integer): the size of the encoder output,
  *      in vector units
  *   </li>
  *   <li>
- *      <b>wake-state-width</b> (integer): the size of the encoder state,
- *      in vector units (defaults to wake-encode-width)
+ *      <b>keyword-state-width</b> (integer): the size of the encoder state,
+ *      in vector units (defaults to keyword-encode-width)
  *   </li>
  *   <li>
- *      <b>wake-threshold</b> (double): the threshold of the classifier's
- *      posterior output, above which the trigger activates the pipeline,
- *      in the range [0, 1]
+ *      <b>keyword-threshold</b> (double): the threshold of the classifier's
+ *      posterior output, above which the recognizer raises a recognition
+ *      event for the most likely kewyord class, in the range [0, 1]
  *   </li>
  * </ul>
  */
-public final class WakewordTrigger implements SpeechProcessor {
-    /** the hann fft-window-type.  */
+public final class KeywordRecognizer implements SpeechProcessor {
+    /** the hann keyword-fft-window-type.  */
     public static final String FFT_WINDOW_TYPE_HANN = "hann";
 
-    /** default fft-window-type configuration value. */
+    /** default keyword-fft-window-type configuration value. */
     public static final String DEFAULT_FFT_WINDOW_TYPE = FFT_WINDOW_TYPE_HANN;
-    /** default rms-target configuration value. */
-    public static final float DEFAULT_RMS_TARGET = 0.08f;
-    /** default rms-alpha configuration value. */
-    public static final float DEFAULT_RMS_ALPHA = 0.0f;
-    /** default pre-emphasis configuration value. */
-    public static final float DEFAULT_PRE_EMPHASIS = 0.0f;
-    /** default fft-window-size configuration value. */
+    /** default keyword-pre-emphasis configuration value. */
+    public static final float DEFAULT_PRE_EMPHASIS = 0.97f;
+    /** default keyword-fft-window-size configuration value. */
     public static final int DEFAULT_FFT_WINDOW_SIZE = 512;
-    /** default fft-hop-length configuration value. */
+    /** default keyword-fft-hop-length configuration value. */
     public static final int DEFAULT_FFT_HOP_LENGTH = 10;
-    /** default mel-frame-length configuration value. */
-    public static final int DEFAULT_MEL_FRAME_LENGTH = 10;
-    /** default mel-frame-width configuration value. */
+    /** default keyword-mel-frame-length configuration value. */
+    public static final int DEFAULT_MEL_FRAME_LENGTH = 1090;
+    /** default keyword-mel-frame-width configuration value. */
     public static final int DEFAULT_MEL_FRAME_WIDTH = 40;
-    /** default wake-encode-length configuration value. */
-    public static final int DEFAULT_WAKE_ENCODE_LENGTH = 1000;
-    /** default wake-encode-width configuration value. */
-    public static final int DEFAULT_WAKE_ENCODE_WIDTH = 128;
-    /** default wake-threshold value. */
-    public static final float DEFAULT_WAKE_THRESHOLD = 0.5f;
+    /** default keyword-encode-length configuration value. */
+    public static final int DEFAULT_ENCODE_LENGTH = 920;
+    /** default keyword-encode-width configuration value. */
+    public static final int DEFAULT_ENCODE_WIDTH = 128;
+    /** default recognition threshold value. */
+    public static final float DEFAULT_THRESHOLD = 0.5f;
 
-    // voice activity detection
-    private boolean isSpeech;
+    // keyword class names
+    private final String[] classes;
 
-    // audio signal normalization and pre-emphasis
-    private final float rmsTarget;
-    private final float rmsAlpha;
+    // audio pre-emphasis
     private final float preEmphasis;
-    private float rmsValue;
     private float prevSample;
 
     // stft/mel filterbank configuration
@@ -212,70 +177,72 @@ public final class WakewordTrigger implements SpeechProcessor {
     private final TensorflowModel encodeModel;
     private final TensorflowModel detectModel;
 
-    // wakeword activation management
-    private final float posteriorThreshold;
-    private float posteriorMax;
+    // detection posterior threshold
+    private final float threshold;
+
+    // context state
+    private boolean isActive;
 
     /**
-     * constructs a new trigger instance.
+     * constructs a new recognizer instance.
      * @param config the pipeline configuration instance
      */
-    public WakewordTrigger(SpeechConfig config) {
+    public KeywordRecognizer(SpeechConfig config) {
         this(config, new TensorflowModel.Loader());
     }
 
     /**
-     * constructs a new trigger instance, for testing.
+     * constructs a new recognizer instance, for testing.
      * @param config the pipeline configuration instance
      * @param loader tensorflow model loader
      */
-    public WakewordTrigger(
+    public KeywordRecognizer(
             SpeechConfig config,
             TensorflowModel.Loader loader) {
+        // parse the list of keyword class names
+        this.classes = config.getString("keyword-classes").split(",");
+        if (this.classes.length < 1)
+            throw new IllegalArgumentException("keyword-classes");
+
         // fetch signal normalization config
-        this.rmsTarget = (float) config
-            .getDouble("rms-target", (double) DEFAULT_RMS_TARGET);
-        this.rmsAlpha = (float) config
-            .getDouble("rms-alpha", (double) DEFAULT_RMS_ALPHA);
         this.preEmphasis = (float) config
-            .getDouble("pre-emphasis", (double) DEFAULT_PRE_EMPHASIS);
-        this.rmsValue = this.rmsTarget;
+            .getDouble("keyword-pre-emphasis", (double) DEFAULT_PRE_EMPHASIS);
 
         // fetch and validate stft/mel spectrogram configuration
         int sampleRate = config
             .getInteger("sample-rate");
         int windowSize = config
-            .getInteger("fft-window-size", DEFAULT_FFT_WINDOW_SIZE);
+            .getInteger("keyword-fft-window-size", DEFAULT_FFT_WINDOW_SIZE);
         this.hopLength = config
-            .getInteger("fft-hop-length", DEFAULT_FFT_HOP_LENGTH)
+            .getInteger("keyword-fft-hop-length", DEFAULT_FFT_HOP_LENGTH)
             * sampleRate / 1000;
         String windowType = config
-            .getString("fft-window-type", DEFAULT_FFT_WINDOW_TYPE);
+            .getString("keyword-fft-window-type", DEFAULT_FFT_WINDOW_TYPE);
         if (windowSize % 2 != 0)
-            throw new IllegalArgumentException("fft-window-size");
+            throw new IllegalArgumentException("keyword-fft-window-size");
         int melLength = config
-            .getInteger("mel-frame-length", DEFAULT_MEL_FRAME_LENGTH)
+            .getInteger("keyword-mel-frame-length", DEFAULT_MEL_FRAME_LENGTH)
             * sampleRate / 1000 / this.hopLength;
         this.melWidth = config
-            .getInteger("mel-frame-width", DEFAULT_MEL_FRAME_WIDTH);
+            .getInteger("keyword-mel-frame-width", DEFAULT_MEL_FRAME_WIDTH);
 
         // allocate the stft window and FFT/frame buffer
         if (windowType.equals(FFT_WINDOW_TYPE_HANN))
             this.fftWindow = hannWindow(windowSize);
         else
-            throw new IllegalArgumentException("fft-window-type");
+            throw new IllegalArgumentException("keyword-fft-window-type");
 
         this.fft = new FloatFFT_1D(windowSize);
         this.fftFrame = new float[windowSize];
 
         // fetch and validate encoder configuration
         int encodeLength = config
-            .getInteger("wake-encode-length", DEFAULT_WAKE_ENCODE_LENGTH)
+            .getInteger("keyword-encode-length", DEFAULT_ENCODE_LENGTH)
             * sampleRate / 1000 / this.hopLength;
         this.encodeWidth = config
-            .getInteger("wake-encode-width", DEFAULT_WAKE_ENCODE_WIDTH);
+            .getInteger("keyword-encode-width", DEFAULT_ENCODE_WIDTH);
         int stateWidth = config
-            .getInteger("wake-state-width", this.encodeWidth);
+            .getInteger("keyword-state-width", this.encodeWidth);
 
         // allocate sliding windows
         // fill all buffers (except samples) with zero, in order to
@@ -289,25 +256,25 @@ public final class WakewordTrigger implements SpeechProcessor {
 
         // load the tensorflow-lite models
         this.filterModel = loader
-            .setPath(config.getString("wake-filter-path"))
+            .setPath(config.getString("keyword-filter-path"))
             .load();
         loader.reset();
         this.encodeModel = loader
-            .setPath(config.getString("wake-encode-path"))
+            .setPath(config.getString("keyword-encode-path"))
             .setStatePosition(1)
             .load();
         loader.reset();
         this.detectModel = loader
-            .setPath(config.getString("wake-detect-path"))
+            .setPath(config.getString("keyword-detect-path"))
             .load();
 
-        // configure the wakeword activation lengths
-        this.posteriorThreshold = (float) config
-            .getDouble("wake-threshold", (double) DEFAULT_WAKE_THRESHOLD);
+        // configure the keyword probability threshold
+        this.threshold = (float) config
+            .getDouble("keyword-threshold", (double) DEFAULT_THRESHOLD);
     }
 
     /**
-     * releases resources associated with the wakeword detector.
+     * releases resources associated with the keyword recognizer.
      * @throws Exception on error
      */
     public void close() throws Exception {
@@ -319,7 +286,7 @@ public final class WakewordTrigger implements SpeechProcessor {
     @Override
     public void reset() {
         // empty the sample buffer, so that only contiguous
-        // speech samples are written to it
+        // audio samples are written to it
         this.sampleWindow.reset();
 
         // reset and fill the other buffers,
@@ -330,9 +297,6 @@ public final class WakewordTrigger implements SpeechProcessor {
         // reset the encoder states
         while (this.encodeModel.states().hasRemaining())
             this.encodeModel.states().putFloat(0);
-
-        // reset the maximum posterior
-        this.posteriorMax = 0;
     }
 
     /**
@@ -343,38 +307,22 @@ public final class WakewordTrigger implements SpeechProcessor {
      */
     public void process(SpeechContext context, ByteBuffer buffer)
             throws Exception {
-        // detect speech deactivation edges for wakeword deactivation
-        boolean vadFall = this.isSpeech && !context.isSpeech();
-        this.isSpeech = context.isSpeech();
+        // run the current frame through the detector pipeline
+        sample(context, buffer);
 
-        if (!context.isActive()) {
-            // run the current frame through the detector pipeline
-            // activate if a keyword phrase was detected
-            sample(context, buffer);
-        }
+        // on deactivation, see if a keyword was detected
+        if (!context.isActive() && this.isActive)
+            detect(context);
 
-        // always reset detector state on a vad deactivation
-        if (vadFall) {
-            if (!context.isActive())
-                trace(context);
-            reset();
-        }
+        this.isActive = context.isActive();
     }
 
     private void sample(SpeechContext context, ByteBuffer buffer) {
-        // update the rms normalization factors
-        // maintain an ewma of the rms signal energy for speech samples
-        if (context.isSpeech() && this.rmsAlpha > 0)
-            this.rmsValue =
-                this.rmsAlpha * rms(buffer)
-                + (1 - this.rmsAlpha) * this.rmsValue;
-
         // process all samples in the frame
         buffer.rewind();
         while (buffer.hasRemaining()) {
-            // normalize and clip the 16-bit sample to the target rms energy
+            // convert to float and clip the 16-bit sample
             float sample = (float) buffer.getShort() / Short.MAX_VALUE;
-            sample = sample * this.rmsTarget / this.rmsValue;
             sample = Math.max(-1f, Math.min(sample, 1f));
 
             // run a pre-emphasis filter to balance high frequencies
@@ -385,11 +333,11 @@ public final class WakewordTrigger implements SpeechProcessor {
 
             // process the sample
             // . write it to the sample sliding window
-            // . run the remainder of the detection pipeline if speech
-            // . advance the sample sliding window
+            // . run the remainder of the detection pipeline if active
+            // . advance the sliding window by the hop length
             this.sampleWindow.write(sample);
             if (this.sampleWindow.isFull()) {
-                if (context.isSpeech())
+                if (context.isActive())
                     analyze(context);
                 this.sampleWindow.rewind().seek(this.hopLength);
             }
@@ -426,12 +374,10 @@ public final class WakewordTrigger implements SpeechProcessor {
         // execute the mel filterbank tensorflow model
         this.filterModel.run();
 
-        // copy the current mel frame into the mel window
+        // copy the current mel frame into the frame window
         this.frameWindow.rewind().seek(this.melWidth);
-        while (this.filterModel.outputs(0).hasRemaining()) {
-            this.frameWindow.write(
-                  this.filterModel.outputs(0).getFloat());
-        }
+        while (this.filterModel.outputs(0).hasRemaining())
+            this.frameWindow.write(this.filterModel.outputs(0).getFloat());
 
         encode(context);
     }
@@ -440,24 +386,22 @@ public final class WakewordTrigger implements SpeechProcessor {
         // transfer the mel filterbank window to the encoder model's inputs
         this.frameWindow.rewind();
         this.encodeModel.inputs(0).rewind();
-        while (!this.frameWindow.isEmpty()) {
+        while (!this.frameWindow.isEmpty())
             this.encodeModel.inputs(0).putFloat(this.frameWindow.read());
-        }
 
         // run the encoder tensorflow model
         this.encodeModel.run();
 
         // copy the encoder output into the encode window
         this.encodeWindow.rewind().seek(this.encodeWidth);
-        while (this.encodeModel.outputs(0).hasRemaining()) {
-            this.encodeWindow.write(
-                  this.encodeModel.outputs(0).getFloat());
-        }
-
-        detect(context);
+        while (this.encodeModel.outputs(0).hasRemaining())
+            this.encodeWindow.write(this.encodeModel.outputs(0).getFloat());
     }
 
     private void detect(SpeechContext context) {
+        String transcript = null;
+        float confidence = 0;
+
         // transfer the encoder window to the detector model's inputs
         this.encodeWindow.rewind();
         this.detectModel.inputs(0).rewind();
@@ -467,21 +411,29 @@ public final class WakewordTrigger implements SpeechProcessor {
         // run the classifier tensorflow model
         this.detectModel.run();
 
-        // check the classifier's output and activate
-        float posterior = this.detectModel.outputs(0).getFloat();
-        if (posterior > this.posteriorThreshold)
-            activate(context);
-        if (posterior > this.posteriorMax)
-            this.posteriorMax = posterior;
-    }
+        // check the classifier's output and find the most likely class
+        for (int i = 0; i < this.classes.length; i++) {
+            float posterior = this.detectModel.outputs(0).getFloat();
+            if (posterior > confidence) {
+                transcript = this.classes[i];
+                confidence = posterior;
+            }
+        }
 
-    private void activate(SpeechContext context) {
-        trace(context);
-        context.setActive(true);
-    }
+        context.traceInfo("keyword: %.3f %s", confidence, transcript);
 
-    private void trace(SpeechContext context) {
-        context.traceInfo(String.format("wake: %f", this.posteriorMax));
+        // if we are under threshold, return the null class
+        if (confidence < this.threshold) {
+            transcript = "";
+            confidence = 1.0f - confidence;
+        }
+
+        // raise the speech recognition event with the class transcript
+        context.setTranscript(transcript);
+        context.setConfidence(confidence);
+        context.dispatch(SpeechContext.Event.RECOGNIZE);
+
+        reset();
     }
 
     private float[] hannWindow(int len) {
@@ -490,19 +442,5 @@ public final class WakewordTrigger implements SpeechProcessor {
         for (int i = 0; i < len; i++)
             window[i] = (float) Math.pow(Math.sin(Math.PI * i / (len - 1)), 2);
         return window;
-    }
-
-    private float rms(ByteBuffer signal) {
-        float sum = 0;
-        int count = 0;
-
-        signal.rewind();
-        while (signal.hasRemaining()) {
-            float sample = (float) signal.getShort() / Short.MAX_VALUE;
-            sum += sample * sample;
-            count++;
-        }
-
-        return (float) Math.sqrt(sum / count);
     }
 }
