@@ -25,7 +25,7 @@ import static org.powermock.api.mockito.PowerMockito.*;
 public class PreASRMicrophoneInputTest {
 
     @Before
-    public void before() throws Exception{
+    public void before() throws Exception {
         mockStatic(AudioRecord.class);
         AudioRecord record = mock(AudioRecord.class);
         whenNew(AudioRecord.class).withAnyArguments().thenReturn(record);
@@ -38,7 +38,7 @@ public class PreASRMicrophoneInputTest {
     }
 
     @Test
-    public void testRead() {
+    public void testRead() throws AudioRecordError {
         final SpeechConfig config = new SpeechConfig();
         config.put("sample-rate", 16000);
         final PreASRMicrophoneInput input =
@@ -52,8 +52,7 @@ public class PreASRMicrophoneInputTest {
 
         // invalid read
         when(recorder.read(any(ByteBuffer.class), anyInt())).thenReturn(1);
-        assertThrows(IllegalStateException.class, () ->
-              input.read(context, buffer));
+        assertThrows(AudioRecordError.class, () -> input.read(context, buffer));
 
         verify(recorder).startRecording();
 
