@@ -226,8 +226,13 @@ public final class SpeechPipeline implements AutoCloseable {
             ByteBuffer frame = this.context.getBuffer().removeFirst();
             this.context.getBuffer().addLast(frame);
 
-            // fill the frame from the input
-            this.input.read(this.context, frame);
+            // fill the frame from the input, stopping if audio cannot be read
+            try {
+                this.input.read(this.context, frame);
+            } catch (Exception e) {
+                raiseError(e);
+                stop();
+            }
 
             // when leaving the managed state, reset all stages internally
             boolean isManaged = this.context.isManaged();

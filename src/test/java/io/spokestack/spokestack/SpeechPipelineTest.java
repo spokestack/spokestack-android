@@ -6,6 +6,7 @@ import java.util.concurrent.Semaphore;
 import java.nio.ByteBuffer;
 
 import androidx.annotation.NonNull;
+import io.spokestack.spokestack.android.AudioRecordError;
 import io.spokestack.spokestack.util.EventTracer;
 import org.junit.Before;
 import org.junit.Test;
@@ -17,12 +18,15 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
           io.spokestack.spokestack.profile.PushToTalkAndroidASR.class,
           io.spokestack.spokestack.profile.PushToTalkAzureASR.class,
           io.spokestack.spokestack.profile.PushToTalkGoogleASR.class,
+          io.spokestack.spokestack.profile.PushToTalkSpokestackASR.class,
           io.spokestack.spokestack.profile.TFWakewordAndroidASR.class,
           io.spokestack.spokestack.profile.TFWakewordAzureASR.class,
           io.spokestack.spokestack.profile.TFWakewordGoogleASR.class,
+          io.spokestack.spokestack.profile.TFWakewordSpokestackASR.class,
           io.spokestack.spokestack.profile.VADTriggerAndroidASR.class,
           io.spokestack.spokestack.profile.VADTriggerAzureASR.class,
-          io.spokestack.spokestack.profile.VADTriggerGoogleASR.class
+          io.spokestack.spokestack.profile.VADTriggerGoogleASR.class,
+          io.spokestack.spokestack.profile.VADTriggerSpokestackASR.class
     );
 
     private List<SpeechContext.Event> events = new ArrayList<>();
@@ -165,7 +169,11 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .addOnSpeechEventListener(this)
             .build();
         pipeline.start();
-        pipeline.stop();
+
+        // wait for pipeline to shut down due to error
+        while (pipeline.isRunning()) {
+            Thread.sleep(1);
+        }
         assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
     }
 
@@ -324,7 +332,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
 
         public void read(SpeechContext context, ByteBuffer frame)
               throws Exception {
-            throw new Exception("fail");
+            throw new AudioRecordError(-3);
         }
     }
 

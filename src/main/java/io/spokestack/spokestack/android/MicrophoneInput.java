@@ -71,10 +71,14 @@ public final class MicrophoneInput implements SpeechInput {
      * reads a frame from the microphone.
      * @param context the current speech context
      * @param frame the frame buffer to fill
+     *
+     * @throws AudioRecordError if audio cannot be read
      */
-    public void read(SpeechContext context, ByteBuffer frame) {
+    public void read(SpeechContext context, ByteBuffer frame)
+          throws AudioRecordError {
         int read = this.recorder.read(frame, frame.capacity());
-        if (read != frame.capacity())
-            throw new IllegalStateException();
+        if (read != frame.capacity()) {
+            throw new AudioRecordError(read);
+        }
     }
 }

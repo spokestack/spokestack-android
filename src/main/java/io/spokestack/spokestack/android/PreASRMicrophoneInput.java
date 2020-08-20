@@ -65,8 +65,11 @@ public final class PreASRMicrophoneInput implements SpeechInput {
      *
      * @param context the current speech context
      * @param frame   the frame buffer to fill
+     *
+     * @throws AudioRecordError if audio cannot be read
      */
-    public void read(SpeechContext context, ByteBuffer frame) {
+    public void read(SpeechContext context, ByteBuffer frame)
+          throws AudioRecordError {
         if (context.isActive()) {
             stopRecording(context);
         } else {
@@ -75,7 +78,7 @@ public final class PreASRMicrophoneInput implements SpeechInput {
             }
             int read = this.recorder.read(frame, frame.capacity());
             if (read != frame.capacity()) {
-                throw new IllegalStateException();
+                throw new AudioRecordError(read);
             }
         }
     }
