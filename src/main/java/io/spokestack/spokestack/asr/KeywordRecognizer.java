@@ -64,6 +64,12 @@ import java.nio.ByteBuffer;
  * </p>
  * <ul>
  *   <li>
+ *      <b>keyword-classes</b> (string, required): comma-separated ordered
+ *      list of class names for the keywords; the name corresponding to the
+ *      most likely class will be returned in the transcript field when the
+ *      recognition event is raised
+ *   </li>
+ *   <li>
  *      <b>keyword-filter-path</b> (string, required): file system path to the
  *      "filter" Tensorflow-Lite model, which is used to calculate a mel
  *      spectrogram frame from the linear STFT; its inputs should be shaped
@@ -78,11 +84,11 @@ import java.nio.ByteBuffer;
  *   </li>
  *   <li>
  *      <b>keyword-detect-path</b> (string, required): file system path to the
- *      "detect" Tensorflow-Lite model; its inputs shoudld be shaped
+ *      "detect" Tensorflow-Lite model; its inputs should be shaped
  *      [encode-length, encode-width], and its outputs [len(classes)]
  *   </li>
  *   <li>
- *      <b>keywod-pre-emphasis</b> (double): the pre-emphasis filter weight
+ *      <b>keyword-pre-emphasis</b> (double): the pre-emphasis filter weight
  *      to apply to the audio signal (0 for no pre-emphasis)
  *   </li>
  *   <li>
