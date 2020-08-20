@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.wakeword;
 
+import io.spokestack.spokestack.RingBuffer;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
 import io.spokestack.spokestack.SpeechProcessor;
