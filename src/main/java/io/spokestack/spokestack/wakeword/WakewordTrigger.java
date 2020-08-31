@@ -285,7 +285,7 @@ public final class WakewordTrigger implements SpeechProcessor {
         this.encodeWindow = new RingBuffer(encodeLength * this.encodeWidth);
 
         this.frameWindow.fill(0);
-        this.encodeWindow.fill(0);
+        this.encodeWindow.fill(-1);
 
         // load the tensorflow-lite models
         this.filterModel = loader
@@ -323,9 +323,10 @@ public final class WakewordTrigger implements SpeechProcessor {
         this.sampleWindow.reset();
 
         // reset and fill the other buffers,
-        // which prevents them from lagging the detection
+        // which prevents them from delaying detection
+        // the encoder has a tanh nonlinearity, so fill it with -1
         this.frameWindow.reset().fill(0);
-        this.encodeWindow.reset().fill(0);
+        this.encodeWindow.reset().fill(-1);
 
         // reset the encoder states
         while (this.encodeModel.states().hasRemaining())
@@ -469,10 +470,10 @@ public final class WakewordTrigger implements SpeechProcessor {
 
         // check the classifier's output and activate
         float posterior = this.detectModel.outputs(0).getFloat();
-        if (posterior > this.posteriorThreshold)
-            activate(context);
         if (posterior > this.posteriorMax)
             this.posteriorMax = posterior;
+        if (posterior > this.posteriorThreshold)
+            activate(context);
     }
 
     private void activate(SpeechContext context) {
