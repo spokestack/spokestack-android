@@ -78,7 +78,7 @@ public class AutomaticGainControlTest {
             .put("sample-rate", 8000)
             .put("frame-width", 10)
             .put("agc-target-level-dbfs", 9)
-            .put("agc-compression-gain-db", 2);
+            .put("agc-compression-gain-db", 15);
 
         final SpeechContext context = new SpeechContext(config);
         AutomaticGainControl agc;

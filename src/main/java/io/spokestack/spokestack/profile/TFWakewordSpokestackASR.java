@@ -63,12 +63,10 @@ public class TFWakewordSpokestackASR implements PipelineProfile {
               .setInputClass(
                     "io.spokestack.spokestack.android.MicrophoneInput")
               .addStageClass(
+                    "io.spokestack.spokestack.webrtc.AutomaticGainControl")
+              .addStageClass(
                     "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
               .setProperty("ans-policy", "aggressive")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AutomaticGainControl")
-              .setProperty("agc-target-level-dbfs", 3)
-              .setProperty("agc-compression-gain-db", 15)
               .addStageClass(
                     "io.spokestack.spokestack.webrtc.VoiceActivityDetector")
               .setProperty("vad-mode", "very-aggressive")

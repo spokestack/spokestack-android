@@ -23,10 +23,9 @@ public class VADTriggerAndroidASR implements PipelineProfile {
               .setInputClass(
                     "io.spokestack.spokestack.android.PreASRMicrophoneInput")
               .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
-              .addStageClass(
                     "io.spokestack.spokestack.webrtc.AutomaticGainControl")
-              .setProperty("agc-compression-gain-db", 15)
+              .addStageClass(
+                    "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
               .addStageClass(
                     "io.spokestack.spokestack.webrtc.VoiceActivityDetector")
               .addStageClass(

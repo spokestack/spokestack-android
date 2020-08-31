@@ -11,10 +11,11 @@
 /*-------------------[      Project Include Files      ]-------------------*/
 #include "filter_audio/agc/include/gain_control.h"
 /*-------------------[      Macros/Constants/Types     ]-------------------*/
+#define MIC_MAX      255   // maximum virtual mic level
+#define MIC_TARGET   180   // -3dBFS
 /*-------------------[        Global Variables         ]-------------------*/
 /*-------------------[        Global Prototypes        ]-------------------*/
 /*-------------------[        Module Variables         ]-------------------*/
-static int32_t miclevel = 128;
 /*-------------------[        Module Prototypes        ]-------------------*/
 /*-------------------[         Implementation          ]-------------------*/
 /*-----------< FUNCTION: AutomaticGainControl_create >-----------------------
@@ -40,7 +41,7 @@ jlong JNICALL Java_io_spokestack_spokestack_webrtc_AutomaticGainControl_create(
    void* agc = NULL;
    int result = WebRtcAgc_Create(&agc);
    if (result == 0) {
-      result = WebRtcAgc_Init(agc, 0, 100, kAgcModeFixedDigital, rate);
+      result = WebRtcAgc_Init(agc, 0, MIC_MAX, kAgcModeAdaptiveDigital, rate);
       if (result == 0) {
          // configure the agc
          WebRtcAgc_config_t config; memset(&config, 0, sizeof(config));
@@ -91,15 +92,27 @@ jint JNICALL Java_io_spokestack_spokestack_webrtc_AutomaticGainControl_process(
       jint    length) {
    int16_t* frame = (int16_t*)env->GetDirectBufferAddress(buffer);
    uint8_t saturated = 0;
-   return WebRtcAgc_Process(
+   int32_t mic_level = 0;
+   // first call virtualmic to analyze the audio frame and set the mic level
+   int result = WebRtcAgc_VirtualMic(
       (void*)agc,
       frame,
       NULL,
       length / 2,
-      frame,
-      NULL,
-      miclevel,
-      &miclevel,
-      0,
-      &saturated);
+      MIC_TARGET,
+      &mic_level);
+   // call process to adjust the audio levels to the target
+   if (result == 0)
+      result = WebRtcAgc_Process(
+         (void*)agc,
+         frame,
+         NULL,
+         length / 2,
+         frame,
+         NULL,
+         MIC_TARGET,
+         &mic_level,
+         0,
+         &saturated);
+   return result;
 }

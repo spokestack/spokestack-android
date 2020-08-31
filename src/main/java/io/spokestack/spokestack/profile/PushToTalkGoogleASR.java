@@ -31,10 +31,9 @@ public class PushToTalkGoogleASR implements PipelineProfile {
               .setInputClass(
                     "io.spokestack.spokestack.android.MicrophoneInput")
               .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
-              .addStageClass(
                     "io.spokestack.spokestack.webrtc.AutomaticGainControl")
-              .setProperty("agc-compression-gain-db", 15)
+              .addStageClass(
+                    "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
               .addStageClass(
                     "io.spokestack.spokestack.webrtc.VoiceActivityDetector")
               .addStageClass("io.spokestack.spokestack.ActivationTimeout")
