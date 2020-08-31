@@ -44,7 +44,7 @@ public class AutomaticGainControl implements SpeechProcessor {
     /** default target peak amplitude, in dBFS. */
     public static final int DEFAULT_TARGET_LEVEL_DBFS = 3;
     /** default compression gain, in dB. */
-    public static final int DEFAULT_COMPRESSION_GAIN_DB = 9;
+    public static final int DEFAULT_COMPRESSION_GAIN_DB = 15;
 
     // native agc structure handle
     private final long agcHandle;
@@ -89,7 +89,11 @@ public class AutomaticGainControl implements SpeechProcessor {
             DEFAULT_COMPRESSION_GAIN_DB);
 
         // create the native agc context
-        this.agcHandle = create(rate, targetLeveldBFS, compressionGaindB, true);
+        this.agcHandle = create(
+            rate,
+            targetLeveldBFS,
+            compressionGaindB,
+            false);
         if (this.agcHandle == 0)
             throw new OutOfMemoryError();
     }
