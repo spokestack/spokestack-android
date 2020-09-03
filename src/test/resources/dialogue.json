@@ -1,0 +1,197 @@
+{
+    "features": [{
+            "name": "play",
+            "id": "444badb2-6b18-4857-8d45-3057eefee253",
+            "destination": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+            "prompts": [],
+            "rules": []
+        },
+        {
+            "name": "next_song",
+            "id": "10c27d48-9ba7-4a06-9267-6e14de050ce8",
+            "prompts": [],
+            "rules": []
+        },
+        {
+            "name": "stop",
+            "id": "10c27d48-9ba7-4a06-9267-6e14de050ce8",
+            "destination": "04ee181d-348f-4b96-abe0-13c3e1a74b47",
+            "prompts": [{
+                "id": "c9e5a424-d61a-4c4c-8114-f2ca646bf779",
+                "text": "Stopping",
+                "voice": "Stopping"
+            }],
+            "rules": []
+        },
+        {
+            "name": "buy_album",
+            "id": "ada466aa-cdb1-4997-a10b-49553b91a62c",
+            "prompts": [{
+                "id": "7f62c76f-e760-448b-aee8-49c2029b85fb",
+                "text": "OK, the album has been purchased",
+                "voice": "OK, the album has been purchased"
+            }],
+            "rules": [{
+                "id": "401338d3-1940-4697-a029-8927c37fff80",
+                "type": "confirmation",
+                "prompts": [{
+                    "id": "5fa5b622-3000-4034-baca-940dc6d6a7e3",
+                    "text": "Are you sure?",
+                    "voice": "Are you sure?",
+                    "proposal": {
+                        "accept": "confirm"
+                    }
+                }]
+            }]
+        },
+        {
+            "name": "exit_player",
+            "id": "9535f900-2ae3-4187-a260-4cd94e616e5e",
+            "destination": "04ee181d-348f-4b96-abe0-13c3e1a74b47",
+            "prompts": [{
+                "id": "8d1d429c-7601-4b55-83ca-b3c416f4172e",
+                "text": "Exiting.",
+                "voice": "Exiting."
+            }],
+            "rules": [{
+                "id": "78f81771-cf1d-4edf-8b54-0a124421c8d7",
+                "type": "confirmation",
+                "prompts": [{
+                    "id": "d8f23f01-cad4-46b2-a4ae-c28355ffa8fe",
+                    "text": "Are you sure?",
+                    "voice": "Are you sure?",
+                    "proposal": {
+                        "accept": "confirm"
+                    }
+                }]
+            }]
+        }
+    ],
+    "frames": [{
+            "id": "519e7289-e08f-4521-a56c-01eb6f23c8ab",
+            "name": "greet",
+            "nodes": [{
+                "name": "greet.__base__",
+                "id": "04ee181d-348f-4b96-abe0-13c3e1a74b47",
+                "next": "e9b478d8-ea2a-4529-80a7-e0dd3e41159d",
+                "prompts": [{
+                    "id": "232932e3-4724-4581-a81d-365c75bcc504",
+                    "text": "Hi",
+                    "voice": "Hi"
+                }],
+                "rules": []
+            }]
+        },
+        {
+            "id": "a19d24d9-a0ff-4ac0-a38c-75553f9aae4f",
+            "name": "frame_1",
+            "nodes": [{
+                "name": "frame_1.__base__",
+                "id": "e9b478d8-ea2a-4529-80a7-e0dd3e41159d",
+                "prompts": [{
+                    "id": "682a7ede-c96d-4522-9699-b53409fc34fd",
+                    "text": "This is frame 1",
+                    "voice": "This is frame one. Want to go back?",
+                    "proposal": {
+                        "accept": "navigate.back",
+                        "reject": "navigate.exit"
+                    }
+                }],
+                "rules": []
+            }]
+        },
+        {
+            "id": "e058aeff-231e-47bf-a619-835975067e91",
+            "name": "player",
+            "nodes": [{
+                "name": "player.__base__",
+                "id": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+                "prompts": [],
+                "rules": [{
+                    "id": "270c0862-b397-4acb-9c5c-b628d69cc922",
+                    "type": "intent_override",
+                    "key": "navigate.next",
+                    "value": "command.next_song"
+                }]
+            }]
+        },
+        {
+            "id": "8a6e9e3d-81e4-46b4-bd19-e7952ad9d629",
+            "name": "help",
+            "nodes": [{
+                "id": "f2d676a6-7c1a-4095-8b86-0acac34b635f",
+                "name": "help.__base__",
+                "prompts": [{
+                    "id": "72892229-fc49-4d78-b1ab-6b4a10afe7ac",
+                    "text": "Say something I understand, please.",
+                    "voice": "Say something I understand, please."
+                }],
+                "rules": []
+            }]
+        },
+        {
+            "id": "5815fa4b-ef46-4b12-b2c9-ce727c91d955",
+            "name": "inform",
+            "nodes": [{
+                    "id": "5ba21c32-6d00-4402-9a24-ae7e3f3debfb",
+                    "name": "inform.__base__",
+                    "prompts": [{
+                        "id": "59ba862c-2570-4d8c-9a19-838bb5a85bd1",
+                        "text": "Got it.",
+                        "voice": "Got it."
+                    }],
+                    "rules": []
+                },
+                {
+                    "id": "f017b9da-1328-453f-81df-9a3aa4fb32dc",
+                    "name": "inform.greet.__base__",
+                    "prompts": [{
+                        "id": "cbaebbc5-95b6-4ecb-8942-19d2fbf5a62f",
+                        "text": "Sure.",
+                        "voice": "Sure."
+                    }],
+                    "rules": []
+                },
+                {
+                    "id": "1350c2bd-f643-4ed2-86c4-e1b8db792e70",
+                    "name": "inform.greet.__base__.yeet",
+                    "prompts": [{
+                        "id": "5259da2b-0ffa-4556-808f-06123c4235fc",
+                        "text": "Yeah fam.",
+                        "voice": "Yeah fam."
+                    }],
+                    "rules": []
+                }
+            ]
+        },
+        {
+            "id": "0245884f-10f0-4995-9fc3-f2bb25524600",
+            "name": "exit",
+            "nodes": [{
+                "id": "87899a73-e715-4223-84d0-4f40e50b7712",
+                "name": "exit.__base__",
+                "prompts": [{
+                    "id": "452dc575-97b6-44f1-a44f-98427457da61",
+                    "text": "Later",
+                    "voice": "Later",
+                    "endsConversation": true
+                }],
+                "rules": []
+            }]
+        },
+        {
+            "id": "6bfb905b-cbd3-4708-8605-c1684a7d478f",
+            "name": "error",
+            "nodes": [{
+                "id": "e83ffe26-5d19-43c5-93cc-59028dd558ed",
+                "name": "error.__base__",
+                "prompts": [{
+                    "id": "66d50e68-ebf2-4ba5-aa09-f8092dc03e2c",
+                    "text": "Sorry, Dave.",
+                    "voice": "Sorry, Dave."
+                }],
+                "rules": []
+            }]
+        }
+    ]
+}
