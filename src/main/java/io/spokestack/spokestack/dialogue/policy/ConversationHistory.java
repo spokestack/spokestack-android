@@ -5,7 +5,9 @@ import io.spokestack.spokestack.dialogue.Prompt;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A container class for storing state important to the Spokestack dialogue
@@ -14,6 +16,7 @@ import java.util.List;
 class ConversationHistory {
 
     private final transient Model conversation;
+    private final Set<String> slotKeys;
     private Deque<String> path;
     private SystemTurn lastResponse;
 
@@ -24,6 +27,7 @@ class ConversationHistory {
      */
     ConversationHistory(Model conversationConfig) {
         this.path = new ArrayDeque<>();
+        this.slotKeys = new HashSet<>();
         this.conversation = conversationConfig;
     }
 
@@ -66,6 +70,14 @@ class ConversationHistory {
      */
     public Deque<String> getPath() {
         return this.path;
+    }
+
+    /**
+     * @return The slot information given by the user during the current
+     * conversation.
+     */
+    public Set<String> getSlotKeys() {
+        return this.slotKeys;
     }
 
     /**
@@ -119,17 +131,19 @@ class ConversationHistory {
     }
 
     /**
-     * Updates the history using the specified conversation state and turn.
+     * Updates the history using the specified user and system turns.
      *
+     * @param userTurn The user's half of the conversation turn.
      * @param systemTurn The system's response to {@code userTurn}.
      */
-    public void update(SystemTurn systemTurn) {
+    public void update(UserTurn userTurn, SystemTurn systemTurn) {
         this.lastResponse = systemTurn;
         if (systemTurn.getNode() != null
               && !(systemTurn.getNode() instanceof Model.Feature)
               && !systemTurn.getNode().getId().equals(getCurrentNode())) {
             updatePath(systemTurn.getNode().getId());
         }
+        this.slotKeys.addAll(userTurn.getSlots().keySet());
     }
 
     /**

@@ -18,6 +18,7 @@ import io.spokestack.spokestack.util.EventTracer;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.HashMap;
 import java.util.Map;
 
 import static io.spokestack.spokestack.dialogue.policy.DialogueAct.*;
@@ -68,7 +69,9 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
      */
     public RuleBasedDialoguePolicy(String policyFile)
           throws IOException, MalformedJsonException {
-        this.gson = new GsonBuilder().disableHtmlEscaping().create();
+        this.gson = new GsonBuilder()
+              .disableHtmlEscaping()
+              .create();
         try (Reader reader = new FileReader(policyFile)) {
             this.conversation = gson.getAdapter(Model.class).fromJson(reader);
         }
@@ -87,20 +90,31 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     }
 
     @Override
-    public void dump(ConversationData conversationData) {
-        conversationData.set(STATE_KEY, gson.toJson(this.history));
+    public String dump(ConversationData conversationData) {
+        HashMap<String, Object> slots = new HashMap<>();
+        for (String key : this.history.getSlotKeys()) {
+            slots.put(key, conversationData.getFormatted(key,
+                  ConversationData.Format.TEXT));
+        }
+        HashMap<String, Object> state = new HashMap<>();
+        state.put("history", this.history);
+        state.put("slots", slots);
+        String serialized = gson.toJson(state);
+        conversationData.set(STATE_KEY, serialized);
+        return serialized;
     }
 
     @Override
-    public void load(ConversationData conversationData) {
-        String state = conversationData.getFormatted(STATE_KEY,
-              ConversationData.Format.TEXT);
-
+    public void load(String state, ConversationData conversationData) {
         if (state == null) {
             return;
         }
 
-        this.history = gson.fromJson(state, ConversationHistory.class);
+        PolicyState deserialized = gson.fromJson(state, PolicyState.class);
+        this.history = deserialized.history;
+        for (String key : deserialized.slots.keySet()) {
+            conversationData.set(key, deserialized.slots.get(key));
+        }
     }
 
     @Override
@@ -172,7 +186,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     private void storeSlots(Map<String, Slot> slots,
                             ConversationData conversationData) {
         for (String key : slots.keySet()) {
-            conversationData.set(key, slots.get(key));
+            conversationData.set(key, slots.get(key).getValue());
         }
     }
 
@@ -515,7 +529,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
         conversationData.set(
               DialogueManager.SLOT_PREFIX + "last_intent",
               userTurn.getIntent());
-        this.history.update(systemTurn);
+        this.history.update(userTurn, systemTurn);
     }
 
     /**
@@ -545,6 +559,29 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
         public boolean isAction() {
             return systemTurn.getNode() != null
                   && systemTurn.getNode() instanceof Feature;
+        }
+    }
+
+    /**
+     * A container class used to serialize and deserialize internal policy
+     * state.
+     */
+    private static class PolicyState {
+        final ConversationHistory history;
+        final Map<String, String> slots;
+
+        /**
+         * Create a new complete state.
+         *
+         * @param conversationHistory The current conversation history.
+         * @param currentSlots        A map of slot names to string values that
+         *                            have been provided so far in the
+         *                            conversation.
+         */
+        PolicyState(ConversationHistory conversationHistory,
+                    Map<String, String> currentSlots) {
+            this.history = conversationHistory;
+            this.slots = currentSlots;
         }
     }
 }

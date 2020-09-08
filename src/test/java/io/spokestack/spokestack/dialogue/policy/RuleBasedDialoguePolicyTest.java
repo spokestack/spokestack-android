@@ -4,6 +4,7 @@ import io.spokestack.spokestack.dialogue.ConversationData;
 import io.spokestack.spokestack.dialogue.DialogueEvent;
 import io.spokestack.spokestack.nlu.Slot;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
 
 import static io.spokestack.spokestack.dialogue.policy.DialoguePolicyTest.*;
 import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for Spokestack's rule-based dialogue policy using a hand-crafted test
@@ -22,7 +24,11 @@ public class RuleBasedDialoguePolicyTest {
     public void statePersistence() throws IOException {
         setPolicy("src/test/resources/dialogue.json");
 
-        handleIntent("greet");
+        Map<String, Slot> slots = new HashMap<>();
+        String slotKey = "testSlot";
+        Slot slot = new Slot(slotKey, "value", "value");
+        slots.put(slotKey, slot);
+        handleIntent("greet", slots);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "greet.__base__");
         verifyPrompt((prompt, data) -> prompt.getVoice(data).contains("Hi")
               && prompt.getText(data).contains("Hi"));
@@ -33,11 +39,11 @@ public class RuleBasedDialoguePolicyTest {
               RuleBasedDialoguePolicy.STATE_KEY, ConversationData.Format.TEXT));
 
         // nothing to load...yet
-        policy.load(data);
+        assertThrows(NullPointerException.class, () -> policy.load("", data));
         assertNull(data.getFormatted(
               RuleBasedDialoguePolicy.STATE_KEY, ConversationData.Format.TEXT));
 
-        policy.dump(data);
+        String dumped = policy.dump(data);
         assertNotNull(data.getFormatted(
               RuleBasedDialoguePolicy.STATE_KEY, ConversationData.Format.TEXT));
 
@@ -48,12 +54,23 @@ public class RuleBasedDialoguePolicyTest {
         ConversationHistory history = newPolicy.getHistory();
 
         assertTrue(history.getPath().isEmpty());
-        newPolicy.load(data);
+        assertTrue(history.getSlotKeys().isEmpty());
+        newPolicy.load(dumped, data);
 
         // the internal history gets completely overwritten, so we have to
         // re-retrieve it
         history = newPolicy.getHistory();
         assertFalse(history.getPath().isEmpty());
+        assertFalse(history.getSlotKeys().isEmpty());
+
+        // dump and load just using the state itself
+        dumped = newPolicy.dump(data);
+        clearPolicyState();
+        newPolicy = currentPolicy();
+        assertTrue(newPolicy.getHistory().getPath().isEmpty());
+
+        newPolicy.load(dumped, data);
+        assertFalse(newPolicy.getHistory().getPath().isEmpty());
     }
 
     @Test
@@ -181,7 +198,7 @@ public class RuleBasedDialoguePolicyTest {
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 1);
         verifyEventCount(DialogueEvent.Type.PROMPT, 2);
         verifyPrompt((prompt, data) ->
-                    prompt.getVoice(data).contains("Hi"));
+              prompt.getVoice(data).contains("Hi"));
 
 
         clearEvents();
