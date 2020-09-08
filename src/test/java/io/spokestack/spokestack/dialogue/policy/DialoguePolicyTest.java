@@ -36,7 +36,7 @@ import static org.junit.Assert.*;
  * To test a policy, first call {@link #setPolicy(String) setPolicy} to load
  * your policy file. Use {@link #handleIntent(String)} or {@link
  * #handleIntent(String, Map)} to simulate user interactions and {@link
- * #completeTurn()} (after adding any relevant data via {@link
+ * #completeTurn(boolean)} (after adding any relevant data via {@link
  * #insertData(String, Object)}) to simulate the app completing user-requested
  * actions.
  * </p>
@@ -114,11 +114,11 @@ public final class DialoguePolicyTest {
         DATA.set(key, value);
     }
 
-    public static void completeTurn() {
+    public static void completeTurn(boolean success) {
         if (POLICY == null) {
             fail("no policy loaded");
         }
-        POLICY.completeTurn(DATA, DISPATCHER);
+        POLICY.completeTurn(success, DATA, DISPATCHER);
     }
 
     public static void clearPolicyState() throws IOException {

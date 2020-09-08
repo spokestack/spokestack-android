@@ -2,9 +2,9 @@ package io.spokestack.spokestack.dialogue.policy;
 
 import io.spokestack.spokestack.dialogue.ConversationData;
 import io.spokestack.spokestack.dialogue.DialogueEvent;
+import io.spokestack.spokestack.dialogue.InMemoryConversationData;
 import io.spokestack.spokestack.nlu.Slot;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -35,41 +35,39 @@ public class RuleBasedDialoguePolicyTest {
 
         RuleBasedDialoguePolicy policy = currentPolicy();
         ConversationData data = dataStore();
-        assertNull(data.getFormatted(
-              RuleBasedDialoguePolicy.STATE_KEY, ConversationData.Format.TEXT));
+        assertNull(data.get(RuleBasedDialoguePolicy.STATE_KEY));
 
         // nothing to load...yet
         assertThrows(NullPointerException.class, () -> policy.load("", data));
-        assertNull(data.getFormatted(
-              RuleBasedDialoguePolicy.STATE_KEY, ConversationData.Format.TEXT));
+        assertNull(data.get(RuleBasedDialoguePolicy.STATE_KEY));
 
         String dumped = policy.dump(data);
-        assertNotNull(data.getFormatted(
-              RuleBasedDialoguePolicy.STATE_KEY, ConversationData.Format.TEXT));
+        assertNotNull(data.get(RuleBasedDialoguePolicy.STATE_KEY));
 
-        // start fresh, but keep the ConversationData instance containing the
-        // policy state
+        ConversationData emptyData = new InMemoryConversationData();
+        assertNull(emptyData.get(slotKey));
         clearPolicyState();
         RuleBasedDialoguePolicy newPolicy = currentPolicy();
         ConversationHistory history = newPolicy.getHistory();
 
         assertTrue(history.getPath().isEmpty());
         assertTrue(history.getSlotKeys().isEmpty());
-        newPolicy.load(dumped, data);
+        newPolicy.load(dumped, emptyData);
 
         // the internal history gets completely overwritten, so we have to
         // re-retrieve it
         history = newPolicy.getHistory();
         assertFalse(history.getPath().isEmpty());
         assertFalse(history.getSlotKeys().isEmpty());
+        assertEquals(slot, emptyData.get(slotKey));
 
         // dump and load just using the state itself
-        dumped = newPolicy.dump(data);
+        dumped = newPolicy.dump(emptyData);
         clearPolicyState();
         newPolicy = currentPolicy();
         assertTrue(newPolicy.getHistory().getPath().isEmpty());
 
-        newPolicy.load(dumped, data);
+        newPolicy.load(dumped, emptyData);
         assertFalse(newPolicy.getHistory().getPath().isEmpty());
     }
 
@@ -128,7 +126,7 @@ public class RuleBasedDialoguePolicyTest {
               && prompt.getText(data).contains("Hi"));
 
         // nothing to do here, so no events should happen
-        completeTurn();
+        completeTurn(true);
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 1);
         verifyEventCount(DialogueEvent.Type.PROMPT, 1);
 
@@ -171,7 +169,7 @@ public class RuleBasedDialoguePolicyTest {
         // no state changes until turn completion
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
 
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "player.__base__");
         verifyEventCount(DialogueEvent.Type.PROMPT, 0);
 
@@ -182,7 +180,7 @@ public class RuleBasedDialoguePolicyTest {
         handleIntent("navigate.next");
         // the navigation intent is overridden to stay on the same frame
         verifyEvent(DialogueEvent.Type.ACTION, "next_song");
-        completeTurn();
+        completeTurn(true);
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
         verifyEventCount(DialogueEvent.Type.PROMPT, 0);
 
@@ -194,7 +192,7 @@ public class RuleBasedDialoguePolicyTest {
         verifyEventCount(DialogueEvent.Type.PROMPT, 1);
         verifyPrompt((prompt, data) ->
               prompt.getVoice(data).contains("Stopping"));
-        completeTurn();
+        completeTurn(true);
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 1);
         verifyEventCount(DialogueEvent.Type.PROMPT, 2);
         verifyPrompt((prompt, data) ->
@@ -217,18 +215,33 @@ public class RuleBasedDialoguePolicyTest {
         // handle it -- the dialogue policy assumes that the state change
         // for the play action happened, so we're internally on the player
         // frame; we won't get a state change event until we leave it
-        completeTurn();
+        completeTurn(true);
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
 
         handleIntent("command.stop");
         verifyEvent(DialogueEvent.Type.ACTION, "stop");
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
         verifyEventCount(DialogueEvent.Type.PROMPT, 1);
-        completeTurn();
+        completeTurn(true);
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 1);
         verifyEventCount(DialogueEvent.Type.PROMPT, 2);
 
         verifyEventCount(DialogueEvent.Type.ERROR, 0);
+    }
+
+    @Test
+    public void featureError() throws IOException {
+        setPolicy("src/test/resources/dialogue.json");
+
+        handleIntent("command.play");
+        verifyEvent(DialogueEvent.Type.ACTION, "play");
+
+        // no state changes until turn completion
+        verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
+
+        completeTurn(false);
+        verifyEvent(DialogueEvent.Type.STATE_CHANGE, "error.__base__");
+        verifyEventCount(DialogueEvent.Type.PROMPT, 1);
     }
 
     @Test
@@ -264,7 +277,7 @@ public class RuleBasedDialoguePolicyTest {
 
         clearEvents();
         handleIntent("command.play");
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "player.__base__");
         verifyEventCount(DialogueEvent.Type.PROMPT, 0);
 
@@ -285,7 +298,7 @@ public class RuleBasedDialoguePolicyTest {
               && prompt.getText(data).contains("Hi"));
 
         handleIntent("navigate.next");
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "frame_1.__base__");
         verifyEventCount(DialogueEvent.Type.PROMPT, 2);
 
@@ -304,7 +317,7 @@ public class RuleBasedDialoguePolicyTest {
               && prompt.getText(data).contains("Hi"));
 
         handleIntent("navigate.next");
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "frame_1.__base__");
         verifyEventCount(DialogueEvent.Type.PROMPT, 2);
 
@@ -345,7 +358,7 @@ public class RuleBasedDialoguePolicyTest {
         // to have a visual analogue, so throw in another intent to get us
         // off the greet frame onto one with no specific inform nodes
         handleIntent("command.play");
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "player.__base__");
 
         // we'll land on the default inform node
@@ -405,7 +418,7 @@ public class RuleBasedDialoguePolicyTest {
 
         handleIntent("command.play");
         verifyEventCount(DialogueEvent.Type.ACTION, 1);
-        completeTurn();
+        completeTurn(true);
         verifyEventCount(DialogueEvent.Type.ACTION, 1);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "player.__base__");
 
@@ -421,7 +434,7 @@ public class RuleBasedDialoguePolicyTest {
         verifyPrompt((prompt, data) ->
               prompt.getText(data).contains("Exiting"));
 
-        completeTurn();
+        completeTurn(true);
         verifyEventCount(DialogueEvent.Type.ACTION, 1);
         verifyTraceCount(0);
         verifyPrompt((prompt, data) ->
@@ -480,7 +493,7 @@ public class RuleBasedDialoguePolicyTest {
               prompt.getText(data).contains(song));
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
 
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "player.__base__");
 
         // accept any of a list of slots
@@ -500,7 +513,7 @@ public class RuleBasedDialoguePolicyTest {
               prompt.getText(data).contains("searching"));
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
 
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "player.__base__");
 
         // two redirects -- only the first is followed, in order to avoid
@@ -534,7 +547,7 @@ public class RuleBasedDialoguePolicyTest {
         setNode("search_results.__base__");
         handleIntent("command.select");
         verifyEvent(DialogueEvent.Type.ACTION, "select");
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "details.__base__");
         verifyPrompt((prompt, data) ->
               prompt.getText(data).contains("first"));
@@ -543,7 +556,7 @@ public class RuleBasedDialoguePolicyTest {
         setNode("search_results.two");
         handleIntent("command.select");
         verifyEvent(DialogueEvent.Type.ACTION, "select");
-        completeTurn();
+        completeTurn(true);
         verifyEvent(DialogueEvent.Type.STATE_CHANGE, "details.two");
         verifyPrompt((prompt, data) ->
               prompt.getText(data).contains("second"));

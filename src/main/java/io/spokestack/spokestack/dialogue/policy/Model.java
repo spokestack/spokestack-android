@@ -385,7 +385,7 @@ public final class Model {
      * A host app is instructed to execute a feature by the {@link
      * io.spokestack.spokestack.dialogue.DialogueEvent.Type#ACTION ACTION}
      * event; when the execution is complete, the app should call {@link
-     * io.spokestack.spokestack.dialogue.DialogueManager#completeTurn()
+     * io.spokestack.spokestack.dialogue.DialogueManager#completeTurn(boolean)
      * completeTurn()}.
      * </p>
      */

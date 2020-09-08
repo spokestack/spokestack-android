@@ -46,8 +46,9 @@ import static io.spokestack.spokestack.dialogue.policy.Model.*;
  * dialogue event listeners when an app feature is triggered. When all
  * operations on external data are complete and data relevant to the action has
  * been made accessible via the current {@link ConversationData data store}, the
- * app should call {@link DialogueManager#completeTurn() completeTurn()} on the
- * dialogue manager in use so that any follow-up navigation/prompts can occur.
+ * app should call {@link DialogueManager#completeTurn(boolean) completeTurn()}
+ * on the dialogue manager in use so that any follow-up navigation/prompts can
+ * occur.
  * </p>
  */
 public class RuleBasedDialoguePolicy implements DialoguePolicy {
@@ -93,8 +94,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     public String dump(ConversationData conversationData) {
         HashMap<String, Object> slots = new HashMap<>();
         for (String key : this.history.getSlotKeys()) {
-            slots.put(key, conversationData.getFormatted(key,
-                  ConversationData.Format.TEXT));
+            slots.put(key, conversationData.get(key));
         }
         HashMap<String, Object> state = new HashMap<>();
         state.put("history", this.history);
@@ -118,26 +118,36 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     }
 
     @Override
-    public void completeTurn(ConversationData conversationData,
+    public void completeTurn(boolean success,
+                             ConversationData conversationData,
                              DialogueDispatcher eventDispatcher) {
         if (this.pendingTurn == null || !this.pendingTurn.isAction()) {
             return;
         }
 
-        String destination =
-              ((Feature) this.pendingTurn.getNode()).getDestination();
+        AbstractNode destNode = null;
+        if (success) {
+            String destination =
+                  ((Feature) this.pendingTurn.getNode()).getDestination();
+            if (destination != null
+                  && !destination.equals(this.history.getCurrentNode())) {
+                destNode = this.conversation.fetchNode(destination);
+            }
+        } else {
+            destNode = findErrorNode(this.pendingTurn.turn,
+                  this.history.getCurrentNode(), eventDispatcher);
+        }
+
         this.pendingTurn = null;
 
         // if we've changed places in the conversation, fire events notifying
         // the app of both the new state and a prompt related to that state
-        if (destination != null
-              && !destination.equals(this.history.getCurrentNode())) {
+        if (destNode != null) {
             SystemTurn systemTurn = new SystemTurn();
-            AbstractNode node = this.conversation.fetchNode(destination);
-            systemTurn.setNode(node);
+            systemTurn.setNode(destNode);
             finalizeTurn(systemTurn);
             dispatchTurnEvents(null, systemTurn, eventDispatcher);
-            this.history.updatePath(destination);
+            this.history.updatePath(destNode.getId());
         }
     }
 
@@ -186,7 +196,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     private void storeSlots(Map<String, Slot> slots,
                             ConversationData conversationData) {
         for (String key : slots.keySet()) {
-            conversationData.set(key, slots.get(key).getValue());
+            conversationData.set(key, slots.get(key));
         }
     }
 
@@ -568,7 +578,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
      */
     private static class PolicyState {
         final ConversationHistory history;
-        final Map<String, String> slots;
+        final Map<String, Slot> slots;
 
         /**
          * Create a new complete state.
@@ -579,7 +589,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
          *                            conversation.
          */
         PolicyState(ConversationHistory conversationHistory,
-                    Map<String, String> currentSlots) {
+                    Map<String, Slot> currentSlots) {
             this.history = conversationHistory;
             this.slots = currentSlots;
         }
