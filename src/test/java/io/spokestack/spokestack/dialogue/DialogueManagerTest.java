@@ -158,7 +158,10 @@ public class DialogueManagerTest {
         public void completeTurn(boolean success, ConversationData conversationData,
                                  DialogueDispatcher eventDispatcher) {
             ConversationState conversationState =
-                  new ConversationState(state, "complete", null, null);
+                  new ConversationState.Builder()
+                        .withNode(state)
+                        .withAction("complete")
+                        .build();
             DialogueEvent event = new DialogueEvent(
                   DialogueEvent.Type.ACTION, conversationState);
             eventDispatcher.dispatch(event);

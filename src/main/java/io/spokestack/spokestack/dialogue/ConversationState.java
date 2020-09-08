@@ -1,6 +1,9 @@
 package io.spokestack.spokestack.dialogue;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * The current state of the conversation at the time of a dialogue event.
  */
@@ -11,31 +14,26 @@ public final class ConversationState {
     private final String appAction;
     private final Prompt systemPrompt;
     private final String error;
+    private final Map<String, Object> slots;
 
     /**
      * Create a new conversation state.
      *
-     * @param node         The user's current node, expressed as a dot-separated
-     *                     frame and node.
-     * @param action       The action just requested by the user, if any.
-     * @param prompt       The prompt to be delivered to the user, if any.
-     * @param errorMessage The current error message.
+     * @param builder  The current conversation state builder.
      */
-    public ConversationState(String node,
-                             String action,
-                             Prompt prompt,
-                             String errorMessage) {
-        if (node != null) {
-            String[] parts = node.split("\\.", 2);
+    private ConversationState(Builder builder) {
+        if (builder.conversationNode != null) {
+            String[] parts = builder.conversationNode.split("\\.", 2);
             this.frameName = parts[0];
             this.nodeName = parts[1];
         } else {
             this.frameName = null;
             this.nodeName = null;
         }
-        this.appAction = action;
-        this.systemPrompt = prompt;
-        this.error = errorMessage;
+        this.appAction = builder.action;
+        this.systemPrompt = builder.systemPrompt;
+        this.error = builder.error;
+        this.slots = builder.slots;
     }
 
     /**
@@ -60,6 +58,13 @@ public final class ConversationState {
     }
 
     /**
+     * @return The slot keys and values related to the current action, if any.
+     */
+    public Map<String, Object> getSlots() {
+        return slots;
+    }
+
+    /**
      * @return The prompt associated with this state.
      */
     public Prompt getPrompt() {
@@ -79,8 +84,47 @@ public final class ConversationState {
               + "frameName='" + frameName + '\''
               + ", nodeName='" + nodeName + '\''
               + ", appAction='" + appAction + '\''
+              + ", slots='" + slots + '\''
               + ", systemPrompt=" + systemPrompt
               + ", error='" + error + '\''
               + '}';
+    }
+
+    public static class Builder {
+        private Map<String, Object> slots = new HashMap<>();
+        private String conversationNode;
+        private String action;
+        private Prompt systemPrompt;
+        private String error;
+
+        public Builder withNode(String node) {
+            this.conversationNode = node;
+            return this;
+        }
+
+        public Builder withAction(String appAction) {
+            this.action = appAction;
+            return this;
+        }
+
+        public Builder withAction(String appAction, Map<String, Object> slots) {
+            this.action = appAction;
+            this.slots = slots;
+            return this;
+        }
+
+        public Builder withPrompt(Prompt prompt) {
+            this.systemPrompt = prompt;
+            return this;
+        }
+
+        public Builder withError(String errorMessage) {
+            this.error = errorMessage;
+            return this;
+        }
+
+        public ConversationState build() {
+            return new ConversationState(this);
+        }
     }
 }
