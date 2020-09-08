@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -160,7 +161,7 @@ public class DialogueManagerTest {
             ConversationState conversationState =
                   new ConversationState.Builder()
                         .withNode(state)
-                        .withAction("complete")
+                        .withAction("complete", new HashMap<>())
                         .build();
             DialogueEvent event = new DialogueEvent(
                   DialogueEvent.Type.ACTION, conversationState);

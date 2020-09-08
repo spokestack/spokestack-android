@@ -1,6 +1,8 @@
 package io.spokestack.spokestack.dialogue;
 
 
+import io.spokestack.spokestack.nlu.Slot;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,12 +16,12 @@ public final class ConversationState {
     private final String appAction;
     private final Prompt systemPrompt;
     private final String error;
-    private final Map<String, Object> slots;
+    private final Map<String, Slot> slots;
 
     /**
      * Create a new conversation state.
      *
-     * @param builder  The current conversation state builder.
+     * @param builder The current conversation state builder.
      */
     private ConversationState(Builder builder) {
         if (builder.conversationNode != null) {
@@ -60,7 +62,7 @@ public final class ConversationState {
     /**
      * @return The slot keys and values related to the current action, if any.
      */
-    public Map<String, Object> getSlots() {
+    public Map<String, Slot> getSlots() {
         return slots;
     }
 
@@ -90,39 +92,71 @@ public final class ConversationState {
               + '}';
     }
 
+    /**
+     * Fluent builder interface for conversation states.
+     */
     public static class Builder {
-        private Map<String, Object> slots = new HashMap<>();
+        private Map<String, Slot> slots = new HashMap<>();
         private String conversationNode;
         private String action;
         private Prompt systemPrompt;
         private String error;
 
+        /**
+         * Include a conversation node in {@code <frame>.<node>} representation
+         * in the conversation state.
+         *
+         * @param node The node represented by the state.
+         * @return The current builder state.
+         */
         public Builder withNode(String node) {
             this.conversationNode = node;
             return this;
         }
 
-        public Builder withAction(String appAction) {
+        /**
+         * Include an app action and associated slots in the conversation
+         * state.
+         *
+         * @param appAction The action represented by the state.
+         * @param args      The slots accompanying the action. These can be
+         *                  thought of as arguments for the app action.
+         * @return The current builder state.
+         */
+        public Builder withAction(String appAction, Map<String, Slot> args) {
             this.action = appAction;
+            this.slots = args;
             return this;
         }
 
-        public Builder withAction(String appAction, Map<String, Object> slots) {
-            this.action = appAction;
-            this.slots = slots;
-            return this;
-        }
-
+        /**
+         * Include a system prompt in the conversation state.
+         *
+         * @param prompt The system prompt
+         * @return The current builder state.
+         */
         public Builder withPrompt(Prompt prompt) {
             this.systemPrompt = prompt;
             return this;
         }
 
+        /**
+         * Include an error message in the conversation state.
+         *
+         * @param errorMessage The error message.
+         * @return The current builder state.
+         */
         public Builder withError(String errorMessage) {
             this.error = errorMessage;
             return this;
         }
 
+        /**
+         * Turn the current builder into an immutable {@code
+         * ConversationState}.
+         *
+         * @return The conversation state represented by the current builder.
+         */
         public ConversationState build() {
             return new ConversationState(this);
         }

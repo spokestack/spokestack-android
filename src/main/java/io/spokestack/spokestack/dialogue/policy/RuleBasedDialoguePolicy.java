@@ -423,7 +423,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     private void dispatchError(DialogueDispatcher eventDispatcher,
                                String message) {
         ConversationState state =
-              new ConversationState(null, null, null, message);
+              new ConversationState.Builder().withError(message).build();
         DialogueEvent event =
               new DialogueEvent(DialogueEvent.Type.ERROR, state);
         eventDispatcher.dispatch(event);
@@ -500,7 +500,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     private void dispatchTurnEvents(UserTurn userTurn,
                                     SystemTurn systemTurn,
                                     DialogueDispatcher eventDispatcher) {
-        ConversationState state = createEventState(systemTurn);
+        ConversationState state = createEventState(userTurn, systemTurn);
         DialogueEvent event;
         if (state.getPrompt() != null) {
             event = new DialogueEvent(DialogueEvent.Type.PROMPT, state);
@@ -519,18 +519,19 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
         }
     }
 
-    private ConversationState createEventState(SystemTurn systemTurn) {
-        String action = null;
-        String nodeName = null;
+    private ConversationState createEventState(UserTurn userTurn,
+                                               SystemTurn systemTurn) {
+        ConversationState.Builder builder = new ConversationState.Builder();
         AbstractNode node = systemTurn.getNode();
         if (node instanceof Feature) {
-            action = node.getName();
+            builder.withAction(node.getName(), userTurn.getSlots());
         } else if (node != null) {
-            nodeName = node.getName();
+            builder.withNode(node.getName());
         }
-        Prompt prompt = systemTurn.getPrompt();
 
-        return new ConversationState(nodeName, action, prompt, null);
+        return builder
+              .withPrompt(systemTurn.getPrompt())
+              .build();
     }
 
     private void updateState(UserTurn userTurn,
