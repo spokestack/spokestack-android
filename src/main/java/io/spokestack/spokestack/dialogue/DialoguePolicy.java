@@ -59,11 +59,13 @@ public interface DialoguePolicy {
      * in the app are completed.
      * </p>
      *
+     * @param success          {@code true} if the user's request/desired action
+     *                         was fulfilled successfully; {@code false}
+     *                         otherwise.
      * @param conversationData Conversation data used to resolve and prepare a
      *                         response.
      * @param eventDispatcher  Dispatcher used to notify listeners of dialogue
-     *                         events.
      */
-    void completeTurn(ConversationData conversationData,
+    void completeTurn(boolean success, ConversationData conversationData,
                       DialogueDispatcher eventDispatcher);
 }
