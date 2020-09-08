@@ -22,19 +22,16 @@ package io.spokestack.spokestack.dialogue;
  * </p>
  *
  * <p>
- * Keys stored by Spokestack will begin with an underscore ({@code _}), so data
- * stored by the app should not use that prefix unless attempting to override a
- * piece of conversation data.
+ * Note that this API stores objects but expects to retrieve strings via {@link
+ * #getFormatted(String, Format)}. This is to allow clients to store any type of
+ * data they wish but provide their own formatting for how custom objects should
+ * be read to the user in a synthesized response or printed in a chat stream.
  * </p>
  *
  * <p>
- * Note that this API stores objects but expects to retrieve strings. This is to
- * allow clients to store any type of data they wish but provide their own
- * formatting for how custom objects should be read to the user in a synthesized
- * response or printed in a chat stream. The dialogue manager does not need to
- * retrieve original objects stored by this interface, so implementation of a
- * {@code get} method is not required, though it may be useful in certain
- * cases.
+ * A {@link #get(String)} method is also included, but this is only used to
+ * serialize dialogue policy state for cross-session persistence, so its
+ * implementation may return {@code null} if such persistence is not needed.
  * </p>
  */
 public interface ConversationData {
@@ -55,6 +52,17 @@ public interface ConversationData {
      * @param value Data to store for use by the conversation.
      */
     void set(String key, Object value);
+
+    /**
+     * Get the raw object stored at {@code key}. This method is only used by
+     * the dialogue system during {@link DialoguePolicy#dump(ConversationData)}
+     * to retrieve original slot values for use in cross-session persistence.
+     *
+     * @param key The key whose original object should be returned.
+     * @return The object stored at {@code key}, or {@code null} if {@code key}
+     * is not found in the data.
+     */
+    Object get(String key);
 
     /**
      * <p>

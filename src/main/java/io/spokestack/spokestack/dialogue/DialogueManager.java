@@ -102,20 +102,31 @@ public final class DialogueManager implements Callback<NLUResult> {
 
     /**
      * Dump the dialogue policy's current state to the currently registered data
-     * store. This can be used in conjunction with {@link #load()} to resume a
-     * dialogue in progress in the next app session.
+     * store. This can be used in conjunction with {@link #load(String) load()}
+     * to resume a dialogue in progress in the next app session.
+     *
+     * Note that true cross-session persistence will involve persisting the
+     * entire contents of the registered {@code ConversationData} instance, as
+     * the dialogue might be relying on data stored there as a result of
+     * actions it has instructed the app to perform, etc.
+     *
+     * @return The serialized state that was dumped to the data store.
      */
-    public void dump() {
-        this.policy.dump(this.dataStore);
+    public String dump() {
+        return this.policy.dump(this.dataStore);
     }
 
     /**
      * Attempt to load a saved policy state from the currently registered data
      * store. Assumes that the registered data store contains data stored by
      * calling {@link #dump()} with the same policy as is currently in use.
+     *
+     * @param state A serialized conversation state from a previous
+     *              conversation.
+     * @throws Exception if there is an error loading saved state.
      */
-    public void load() {
-        this.policy.load(this.dataStore);
+    public void load(String state) throws Exception {
+        this.policy.load(state, this.dataStore);
     }
 
     @Override

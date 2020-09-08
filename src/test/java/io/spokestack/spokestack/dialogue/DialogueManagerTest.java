@@ -78,15 +78,18 @@ public class DialogueManagerTest {
               ConversationData.Format.TEXT));
         manager.dump();
 
-        assertEquals("saved", conversationData.getFormatted("state",
+        assertEquals(null, conversationData.getFormatted("state",
               ConversationData.Format.TEXT));
 
         // load the saved state into the policy
         policy.clear();
         assertNull(policy.state);
 
-        manager.load();
-        assertEquals("saved", policy.state);
+        manager.load(null);
+        assertEquals(null, policy.state);
+
+        manager.load("newState");
+        assertEquals("newState", policy.state);
     }
 
     @Test
@@ -130,14 +133,13 @@ public class DialogueManagerTest {
         }
 
         @Override
-        public void dump(ConversationData conversationData) {
-            conversationData.set("state", "saved");
+        public String dump(ConversationData conversationData) {
+            conversationData.set("state", this.state);
+            return this.state;
         }
 
-        @Override
-        public void load(ConversationData conversationData) {
-            state = conversationData.getFormatted("state",
-                  ConversationData.Format.TEXT);
+        public void load(String state, ConversationData conversationData) {
+            this.state = state;
         }
 
         @Override

@@ -22,15 +22,21 @@ public interface DialoguePolicy {
      *
      * @param conversationData The data store where policy state should be
      *                         saved.
+     * @return The policy state that was dumped.
      */
-    void dump(ConversationData conversationData);
+    String dump(ConversationData conversationData);
 
     /**
-     * Load previously stored internal state from the specified data store.
+     * Load previously serialized internal state.
      *
-     * @param conversationData The data store containing stored policy state.
+     * @param state            Policy state serialized using {@link
+     *                         #dump(ConversationData) dump()}.
+     * @param conversationData The data store where any relevant policy state
+     *                         should be loaded.
+     * @throws Exception if there was an error loading state from the supplied
+     *                   arguments.
      */
-    void load(ConversationData conversationData);
+    void load(String state, ConversationData conversationData) throws Exception;
 
     /**
      * Process a user turn and return a relevant response.
