@@ -24,6 +24,11 @@ public class InMemoryConversationData implements ConversationData {
     }
 
     @Override
+    public Object get(String key) {
+        return this.data.get(key);
+    }
+
+    @Override
     public String getFormatted(String key, Format mode) {
         Object val = this.data.get(key);
         return (val == null) ? null : String.valueOf(val);
