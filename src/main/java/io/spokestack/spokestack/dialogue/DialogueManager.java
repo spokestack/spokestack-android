@@ -86,9 +86,12 @@ public final class DialogueManager implements Callback<NLUResult> {
      * Complete the pending user turn. Some dialogue policies may not require a
      * signal for turn completion; see the documentation for your chosen policy
      * for more information.
+     *
+     * @param success {@code true} if the user's request/desired action was
+     *                fulfilled successfully; {@code false} otherwise.
      */
-    public void completeTurn() {
-        this.policy.completeTurn(this.dataStore, this.eventDispatcher);
+    public void completeTurn(boolean success) {
+        this.policy.completeTurn(success, this.dataStore, this.eventDispatcher);
     }
 
     /**
@@ -105,10 +108,14 @@ public final class DialogueManager implements Callback<NLUResult> {
      * store. This can be used in conjunction with {@link #load(String) load()}
      * to resume a dialogue in progress in the next app session.
      *
-     * Note that true cross-session persistence will involve persisting the
-     * entire contents of the registered {@code ConversationData} instance, as
-     * the dialogue might be relying on data stored there as a result of
-     * actions it has instructed the app to perform, etc.
+     * <p>
+     * Note that, depending on an app's requirements, truly resuming a session
+     * in progress may involve persisting and restoring the entire contents of
+     * the registered {@code ConversationData} instance, as the dialogue might
+     * be relying on data stored there as a result of actions it has instructed
+     * the app to perform or data expected by prompts and stored explicitly by
+     * the app, etc.
+     * </p>
      *
      * @return The serialized state that was dumped to the data store.
      */

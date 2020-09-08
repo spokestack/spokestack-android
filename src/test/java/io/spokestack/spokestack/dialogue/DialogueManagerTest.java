@@ -78,7 +78,7 @@ public class DialogueManagerTest {
               ConversationData.Format.TEXT));
         manager.dump();
 
-        assertEquals(null, conversationData.getFormatted("state",
+        assertNull(conversationData.getFormatted("state",
               ConversationData.Format.TEXT));
 
         // load the saved state into the policy
@@ -86,7 +86,7 @@ public class DialogueManagerTest {
         assertNull(policy.state);
 
         manager.load(null);
-        assertEquals(null, policy.state);
+        assertNull(policy.state);
 
         manager.load("newState");
         assertEquals("newState", policy.state);
@@ -120,7 +120,7 @@ public class DialogueManagerTest {
         assertEquals(listener.traces.size(), 1);
         assertEquals(listener.events.size(), 0);
 
-        manager.completeTurn();
+        manager.completeTurn(true);
         assertEquals(listener.traces.size(), 1);
         assertEquals(listener.events.size(), 1);
     }
@@ -155,7 +155,7 @@ public class DialogueManagerTest {
         }
 
         @Override
-        public void completeTurn(ConversationData conversationData,
+        public void completeTurn(boolean success, ConversationData conversationData,
                                  DialogueDispatcher eventDispatcher) {
             ConversationState conversationState =
                   new ConversationState(state, "complete", null, null);
