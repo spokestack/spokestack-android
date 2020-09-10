@@ -183,15 +183,36 @@
             "id": "6bfb905b-cbd3-4708-8605-c1684a7d478f",
             "name": "error",
             "nodes": [{
-                "id": "e83ffe26-5d19-43c5-93cc-59028dd558ed",
-                "name": "error.__base__",
-                "prompts": [{
-                    "id": "66d50e68-ebf2-4ba5-aa09-f8092dc03e2c",
-                    "text": "Sorry, Dave.",
-                    "voice": "Sorry, Dave."
-                }],
-                "rules": []
-            }]
+                    "id": "e83ffe26-5d19-43c5-93cc-59028dd558ed",
+                    "name": "error.__base__",
+                    "prompts": [{
+                        "id": "66d50e68-ebf2-4ba5-aa09-f8092dc03e2c",
+                        "text": "Sorry, Dave.",
+                        "voice": "Sorry, Dave."
+                    }],
+                    "rules": []
+                },
+                {
+                    "id": "6a98da9b-2638-4645-b53e-5dcfde619a80",
+                    "name": "error.command.play",
+                    "prompts": [{
+                        "id": "b71747cd-28b5-4472-86f1-57f88b77ffa2",
+                        "text": "I can't play right now, Dave.",
+                        "voice": "I can't play right now, Dave."
+                    }],
+                    "rules": []
+                },
+                {
+                    "id": "7ed3686d-239d-4bdd-9519-2ec51087c2a0",
+                    "name": "error.command.play.greet.__base__",
+                    "prompts": [{
+                        "id": "96b2a9a6-31c4-455c-932e-f48cabb7fef9",
+                        "text": "I can't play in this state, Dave.",
+                        "voice": "I can't play in this state, Dave."
+                    }],
+                    "rules": []
+                }
+            ]
         }
     ]
 }

@@ -52,6 +52,8 @@ public final class DialogueManager implements Callback<NLUResult> {
     private final ConversationData dataStore;
     private final DialogueDispatcher eventDispatcher;
 
+    private NLUResult lastTurn;
+
     private DialogueManager(Builder builder) throws Exception {
         if (builder.policyFile != null) {
             this.policy = new RuleBasedDialoguePolicy(builder.policyFile);
@@ -75,6 +77,7 @@ public final class DialogueManager implements Callback<NLUResult> {
      */
     public void processTurn(NLUResult userTurn) {
         try {
+            this.lastTurn = userTurn;
             policy.handleTurn(userTurn, this.dataStore, this.eventDispatcher);
         } catch (Exception e) {
             eventDispatcher.trace(EventTracer.Level.ERROR,
@@ -92,6 +95,14 @@ public final class DialogueManager implements Callback<NLUResult> {
      */
     public void completeTurn(boolean success) {
         this.policy.completeTurn(success, this.dataStore, this.eventDispatcher);
+    }
+
+    /**
+     * Get the last user turn processed by the dialogue manager.
+     * @return The last user turn processed by the dialogue manager.
+     */
+    public NLUResult getLastTurn() {
+        return this.lastTurn;
     }
 
     /**

@@ -195,8 +195,8 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
 
     private void storeSlots(Map<String, Slot> slots,
                             ConversationData conversationData) {
-        for (String key : slots.keySet()) {
-            conversationData.set(key, slots.get(key));
+        for (Map.Entry<String, Slot> entry : slots.entrySet()) {
+            conversationData.set(entry.getKey(), entry.getValue());
         }
     }
 
@@ -298,7 +298,6 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
                           + featureName);
                 } else {
                     turn.setNode(feature);
-//                    this.pendingTurn = new PendingTurn(userTurn, turn, false);
                 }
                 break;
             case HELP:
@@ -433,12 +432,6 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
                                  SystemTurn systemTurn,
                                  ConversationData conversationData) {
         AbstractNode node = systemTurn.getNode();
-
-//        if (this.pendingTurn != null) {
-        // actions get priority since the system turn won't get a node
-        // for them
-//            node = this.pendingTurn.node;
-//        }
 
         if (node == null) {
             String currentNode = this.history.getCurrentNode();

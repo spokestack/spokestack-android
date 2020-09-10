@@ -106,9 +106,12 @@ public class DialogueManagerTest {
               .withDataStore(conversationData)
               .build();
 
+        assertNull(manager.getLastTurn());
+
         NLUResult result = new NLUResult.Builder("error").build();
 
         manager.processTurn(result);
+        assertEquals(result, manager.getLastTurn());
         assertEquals(EventTracer.Level.ERROR, listener.traces.get(0).first());
         assertTrue(listener.traces.get(0).second().contains("dialogue error"));
         listener.clear();

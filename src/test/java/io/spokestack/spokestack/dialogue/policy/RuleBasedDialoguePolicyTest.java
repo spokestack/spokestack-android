@@ -240,8 +240,24 @@ public class RuleBasedDialoguePolicyTest {
         verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
 
         completeTurn(false);
-        verifyEvent(DialogueEvent.Type.STATE_CHANGE, "error.__base__");
-        verifyEventCount(DialogueEvent.Type.PROMPT, 1);
+        verifyEvent(DialogueEvent.Type.STATE_CHANGE, "error.command.play");
+        verifyPrompt((prompt, data) ->
+              prompt.getVoice(data).contains("can't play right now"));
+
+        // the most specific error node possible combines the intent that
+        // resulted in the error and the user's current node
+        clearPolicyState();
+        setNode("greet.__base__");
+        handleIntent("command.play");
+        verifyEvent(DialogueEvent.Type.ACTION, "play");
+
+        verifyEventCount(DialogueEvent.Type.STATE_CHANGE, 0);
+
+        completeTurn(false);
+        verifyEvent(DialogueEvent.Type.STATE_CHANGE,
+              "error.command.play.greet.__base__");
+        verifyPrompt((prompt, data) ->
+              prompt.getVoice(data).contains("can't play in this state"));
     }
 
     @Test

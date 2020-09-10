@@ -112,14 +112,14 @@ public final class Model {
      */
     public Node findErrorNode(UserTurn userTurn, String nodeId) {
         String frameName = "error";
-        Node baseNode = lookupNode(baseNode(frameName));
-        if (nodeId == null) {
-            return baseNode;
-        }
         String intentName = "." + userTurn.getIntent();
-        String nodeName = "." + fetchNode(nodeId).name;
-        Node node = lookupNode(frameName + intentName + nodeName);
+        Node baseNode = lookupNode(baseNode(frameName));
+        Node node = null;
 
+        if (nodeId != null) {
+            String nodeName = "." + fetchNode(nodeId).name;
+            node = lookupNode(frameName + intentName + nodeName);
+        }
         if (node == null) {
             node = lookupNode(frameName + intentName);
         }
