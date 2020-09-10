@@ -70,7 +70,7 @@ public class TFWakewordAzureASR implements PipelineProfile {
               .setProperty("wake-threshold", 0.9)
               .setProperty("pre-emphasis", 0.97)
               .addStageClass("io.spokestack.spokestack.ActivationTimeout")
-              .setProperty("active-min", 2000)
+              .setProperty("wake-active-min", 2000)
               .addStageClass(
                     "io.spokestack.spokestack.microsoft.AzureSpeechRecognizer");
     }
