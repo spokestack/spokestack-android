@@ -63,7 +63,7 @@ import java.util.ArrayList;
  * </p>
  * <ul>
  *   <li>
- *      <b>active-min</b> (integer): the minimum length of time, in
+ *      <b>wake-active-min</b> (integer): the minimum length of time, in
  *      milliseconds, that the recognizer will wait for speech before timing
  *      out.
  *   </li>
@@ -82,10 +82,9 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
      *
      * @param speechConfig Spokestack pipeline configuration
      */
-    @SuppressWarnings("unused")
     public AndroidSpeechRecognizer(SpeechConfig speechConfig) {
         this.streaming = false;
-        this.minActive = speechConfig.getInteger("active-min", 0);
+        this.minActive = speechConfig.getInteger("wake-active-min", 0);
         this.taskHandler = new TaskHandler(true);
     }
 

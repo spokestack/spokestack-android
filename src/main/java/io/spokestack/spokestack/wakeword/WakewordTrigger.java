@@ -92,14 +92,6 @@ import java.nio.ByteBuffer;
  *      [encode-length, encode-width], and its outputs [1]
  *   </li>
  *   <li>
- *      <b>wake-active-min</b> (integer): the minimum length of an activation,
- *      in milliseconds, used to ignore a VAD deactivation after the wakeword
- *   </li>
- *   <li>
- *      <b>wake-active-max</b> (integer): the maximum length of an activation,
- *      in milliseconds, used to time out the activation
- *   </li>
- *   <li>
  *      <b>rms-target</b> (double): the desired linear Root Mean Squared (RMS)
  *      signal energy, which is used for signal normalization and should be
  *      tuned to the RMS target used during training
