@@ -71,8 +71,8 @@ public class ActivationTimeoutTest {
         return new SpeechConfig()
               .put("sample-rate", 16000)
               .put("frame-width", 10)
-              .put("active-min", 20)
-              .put("active-max", 30);
+              .put("wake-active-min", 20)
+              .put("wake-active-max", 30);
     }
 
     public class TestEnv implements OnSpeechEventListener {
