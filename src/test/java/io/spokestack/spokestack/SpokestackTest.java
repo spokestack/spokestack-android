@@ -42,7 +42,7 @@ public class SpokestackTest {
         assertThrows(IllegalArgumentException.class,
               () -> {
                   builder
-                        .setAndroidContext(mock(Context.class))
+                        .withAndroidContext(mock(Context.class))
                         .build();
               });
 
@@ -120,21 +120,9 @@ public class SpokestackTest {
 
     @Test
     public void testNlu() throws Exception {
-        mockStatic(SystemClock.class);
         TestAdapter listener = new TestAdapter();
 
-        // inject fake builders into wrapper's builder
-        SpeechPipeline.Builder pipelineBuilder = new SpeechPipeline.Builder();
-
-        NLUTestUtils.TestEnv nluEnv = new NLUTestUtils.TestEnv();
-        TensorflowNLU.Builder nluBuilder = nluEnv.nluBuilder;
-
-        TTSManager.Builder ttsBuilder = new TTSManager.Builder();
-
-        Spokestack spokestack = new Spokestack
-              .Builder(pipelineBuilder, nluBuilder, ttsBuilder)
-              .disableWakeword()
-              .disableTts()
+        Spokestack spokestack = mockedNluBuilder()
               .addListener(listener)
               .build();
 
@@ -146,7 +134,7 @@ public class SpokestackTest {
         assertEquals(result.getIntent(), lastResult.getIntent());
 
         NLUContext fakeContext = new NLUContext(testConfig());
-        result = spokestack.getNlu().classify("test",fakeContext).get();
+        result = spokestack.getNlu().classify("test", fakeContext).get();
         assertEquals(result.getIntent(), lastResult.getIntent());
 
         // classification is called automatically on ASR results
@@ -157,6 +145,66 @@ public class SpokestackTest {
         lastResult = listener.nluResults.poll(1, TimeUnit.SECONDS);
         assertNotNull(lastResult);
         assertEquals(result.getIntent(), lastResult.getIntent());
+    }
+
+    @Test
+    public void testAutoClassification() throws Exception {
+        TestAdapter listener = new TestAdapter();
+
+        Spokestack spokestack = mockedNluBuilder()
+              .disableAutoClassification()
+              .addListener(listener)
+              .build();
+
+        // automatic classification can be disabled
+        listener.clear();
+        assertTrue(listener.nluResults.isEmpty());
+        SpeechContext context = spokestack.getSpeechPipeline().getContext();
+        context.dispatch(SpeechContext.Event.RECOGNIZE);
+        NLUResult lastResult =
+              listener.nluResults.poll(500, TimeUnit.MILLISECONDS);
+        assertNull(lastResult);
+    }
+
+    @Test
+    public void testTranscriptEditing() throws Exception {
+        TestAdapter listener = new TestAdapter();
+
+        Spokestack spokestack = mockedNluBuilder()
+              .addListener(listener)
+              .withTranscriptEditor(String::toUpperCase)
+              .build();
+
+        // transcripts can be edited before automatic classification
+        String transcript = "test";
+        assertTrue(listener.nluResults.isEmpty());
+        SpeechContext context = spokestack.getSpeechPipeline().getContext();
+        context.setTranscript(transcript);
+        context.dispatch(SpeechContext.Event.RECOGNIZE);
+        NLUResult result = spokestack.classify("test").get();
+        NLUResult lastResult = listener.nluResults.poll(1, TimeUnit.SECONDS);
+        assertNotNull(lastResult);
+        assertEquals(result.getIntent(), lastResult.getIntent());
+        assertEquals(transcript.toUpperCase(), lastResult.getUtterance());
+
+        // ...but not before classification via convenience method
+        result = spokestack.classify(transcript).get();
+        assertEquals(transcript, result.getUtterance());
+    }
+
+    private Spokestack.Builder mockedNluBuilder() throws Exception {
+        mockStatic(SystemClock.class);
+
+        NLUTestUtils.TestEnv nluEnv = new NLUTestUtils.TestEnv();
+        TensorflowNLU.Builder nluBuilder = nluEnv.nluBuilder;
+
+        return new Spokestack.Builder(
+              new SpeechPipeline.Builder(),
+              nluBuilder,
+              new TTSManager.Builder()
+        )
+              .disableWakeword()
+              .disableTts();
     }
 
     @Test
@@ -187,8 +235,8 @@ public class SpokestackTest {
         Spokestack spokestack = new Spokestack
               .Builder(pipelineBuilder, nluBuilder, ttsBuilder)
               .disableWakeword()
-              .setAndroidContext(context)
-              .setLifecycle(lifecycleRegistry)
+              .withAndroidContext(context)
+              .withLifecycle(lifecycleRegistry)
               .addListener(listener)
               .build();
 
@@ -239,6 +287,13 @@ public class SpokestackTest {
 
         public void setSpokestack(Spokestack spokestack) {
             this.spokestack = spokestack;
+            clear();
+        }
+
+        public void clear() {
+            this.speechEvents.clear();
+            this.nluResults.clear();
+            this.ttsEvents.clear();
         }
 
         @Override

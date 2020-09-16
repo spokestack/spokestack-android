@@ -67,6 +67,8 @@ public final class Spokestack extends SpokestackAdapter
       implements AutoCloseable {
 
     private final List<SpokestackAdapter> listeners;
+    private final boolean autoClassify;
+    private final TranscriptEditor transcriptEditor;
     private SpeechPipeline speechPipeline;
     private TensorflowNLU nlu;
     private TTSManager tts;
@@ -80,6 +82,8 @@ public final class Spokestack extends SpokestackAdapter
     private Spokestack(Builder builder) throws Exception {
         this.listeners = new ArrayList<>();
         this.listeners.addAll(builder.listeners);
+        this.autoClassify = builder.autoClassify;
+        this.transcriptEditor = builder.transcriptEditor;
         if (builder.useAsr) {
             this.speechPipeline = builder.getPipelineBuilder()
                   .addOnSpeechEventListener(this)
@@ -237,8 +241,13 @@ public final class Spokestack extends SpokestackAdapter
                         @NotNull SpeechContext context) {
         // automatically classify final ASR transcripts
         if (event == SpeechContext.Event.RECOGNIZE) {
-            if (this.nlu != null) {
-                classifyInternal(context.getTranscript());
+            if (this.nlu != null && this.autoClassify) {
+                String transcript = context.getTranscript();
+                if (this.transcriptEditor != null) {
+                    transcript =
+                          this.transcriptEditor.editTranscript(transcript);
+                }
+                classifyInternal(transcript);
             }
         }
     }
@@ -278,9 +287,11 @@ public final class Spokestack extends SpokestackAdapter
 
         private boolean useAsr = true;
         private boolean useNLU = true;
+        private boolean autoClassify = true;
         private boolean useTTS = true;
         private boolean useTTSPlayback = true;
 
+        private TranscriptEditor transcriptEditor;
         private Context appContext;
         private Lifecycle appLifecycle;
 
@@ -359,12 +370,12 @@ public final class Spokestack extends SpokestackAdapter
          *         TTS (other)
          *     <ul>
          *   <li>
-         *       {@link #setAndroidContext(android.content.Context)}:
+         *       {@link #withAndroidContext(android.content.Context)}:
          *       Android Application context used to manage the audio session
          *       for automatic playback.
          *   </li>
          *   <li>
-         *       {@link #setLifecycle(androidx.lifecycle.Lifecycle)}:
+         *       {@link #withLifecycle(androidx.lifecycle.Lifecycle)}:
          *       Android lifecycle context used to manage automatic pausing and
          *       resuming of audio on application lifecycle events.
          *   </li>
@@ -456,13 +467,40 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
+         * Sets a transcript editor used to alter ASR transcripts before they
+         * are classified by the NLU subsystem.
+         *
+         * <p>
+         * If a transcript editor is in use, registered listeners will receive
+         * {@code RECOGNIZE} events from the speech pipeline with the unedited
+         * transcripts, but the editor will automatically run on those
+         * transcripts before the NLU subsystem operates on them. Thus, the
+         * {@code utterance} inside the {@code NLUResult} returned by
+         * classification will reflect the edited version of the transcript.
+         * </p>
+         *
+         * <p>
+         * Transcript editors are <i>not</i> automatically run on inputs to
+         * the {@link #classify(String)} convenience method.
+         * </p>
+         *
+         * @param editor A transcript editor used to alter ASR results before
+         *               NLU classification.
+         * @return the updated builder
+         */
+        public Builder withTranscriptEditor(TranscriptEditor editor) {
+            this.transcriptEditor = editor;
+            return this;
+        }
+
+        /**
          * Sets the Android Context for the pipeline. Should be an Application
          * Context rather than an Activity Context.
          *
          * @param androidContext the Android Application Context.
          * @return the updated builder
          */
-        public Builder setAndroidContext(Context androidContext) {
+        public Builder withAndroidContext(Context androidContext) {
             this.appContext = androidContext;
             this.pipelineBuilder.setAndroidContext(androidContext);
             this.ttsBuilder.setAndroidContext(androidContext);
@@ -475,7 +513,7 @@ public final class Spokestack extends SpokestackAdapter
          * @param lifecycle the Android Lifecycle.
          * @return the updated builder
          */
-        public Builder setLifecycle(Lifecycle lifecycle) {
+        public Builder withLifecycle(Lifecycle lifecycle) {
             this.appLifecycle = lifecycle;
             this.ttsBuilder.setLifecycle(lifecycle);
             return this;
@@ -522,6 +560,19 @@ public final class Spokestack extends SpokestackAdapter
          */
         public Builder disableNlu() {
             this.useNLU = false;
+            return this;
+        }
+
+        /**
+         * Signal that Spokestack's NLU subsystem should not be automatically
+         * run on ASR transcripts. NLU will still be initialized and available
+         * from the {@code Spokestack} instance unless explicitly disabled via
+         * {@link #disableNlu()}.
+         *
+         * @return the updated builder
+         */
+        public Builder disableAutoClassification() {
+            this.autoClassify = false;
             return this;
         }
 
