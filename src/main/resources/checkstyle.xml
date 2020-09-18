@@ -118,7 +118,10 @@
 
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
-        <module name="LineLength"/>
+        <module name="LineLength">
+            <!-- ignore javadoc line length -->
+            <property name="ignorePattern" value="^\s+\* .*$"/>
+        </module>
         <module name="MethodLength"/>
         <module name="ParameterNumber"/>
 
