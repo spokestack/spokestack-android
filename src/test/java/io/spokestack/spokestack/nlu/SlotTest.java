@@ -40,7 +40,7 @@ class SlotTest {
     @Test
     void testToString() {
         Slot one = new Slot("test", "1", 1);
-        String expected = "Slot{name=\"test\", rawValue=1, value=1}";
+        String expected = "Slot{name=\"test\", type=null, rawValue=1, value=1}";
         assertEquals(expected, one.toString());
     }
 }
