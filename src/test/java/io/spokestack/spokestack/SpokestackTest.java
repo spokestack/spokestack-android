@@ -49,9 +49,9 @@ public class SpokestackTest {
         // TTS playback disabled
         // avoid creating a real websocket by also faking the service class
         Spokestack.Builder noOutputBuilder = new Spokestack.Builder()
-              .disableAsr()
-              .disableNlu()
-              .disableTtsPlayback();
+              .withoutSpeechPipeline()
+              .withoutNlu()
+              .withoutAutoPlayback();
         noOutputBuilder.getTtsBuilder().setTTSServiceClass(
               "io.spokestack.spokestack.tts.TTSTestUtils$Service");
 
@@ -63,11 +63,11 @@ public class SpokestackTest {
         // disableAsr() or disableTts() and disableTtsPlayback() for normal
         // usage
         Spokestack spokestack = builder
-              .disableWakeword()
-              .disableAsr()
-              .disableNlu()
-              .disableTts()
-              .disableTtsPlayback()
+              .withoutWakeword()
+              .withoutSpeechPipeline()
+              .withoutNlu()
+              .withoutTts()
+              .withoutAutoPlayback()
               .setProperty("test", "test")
               .build();
 
@@ -88,9 +88,9 @@ public class SpokestackTest {
 
         Spokestack.Builder builder = new Spokestack.Builder()
               .setConfig(testConfig())
-              .disableWakeword()
-              .disableNlu()
-              .disableTts()
+              .withoutWakeword()
+              .withoutNlu()
+              .withoutTts()
               .addListener(listener);
 
         builder.getPipelineBuilder().setStageClasses(new ArrayList<>());
@@ -152,7 +152,7 @@ public class SpokestackTest {
         TestAdapter listener = new TestAdapter();
 
         Spokestack spokestack = mockedNluBuilder()
-              .disableAutoClassification()
+              .withoutAutoClassification()
               .addListener(listener)
               .build();
 
@@ -203,8 +203,8 @@ public class SpokestackTest {
               nluBuilder,
               new TTSManager.Builder()
         )
-              .disableWakeword()
-              .disableTts();
+              .withoutWakeword()
+              .withoutTts();
     }
 
     @Test
@@ -234,7 +234,7 @@ public class SpokestackTest {
 
         Spokestack spokestack = new Spokestack
               .Builder(pipelineBuilder, nluBuilder, ttsBuilder)
-              .disableWakeword()
+              .withoutWakeword()
               .withAndroidContext(context)
               .withLifecycle(lifecycleRegistry)
               .addListener(listener)

@@ -28,18 +28,18 @@ import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_SAMPLE_RATE;
  *
  * <p>
  * Client applications may wish to establish event listeners for purposes such
- * as logging, but events necessary to forward user interactions through the
- * system (for example, sending ASR transcripts through NLU) are handled
- * entirely by this class. This includes internal management of TTS playback,
- * which requires the client application to declare additional media player
- * dependencies; see
+ * as forwarding trace events to a logging framework, but events necessary to
+ * complete user interactions (for example, sending ASR transcripts through NLU)
+ * are handled entirely by this class. This includes internal management of TTS
+ * playback, which requires the client application to declare additional media
+ * player dependencies; see
  * <a href="https://www.spokestack.io/docs/Android/tts#prerequisites">the
  * documentation</a> for more details. This feature can be disabled via the
  * builder if desired.
  * </p>
  *
  * <p>
- * In general, the default configuration assumes that the client application
+ * The default configuration of this class assumes that the client application
  * wants to use all of Spokestack's features, regardless of their implied
  * dependencies or required configuration, so an error will be thrown if any
  * prerequisite is missing at build time. Individual features can be disabled
@@ -459,6 +459,18 @@ public final class Spokestack extends SpokestackAdapter
         /**
          * Sets configuration for all subsystem builders.
          *
+         * <p>
+         * Note that the following low-level properties are set to default
+         * values at builder construction time; these properties must have
+         * values in order for Spokestack to start properly:
+         * </p>
+         *
+         * <ul>
+         *     <li>sample-rate</li>
+         *     <li>frame-width</li>
+         *     <li>buffer-width</li>
+         * </ul>
+         *
          * @param config configuration to attach
          * @return the updated builder
          */
@@ -486,6 +498,13 @@ public final class Spokestack extends SpokestackAdapter
          * are classified by the NLU subsystem.
          *
          * <p>
+         * This can be used to alter ASR results that frequently contain a
+         * spelling for a homophone that's incorrect for the domain; for
+         * example, an app used to summon a genie whose ASR transcripts tend to
+         * contain "Jen" instead of "djinn".
+         * </p>
+         *
+         * <p>
          * If a transcript editor is in use, registered listeners will receive
          * {@code RECOGNIZE} events from the speech pipeline with the unedited
          * transcripts, but the editor will automatically run on those
@@ -495,7 +514,7 @@ public final class Spokestack extends SpokestackAdapter
          * </p>
          *
          * <p>
-         * Transcript editors are <i>not</i> automatically run on inputs to the
+         * Transcript editors are <i>not</i> run automatically on inputs to the
          * {@link #classify(String)} convenience method.
          * </p>
          *
@@ -540,7 +559,7 @@ public final class Spokestack extends SpokestackAdapter
          *
          * @return the updated builder
          */
-        public Builder disableAsr() {
+        public Builder withoutSpeechPipeline() {
             this.useAsr = false;
             return this;
         }
@@ -557,11 +576,11 @@ public final class Spokestack extends SpokestackAdapter
          * <p>
          * If a different profile is specified using the above approach, or if
          * the speech pipeline is disabled altogether with {@link
-         * #disableAsr()}, this method should not be called.
+         * #withoutSpeechPipeline()}, this method should not be called.
          *
          * @return the updated builder
          */
-        public Builder disableWakeword() {
+        public Builder withoutWakeword() {
             String profileClass =
                   "io.spokestack.spokestack.profile.PushToTalkAndroidASR";
             this.pipelineBuilder.useProfile(profileClass);
@@ -573,7 +592,7 @@ public final class Spokestack extends SpokestackAdapter
          *
          * @return the updated builder
          */
-        public Builder disableNlu() {
+        public Builder withoutNlu() {
             this.useNLU = false;
             return this;
         }
@@ -582,11 +601,11 @@ public final class Spokestack extends SpokestackAdapter
          * Signal that Spokestack's NLU subsystem should not be automatically
          * run on ASR transcripts. NLU will still be initialized and available
          * from the {@code Spokestack} instance unless explicitly disabled via
-         * {@link #disableNlu()}.
+         * {@link #withoutNlu()}.
          *
          * @return the updated builder
          */
-        public Builder disableAutoClassification() {
+        public Builder withoutAutoClassification() {
             this.autoClassify = false;
             return this;
         }
@@ -596,19 +615,19 @@ public final class Spokestack extends SpokestackAdapter
          *
          * @return the updated builder
          */
-        public Builder disableTts() {
+        public Builder withoutTts() {
             this.useTTS = false;
             return this;
         }
 
         /**
          * Signal that Spokestack should not automatically manage TTS playback.
-         * To disable TTS altogether, call {@link #disableTts()}; calling both
+         * To disable TTS altogether, call {@link #withoutTts()}; calling both
          * is unnecessary.
          *
          * @return the updated builder
          */
-        public Builder disableTtsPlayback() {
+        public Builder withoutAutoPlayback() {
             this.useTTSPlayback = false;
             return this;
         }
