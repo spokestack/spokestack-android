@@ -3,6 +3,9 @@ package io.spokestack.spokestack.profile;
 import io.spokestack.spokestack.PipelineProfile;
 import io.spokestack.spokestack.SpeechPipeline;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A speech pipeline profile that relies on manual pipeline activation,
  * using Android's {@code SpeechRecognizer} API for ASR.
@@ -19,10 +22,10 @@ import io.spokestack.spokestack.SpeechPipeline;
 public class PushToTalkAndroidASR implements PipelineProfile {
     @Override
     public SpeechPipeline.Builder apply(SpeechPipeline.Builder builder) {
+        List<String> stages = new ArrayList<>();
+        stages.add("io.spokestack.spokestack.android.AndroidSpeechRecognizer");
         return builder
-              .setInputClass(
-                    "io.spokestack.spokestack.android.NoInput")
-              .addStageClass(
-                    "io.spokestack.spokestack.android.AndroidSpeechRecognizer");
+              .setInputClass("io.spokestack.spokestack.android.NoInput")
+              .setStageClasses(stages);
     }
 }

@@ -3,6 +3,9 @@ package io.spokestack.spokestack.profile;
 import io.spokestack.spokestack.PipelineProfile;
 import io.spokestack.spokestack.SpeechPipeline;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A speech pipeline profile that uses TensorFlow Lite for wakeword detection
  * and Android's {@code SpeechRecognizer} API for ASR. Properties related to
@@ -47,23 +50,21 @@ import io.spokestack.spokestack.SpeechPipeline;
 public class TFWakewordAndroidASR implements PipelineProfile {
     @Override
     public SpeechPipeline.Builder apply(SpeechPipeline.Builder builder) {
+        List<String> stages = new ArrayList<>();
+        stages.add("io.spokestack.spokestack.webrtc.AutomaticGainControl");
+        stages.add("io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor");
+        stages.add("io.spokestack.spokestack.webrtc.VoiceActivityDetector");
+        stages.add("io.spokestack.spokestack.wakeword.WakewordTrigger");
+        stages.add("io.spokestack.spokestack.android.AndroidSpeechRecognizer");
+
         return builder
               .setInputClass(
                     "io.spokestack.spokestack.android.PreASRMicrophoneInput")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AutomaticGainControl")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
               .setProperty("ans-policy", "aggressive")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.VoiceActivityDetector")
               .setProperty("vad-mode", "very-aggressive")
               .setProperty("vad-fall-delay", 800)
-              .addStageClass(
-                    "io.spokestack.spokestack.wakeword.WakewordTrigger")
               .setProperty("wake-threshold", 0.9)
               .setProperty("pre-emphasis", 0.97)
-              .addStageClass(
-                    "io.spokestack.spokestack.android.AndroidSpeechRecognizer");
+              .setStageClasses(stages);
     }
 }
