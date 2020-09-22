@@ -8,10 +8,15 @@ import io.spokestack.spokestack.nlu.tensorflow.TensorflowNLU;
 import io.spokestack.spokestack.tts.SynthesisRequest;
 import io.spokestack.spokestack.tts.TTSManager;
 import io.spokestack.spokestack.util.AsyncResult;
+import io.spokestack.spokestack.util.EventTracer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_BUFFER_WIDTH;
+import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_FRAME_WIDTH;
+import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_SAMPLE_RATE;
 
 /**
  * This class combines all Spokestack subsystems into a single component to
@@ -297,8 +302,7 @@ public final class Spokestack extends SpokestackAdapter
 
         /**
          * Create a Spokestack builder with a default configuration. The speech
-         * pipeline will use the {@link
-         * io.spokestack.spokestack.profile.TFWakewordAndroidASR
+         * pipeline will use the {@link io.spokestack.spokestack.profile.TFWakewordAndroidASR
          * TFWakewordAndroidASR} profile, and all features will be enabled.
          *
          * <p>
@@ -385,6 +389,7 @@ public final class Spokestack extends SpokestackAdapter
          */
         public Builder() {
             this.speechConfig = new SpeechConfig();
+            setDefaults(this.speechConfig);
             String profileClass =
                   "io.spokestack.spokestack.profile.TFWakewordAndroidASR";
             this.pipelineBuilder =
@@ -402,6 +407,16 @@ public final class Spokestack extends SpokestackAdapter
                         .setTTSServiceClass(ttsServiceClass)
                         .setOutputClass(ttsOutputClass)
                         .setConfig(this.speechConfig);
+        }
+
+        private void setDefaults(SpeechConfig config) {
+            // speech pipeline
+            config.put("sample-rate", DEFAULT_SAMPLE_RATE);
+            config.put("frame-width", DEFAULT_FRAME_WIDTH);
+            config.put("buffer-width", DEFAULT_BUFFER_WIDTH);
+
+            // NLU
+            config.put("trace-level", EventTracer.Level.ERROR.value());
         }
 
         /**
@@ -480,8 +495,8 @@ public final class Spokestack extends SpokestackAdapter
          * </p>
          *
          * <p>
-         * Transcript editors are <i>not</i> automatically run on inputs to
-         * the {@link #classify(String)} convenience method.
+         * Transcript editors are <i>not</i> automatically run on inputs to the
+         * {@link #classify(String)} convenience method.
          * </p>
          *
          * @param editor A transcript editor used to alter ASR results before
