@@ -222,10 +222,12 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
                   ? SpeechContext.Event.PARTIAL_RECOGNIZE
                   : SpeechContext.Event.RECOGNIZE;
             String transcript = extractTranscript(results);
-            float confidence = extractConfidence(results);
-            this.context.setTranscript(transcript);
-            this.context.setConfidence(confidence);
-            this.context.dispatch(event);
+            if (!transcript.equals("")) {
+                float confidence = extractConfidence(results);
+                this.context.setTranscript(transcript);
+                this.context.setConfidence(confidence);
+                this.context.dispatch(event);
+            }
         }
 
         private String extractTranscript(Bundle results) {
