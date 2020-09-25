@@ -120,11 +120,19 @@ public class AndroidSpeechRecognizerTest {
         AndroidSpeechRecognizer.SpokestackListener asrListener =
               speechRecognizer.getListener();
 
+        // empty result
+        listener.clear();
+        Bundle results = MockRecognizer.speechResults("");
+        asrListener.onPartialResults(results);
+        assertFalse(listener.receivedPartial);
+        assertNull(listener.transcript);
+
         // partial result
         listener.clear();
-        Bundle results = MockRecognizer.speechResults("partial");
+        String transcript = "partial";
+        results = MockRecognizer.speechResults(transcript);
         asrListener.onPartialResults(results);
-        assertEquals(MockRecognizer.TRANSCRIPT, listener.transcript);
+        assertEquals(transcript, listener.transcript);
         assertTrue(listener.receivedPartial);
         assertNull(listener.error);
 

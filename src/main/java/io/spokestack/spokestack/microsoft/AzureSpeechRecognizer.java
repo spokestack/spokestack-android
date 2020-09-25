@@ -221,11 +221,13 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
               SpeechRecognitionEventArgs recognitionArgs) {
             ResultReason reason = recognitionArgs.getResult().getReason();
             String transcript = recognitionArgs.getResult().getText();
-            if (reason == ResultReason.RecognizingSpeech) {
-                dispatchResult(transcript,
-                      SpeechContext.Event.PARTIAL_RECOGNIZE);
-            } else if (reason == ResultReason.RecognizedSpeech) {
-                dispatchResult(transcript, SpeechContext.Event.RECOGNIZE);
+            if (!transcript.equals("")) {
+                if (reason == ResultReason.RecognizingSpeech) {
+                    dispatchResult(transcript,
+                          SpeechContext.Event.PARTIAL_RECOGNIZE);
+                } else if (reason == ResultReason.RecognizedSpeech) {
+                    dispatchResult(transcript, SpeechContext.Event.RECOGNIZE);
+                }
             }
         }
 

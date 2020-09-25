@@ -26,8 +26,7 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -51,6 +50,7 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
     private SpeechConfig speechConfig;
     private SpeechContext.Event event;
     private SpeechRecognitionEventArgs partialRecognitionEvent;
+    private SpeechRecognitionEventArgs emptyTextEvent;
     private SpeechRecognitionEventArgs recognitionEvent;
     private SpeechRecognitionCanceledEventArgs canceledEvent;
 
@@ -103,6 +103,14 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
         doReturn(CancellationReason.Error).when(canceledEvent).getReason();
         doReturn("unknown error").when(canceledEvent).getErrorDetails();
         when(canceledEvent.getErrorCode()).thenReturn(CancellationErrorCode.ServiceError);
+
+        // empty text
+        emptyTextEvent = PowerMockito.mock(SpeechRecognitionEventArgs.class);
+        SpeechRecognitionResult emptyResult =
+              mock(SpeechRecognitionResult.class);
+        doReturn("").when(emptyResult).getText();
+        doReturn(ResultReason.RecognizingSpeech).when(emptyResult).getReason();
+        when(emptyTextEvent.getResult()).thenReturn(emptyResult);
     }
 
     @Test
@@ -168,6 +176,11 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
         assertEquals("test", context.getTranscript());
         assertEquals(1.0, context.getConfidence());
         assertEquals(SpeechContext.Event.RECOGNIZE, this.event);
+
+        this.event = null;
+        new AzureSpeechRecognizer.RecognitionListener(context)
+              .onEvent(mockRecognizer, emptyTextEvent);
+        assertNull(this.event);
 
         // cancellation
         context = createContext(config);
