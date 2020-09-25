@@ -212,8 +212,12 @@ public class SpokestackTTSOutput extends SpeechOutput
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         if (playbackState == Player.STATE_ENDED) {
-            resetPlayerState();
-            dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_COMPLETE));
+            // check for content produced by the TTS system; the player can
+            // also receive state change events for audio from another source
+            if (this.playerState.hasContent) {
+                dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_COMPLETE));
+                resetPlayerState();
+            }
         }
     }
 

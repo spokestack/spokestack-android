@@ -150,6 +150,13 @@ public class SpokestackTTSOutputTest {
 
         ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
         assertFalse(ttsOutput.getPlayerState().hasContent);
+        // no playback_complete event if the player didn't have content from
+        // the TTS system
+        assertTrue(listener.events.isEmpty());
+
+        // now give it audio to play and check again
+        ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
+        ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
         assertEquals(1, listener.events.size());
         assertEquals(TTSEvent.Type.PLAYBACK_COMPLETE,
               listener.events.get(0).type);
