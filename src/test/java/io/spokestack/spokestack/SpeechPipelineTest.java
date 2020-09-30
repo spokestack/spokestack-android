@@ -212,13 +212,20 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
 
         // still no event, and the external activation isn't overridden by the
         // stage, which would normally deactivate on the second frame
-        pipeline.getContext().setActive(true);
+        pipeline.activate();
         transact(true);
         assertTrue(this.events.isEmpty());
         assertTrue(pipeline.getContext().isActive());
 
-        // turn off external management and get the expected activations/events
-        pipeline.getContext().setManaged(false);
+        // ensure that manual deactivation resets stages
+        assertFalse(Stage.reset);
+        pipeline.deactivate();
+        assertTrue(Stage.reset);
+        assertFalse(pipeline.getContext().isActive());
+        assertFalse(pipeline.getContext().isManaged());
+
+        // now that external management is off,
+        // we get the expected activations/events
         transact(false);
         assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
         assertTrue(pipeline.getContext().isActive());
@@ -291,12 +298,14 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
 
     public static class Stage implements SpeechProcessor {
         public static boolean open;
+        public static boolean reset = false;
 
         public Stage(SpeechConfig config) {
             open = true;
         }
 
         public void reset() {
+            reset = true;
             close();
         }
 
