@@ -123,7 +123,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .setProperty("sample-rate", 16000)
             .setProperty("frame-width", 20)
             .setProperty("buffer-width", 300)
-            .setProperty("trace-level", EventTracer.Level.INFO.value())
+            .setProperty("trace-level", EventTracer.Level.DEBUG.value())
             .addOnSpeechEventListener(this)
             .build();
 

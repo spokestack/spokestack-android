@@ -151,6 +151,8 @@ public final class SpokestackCloudRecognizer implements SpeechProcessor {
                       ? SpeechContext.Event.RECOGNIZE
                       : SpeechContext.Event.PARTIAL_RECOGNIZE;
                 context.dispatch(event);
+            } else if (isFinal) {
+                context.dispatch(SpeechContext.Event.TIMEOUT);
             }
         }
 

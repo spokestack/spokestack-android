@@ -147,7 +147,7 @@ public final class SpeechPipeline implements AutoCloseable {
      */
     public void start() throws Exception {
         if (this.running) {
-            this.context.traceInfo(
+            this.context.traceDebug(
                   "attempting to start a running pipeline; ignoring");
             return;
         }

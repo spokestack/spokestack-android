@@ -115,7 +115,7 @@ public class SpokestackCloudRecognizerTest implements OnSpeechEventListener {
 
         this.event = null;
         listener.onSpeech("", 0.9f, true);
-        assertNull(this.event);
+        assertEquals(SpeechContext.Event.TIMEOUT, this.event);
     }
 
     @Test
