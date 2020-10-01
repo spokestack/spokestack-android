@@ -130,7 +130,14 @@ public final class SpeechPipeline implements AutoCloseable {
 
     /** manually deactivate the speech pipeline. */
     public void deactivate() {
-        this.context.setActive(false);
+        this.context.reset();
+        for (SpeechProcessor stage : this.stages) {
+            try {
+                stage.reset();
+            } catch (Exception e) {
+                raiseError(e);
+            }
+        }
     }
 
     /**
