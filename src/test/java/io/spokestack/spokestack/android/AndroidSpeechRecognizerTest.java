@@ -148,6 +148,15 @@ public class AndroidSpeechRecognizerTest {
         // shouldn't fire when ASR is inactive
         assertEquals(6, listener.traces.size());
 
+        // empty final result
+        listener.clear();
+        transcript = "";
+        results = MockRecognizer.speechResults(transcript);
+        asrListener.onResults(results);
+        assertEquals(EventListener.TIMEOUT, listener.traces.get(0));
+        assertNull(listener.transcript);
+        assertNull(listener.error);
+
         // ASR received an error
         listener.clear();
         context.setActive(true);
@@ -249,6 +258,7 @@ public class AndroidSpeechRecognizerTest {
             this.confidence = 0.0;
             this.error = null;
             this.receivedPartial = false;
+            this.traces.clear();
         }
 
         @Override

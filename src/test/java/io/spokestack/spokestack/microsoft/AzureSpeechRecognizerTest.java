@@ -52,6 +52,7 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
     private SpeechRecognitionEventArgs partialRecognitionEvent;
     private SpeechRecognitionEventArgs emptyTextEvent;
     private SpeechRecognitionEventArgs recognitionEvent;
+    private SpeechRecognitionEventArgs timeoutEvent;
     private SpeechRecognitionCanceledEventArgs canceledEvent;
 
     @Before
@@ -98,6 +99,13 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
         doReturn("test").when(finalResult).getText();
         doReturn(ResultReason.RecognizedSpeech).when(finalResult).getReason();
         when(recognitionEvent.getResult()).thenReturn(finalResult);
+
+        timeoutEvent = PowerMockito.mock(SpeechRecognitionEventArgs.class);
+        SpeechRecognitionResult timeoutResult =
+              mock(SpeechRecognitionResult.class);
+        doReturn("").when(timeoutResult).getText();
+        doReturn(ResultReason.RecognizedSpeech).when(timeoutResult).getReason();
+        when(timeoutEvent.getResult()).thenReturn(timeoutResult);
 
         canceledEvent = PowerMockito.mock(SpeechRecognitionCanceledEventArgs.class);
         doReturn(CancellationReason.Error).when(canceledEvent).getReason();
@@ -176,6 +184,13 @@ public class AzureSpeechRecognizerTest implements OnSpeechEventListener {
         assertEquals("test", context.getTranscript());
         assertEquals(1.0, context.getConfidence());
         assertEquals(SpeechContext.Event.RECOGNIZE, this.event);
+
+        context.reset();
+        new AzureSpeechRecognizer.RecognitionListener(context)
+              .onEvent(mockRecognizer, timeoutEvent);
+        assertEquals("", context.getTranscript());
+        assertEquals(0.0, context.getConfidence());
+        assertEquals(SpeechContext.Event.TIMEOUT, this.event);
 
         this.event = null;
         new AzureSpeechRecognizer.RecognitionListener(context)
