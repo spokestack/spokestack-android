@@ -166,6 +166,12 @@ public class VoiceActivityDetector implements SpeechProcessor {
         }
     }
 
+    @Override
+    public void reset() {
+        this.runValue = false;
+        this.runLength = 0;
+    }
+
     //-----------------------------------------------------------------------
     // native interface
     //-----------------------------------------------------------------------

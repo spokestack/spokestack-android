@@ -5,13 +5,19 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
+import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.SinglePeriodTimeline;
+import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -144,6 +150,13 @@ public class SpokestackTTSOutputTest {
 
         ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
         assertFalse(ttsOutput.getPlayerState().hasContent);
+        // no playback_complete event if the player didn't have content from
+        // the TTS system
+        assertTrue(listener.events.isEmpty());
+
+        // now give it audio to play and check again
+        ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
+        ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
         assertEquals(1, listener.events.size());
         assertEquals(TTSEvent.Type.PLAYBACK_COMPLETE,
               listener.events.get(0).type);
@@ -191,16 +204,20 @@ public class SpokestackTTSOutputTest {
 
         // these methods are implemented solely to maintain compatibility with
         // older Android APIs; calling them should do nothing
-        ttsOutput.onTimelineChanged(null, 0);
-        ttsOutput.onTimelineChanged(null, null, 0);
-        ttsOutput.onTracksChanged(null, null);
+        Timeline timeline = new SinglePeriodTimeline(0, false, false, false);
+        ttsOutput.onTimelineChanged(timeline, 0);
+        ttsOutput.onTimelineChanged(timeline, null, 0);
+        TrackGroupArray groupArray = new TrackGroupArray();
+        TrackSelectionArray selectionArray = new TrackSelectionArray();
+        ttsOutput.onTracksChanged(groupArray, selectionArray);
         ttsOutput.onLoadingChanged(true);
         ttsOutput.onPlaybackSuppressionReasonChanged(0);
         ttsOutput.onIsPlayingChanged(false);
         ttsOutput.onRepeatModeChanged(0);
         ttsOutput.onShuffleModeEnabledChanged(false);
         ttsOutput.onPositionDiscontinuity(-10);
-        ttsOutput.onPlaybackParametersChanged(null);
+        PlaybackParameters params = new PlaybackParameters(1.0f);
+        ttsOutput.onPlaybackParametersChanged(params);
         ttsOutput.onSeekProcessed();
     }
 
@@ -230,7 +247,7 @@ public class SpokestackTTSOutputTest {
         List<TTSEvent> events = new ArrayList<>();
 
         @Override
-        public void eventReceived(TTSEvent event) {
+        public void eventReceived(@NonNull TTSEvent event) {
             this.events.add(event);
         }
     }

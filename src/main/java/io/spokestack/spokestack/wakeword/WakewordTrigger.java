@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.wakeword;
 
+import io.spokestack.spokestack.RingBuffer;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
 import io.spokestack.spokestack.SpeechProcessor;
@@ -89,14 +90,6 @@ import java.nio.ByteBuffer;
  *      <b>wake-detect-path</b> (string, required): file system path to the
  *      "detect" Tensorflow-Lite model; its inputs shoudld be shaped
  *      [encode-length, encode-width], and its outputs [1]
- *   </li>
- *   <li>
- *      <b>wake-active-min</b> (integer): the minimum length of an activation,
- *      in milliseconds, used to ignore a VAD deactivation after the wakeword
- *   </li>
- *   <li>
- *      <b>wake-active-max</b> (integer): the maximum length of an activation,
- *      in milliseconds, used to time out the activation
  *   </li>
  *   <li>
  *      <b>rms-target</b> (double): the desired linear Root Mean Squared (RMS)
@@ -284,7 +277,7 @@ public final class WakewordTrigger implements SpeechProcessor {
         this.encodeWindow = new RingBuffer(encodeLength * this.encodeWidth);
 
         this.frameWindow.fill(0);
-        this.encodeWindow.fill(0);
+        this.encodeWindow.fill(-1);
 
         // load the tensorflow-lite models
         this.filterModel = loader
@@ -315,6 +308,26 @@ public final class WakewordTrigger implements SpeechProcessor {
         this.detectModel.close();
     }
 
+    @Override
+    public void reset() {
+        // empty the sample buffer, so that only contiguous
+        // speech samples are written to it
+        this.sampleWindow.reset();
+
+        // reset and fill the other buffers,
+        // which prevents them from delaying detection
+        // the encoder has a tanh nonlinearity, so fill it with -1
+        this.frameWindow.reset().fill(0);
+        this.encodeWindow.reset().fill(-1);
+
+        // reset the encoder states
+        while (this.encodeModel.states().hasRemaining())
+            this.encodeModel.states().putFloat(0);
+
+        // reset the maximum posterior
+        this.posteriorMax = 0;
+    }
+
     /**
      * processes a frame of audio.
      * @param context the current speech context
@@ -337,7 +350,7 @@ public final class WakewordTrigger implements SpeechProcessor {
         if (vadFall) {
             if (!context.isActive())
                 trace(context);
-            reset(context);
+            reset();
         }
     }
 
@@ -449,33 +462,15 @@ public final class WakewordTrigger implements SpeechProcessor {
 
         // check the classifier's output and activate
         float posterior = this.detectModel.outputs(0).getFloat();
-        if (posterior > this.posteriorThreshold)
-            activate(context);
         if (posterior > this.posteriorMax)
             this.posteriorMax = posterior;
+        if (posterior > this.posteriorThreshold)
+            activate(context);
     }
 
     private void activate(SpeechContext context) {
         trace(context);
         context.setActive(true);
-    }
-
-    private void reset(SpeechContext context) {
-        // empty the sample buffer, so that only contiguous
-        // speech samples are written to it
-        this.sampleWindow.reset();
-
-        // reset and fill the other buffers,
-        // which prevents them from lagging the detection
-        this.frameWindow.reset().fill(0);
-        this.encodeWindow.reset().fill(0);
-
-        // reset the encoder states
-        while (this.encodeModel.states().hasRemaining())
-            this.encodeModel.states().putFloat(0);
-
-        // reset the maximum posterior
-        this.posteriorMax = 0;
     }
 
     private void trace(SpeechContext context) {

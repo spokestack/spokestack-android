@@ -22,7 +22,7 @@ public final class NoInput implements SpeechInput {
     }
 
     /**
-     * simulates reading an frame. actually does nothing.
+     * simulates reading an audio frame. actually does nothing.
      *
      * @param context the current speech context
      * @param frame   the frame buffer to fill

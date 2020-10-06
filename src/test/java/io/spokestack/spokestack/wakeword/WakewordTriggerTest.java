@@ -3,6 +3,7 @@ package io.spokestack.spokestack.wakeword;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import androidx.annotation.NonNull;
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
@@ -293,7 +294,8 @@ public class WakewordTriggerTest {
             this.wake.process(this.context, this.frame);
         }
 
-        public void onEvent(SpeechContext.Event event, SpeechContext context) {
+        public void onEvent(@NonNull SpeechContext.Event event,
+                            @NonNull SpeechContext context) {
             this.event = event;
         }
     }

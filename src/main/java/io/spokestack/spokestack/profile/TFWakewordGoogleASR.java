@@ -3,6 +3,9 @@ package io.spokestack.spokestack.profile;
 import io.spokestack.spokestack.PipelineProfile;
 import io.spokestack.spokestack.SpeechPipeline;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A speech pipeline profile that uses TensorFlow Lite for wakeword detection
  * and Google Speech for ASR. Properties related to signal processing are tuned
@@ -54,27 +57,23 @@ import io.spokestack.spokestack.SpeechPipeline;
 public class TFWakewordGoogleASR implements PipelineProfile {
     @Override
     public SpeechPipeline.Builder apply(SpeechPipeline.Builder builder) {
+        List<String> stages = new ArrayList<>();
+        stages.add("io.spokestack.spokestack.webrtc.AutomaticGainControl");
+        stages.add("io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor");
+        stages.add("io.spokestack.spokestack.webrtc.VoiceActivityDetector");
+        stages.add("io.spokestack.spokestack.wakeword.WakewordTrigger");
+        stages.add("io.spokestack.spokestack.ActivationTimeout");
+        stages.add("io.spokestack.spokestack.google.GoogleSpeechRecognizer");
+
         return builder
               .setInputClass(
                     "io.spokestack.spokestack.android.MicrophoneInput")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
               .setProperty("ans-policy", "aggressive")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AutomaticGainControl")
-              .setProperty("agc-target-level-dbfs", 3)
-              .setProperty("agc-compression-gain-db", 15)
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.VoiceActivityDetector")
               .setProperty("vad-mode", "very-aggressive")
               .setProperty("vad-fall-delay", 800)
-              .addStageClass(
-                    "io.spokestack.spokestack.wakeword.WakewordTrigger")
               .setProperty("wake-threshold", 0.9)
               .setProperty("pre-emphasis", 0.97)
-              .addStageClass("io.spokestack.spokestack.ActivationTimeout")
-              .setProperty("active-min", 2000)
-              .addStageClass(
-                    "io.spokestack.spokestack.google.GoogleSpeechRecognizer");
+              .setProperty("wake-active-min", 2000)
+              .setStageClasses(stages);
     }
 }

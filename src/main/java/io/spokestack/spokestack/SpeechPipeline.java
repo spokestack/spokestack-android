@@ -75,6 +75,7 @@ public final class SpeechPipeline implements AutoCloseable {
     private List<SpeechProcessor> stages;
     private Thread thread;
     private boolean running;
+    private boolean managed;
 
     /**
      * initializes a new speech pipeline instance.
@@ -129,7 +130,14 @@ public final class SpeechPipeline implements AutoCloseable {
 
     /** manually deactivate the speech pipeline. */
     public void deactivate() {
-        this.context.setActive(false);
+        this.context.reset();
+        for (SpeechProcessor stage : this.stages) {
+            try {
+                stage.reset();
+            } catch (Exception e) {
+                raiseError(e);
+            }
+        }
     }
 
     /**
@@ -139,7 +147,9 @@ public final class SpeechPipeline implements AutoCloseable {
      */
     public void start() throws Exception {
         if (this.running) {
-            throw new IllegalStateException("already running");
+            this.context.traceDebug(
+                  "attempting to start a running pipeline; ignoring");
+            return;
         }
 
         try {
@@ -223,12 +233,26 @@ public final class SpeechPipeline implements AutoCloseable {
             ByteBuffer frame = this.context.getBuffer().removeFirst();
             this.context.getBuffer().addLast(frame);
 
-            // fill the frame from the input
-            this.input.read(this.context, frame);
+            // fill the frame from the input, stopping if audio cannot be read
+            try {
+                this.input.read(this.context, frame);
+            } catch (Exception e) {
+                raiseError(e);
+                stop();
+            }
+
+            // when leaving the managed state, reset all stages internally
+            boolean isManaged = this.context.isManaged();
+            if (this.managed && !isManaged) {
+                for (SpeechProcessor stage : this.stages) {
+                    stage.reset();
+                }
+            }
+            this.managed = isManaged;
 
             // dispatch the frame to the stages
-            if (!this.context.isManaged()) {
-                for (SpeechProcessor stage : this.stages) {
+            for (SpeechProcessor stage : this.stages) {
+                if (!this.managed) {
                     frame.rewind();
                     stage.process(this.context, frame);
                 }

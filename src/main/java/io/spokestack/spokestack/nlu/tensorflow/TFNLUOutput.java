@@ -158,7 +158,8 @@ final class TFNLUOutput {
             if (slotVal == null) {
                 String captureName = metaSlot.getCaptureName();
                 if (!parsed.containsKey(captureName)) {
-                    Slot emptySlot = new Slot(captureName, slotVal, null);
+                    Slot emptySlot = new Slot(
+                          captureName, metaSlot.getType(), null, null);
                     parsed.put(captureName, emptySlot);
                 }
                 // else leave the existing (implicit) slot alone
@@ -174,7 +175,7 @@ final class TFNLUOutput {
         Map<String, Slot> slots = new HashMap<>();
         for (Metadata.Slot slot : intent.getImplicitSlots()) {
             String name = slot.getCaptureName();
-            Slot parsed = new Slot(name,
+            Slot parsed = new Slot(name, slot.getType(),
                   String.valueOf(slot.getValue()), slot.getValue());
             slots.put(name, parsed);
         }
@@ -186,7 +187,7 @@ final class TFNLUOutput {
         String slotName = metaSlot.getCaptureName();
         try {
             Object parsed = parser.parse(metaSlot.getFacets(), slotValue);
-            return new Slot(slotName, slotValue, parsed);
+            return new Slot(slotName, metaSlot.getType(), slotValue, parsed);
         } catch (Exception e) {
             throw new IllegalArgumentException("Error parsing slot "
                   + slotName, e);

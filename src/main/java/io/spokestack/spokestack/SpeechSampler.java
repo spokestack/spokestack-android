@@ -77,6 +77,11 @@ public final class SpeechSampler implements SpeechProcessor {
         this.header.putInt(Integer.MAX_VALUE);      // size of data chunk
     }
 
+    @Override
+    public void reset() throws Exception {
+        close();
+    }
+
     /**
      * destroys the resources attached to the copmonent.
      * @throws Exception on error

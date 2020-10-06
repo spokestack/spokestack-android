@@ -63,7 +63,7 @@ import java.util.ArrayList;
  * </p>
  * <ul>
  *   <li>
- *      <b>active-min</b> (integer): the minimum length of time, in
+ *      <b>wake-active-min</b> (integer): the minimum length of time, in
  *      milliseconds, that the recognizer will wait for speech before timing
  *      out.
  *   </li>
@@ -82,10 +82,9 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
      *
      * @param speechConfig Spokestack pipeline configuration
      */
-    @SuppressWarnings("unused")
     public AndroidSpeechRecognizer(SpeechConfig speechConfig) {
         this.streaming = false;
-        this.minActive = speechConfig.getInteger("active-min", 0);
+        this.minActive = speechConfig.getInteger("wake-active-min", 0);
         this.taskHandler = new TaskHandler(true);
     }
 
@@ -118,6 +117,7 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
 
         if (context.isActive()) {
             if (!this.streaming) {
+                context.setManaged(true);
                 begin();
                 this.streaming = true;
             }
@@ -147,19 +147,28 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
               RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         if (this.minActive > 0) {
             intent.putExtra(
                   RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS,
                   this.minActive);
         }
-        // added in API level 23
-        intent.putExtra("android.speech.extra.PREFER_OFFLINE", true);
         return intent;
     }
 
     @Override
+    public void reset() {
+       close();
+    }
+
+    @Override
     public void close() {
-        this.taskHandler.run(() -> this.speechRecognizer.destroy());
+        this.taskHandler.run(() -> {
+            if (this.speechRecognizer != null) {
+                this.speechRecognizer.destroy();
+                this.speechRecognizer = null;
+            }
+        });
     }
 
     /**
@@ -176,24 +185,51 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         @Override
         public void onError(int error) {
             SpeechRecognizerError speechErr = new SpeechRecognizerError(error);
-            if (speechErr.description
-                  == SpeechRecognizerError.Description.SPEECH_TIMEOUT) {
+            this.context.traceDebug("AndroidSpeechRecognizer error " + error);
+            if (isTimeout(speechErr.description)) {
                 this.context.dispatch(SpeechContext.Event.TIMEOUT);
             } else {
                 this.context.setError(speechErr);
                 this.context.dispatch(SpeechContext.Event.ERROR);
             }
-            this.context.setSpeech(false);
-            this.context.setActive(false);
+            relinquishContext();
+        }
+
+        private boolean isTimeout(
+              SpeechRecognizerError.Description description) {
+            // the NO_RECOGNITION_MATCH condition appears to be a bug on
+            // Google's part that cropped up since this class was written,
+            // but we'll leave the workaround in place unless/until they fix it
+            return description
+                  == SpeechRecognizerError.Description.SPEECH_TIMEOUT
+                  || description
+                  == SpeechRecognizerError.Description.NO_RECOGNITION_MATCH;
+        }
+
+        @Override
+        public void onPartialResults(Bundle partialResults) {
+            dispatchRecognition(partialResults, false);
         }
 
         @Override
         public void onResults(Bundle results) {
+            dispatchRecognition(results, true);
+            relinquishContext();
+        }
+
+        private void dispatchRecognition(Bundle results, boolean isFinal) {
+            SpeechContext.Event event = (isFinal)
+                  ? SpeechContext.Event.RECOGNIZE
+                  : SpeechContext.Event.PARTIAL_RECOGNIZE;
             String transcript = extractTranscript(results);
-            float confidence = extractConfidence(results);
-            this.context.setTranscript(transcript);
-            this.context.setConfidence(confidence);
-            this.context.dispatch(SpeechContext.Event.RECOGNIZE);
+            if (!transcript.equals("")) {
+                float confidence = extractConfidence(results);
+                this.context.setTranscript(transcript);
+                this.context.setConfidence(confidence);
+                this.context.dispatch(event);
+            } else if (isFinal) {
+                this.context.dispatch(SpeechContext.Event.TIMEOUT);
+            }
         }
 
         private String extractTranscript(Bundle results) {
@@ -205,7 +241,16 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         private float extractConfidence(Bundle results) {
             float[] confidences = results.getFloatArray(
                   SpeechRecognizer.CONFIDENCE_SCORES);
-            return confidences.length > 0 ? confidences[0] : 0.0f;
+            if (confidences == null || confidences.length == 0) {
+                return 0.0f;
+            }
+            return confidences[0];
+        }
+
+        private void relinquishContext() {
+            this.context.setSpeech(false);
+            this.context.setActive(false);
+            this.context.setManaged(false);
         }
 
         @Override
@@ -216,7 +261,6 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
 
         @Override
         public void onBeginningOfSpeech() {
-            this.context.setActive(true);
             this.context.setSpeech(true);
             this.context.traceDebug("AndroidSpeechRecognizer begin speech");
         }
@@ -235,14 +279,6 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
         public void onEndOfSpeech() {
             this.context.traceDebug("AndroidSpeechRecognizer end speech");
             this.context.setSpeech(false);
-            this.context.setActive(false);
-        }
-
-        @Override
-        public void onPartialResults(Bundle partialResults) {
-            String transcript = extractTranscript(partialResults);
-            this.context.traceDebug(
-                  "AndroidSpeechRecognizer partial results: %s", transcript);
         }
 
         @Override

@@ -3,13 +3,11 @@ package io.spokestack.spokestack.tts;
 
 import android.content.Context;
 import android.net.Uri;
-import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
 import io.spokestack.spokestack.SpeechConfig;
-import io.spokestack.spokestack.SpeechOutput;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,15 +25,13 @@ import static org.mockito.Mockito.mock;
 public class TTSManagerTest implements TTSListener {
 
     @Mock
-    private Context context = mock(Context.class);
+    private final Context context = mock(Context.class);
 
     private TTSEvent lastEvent;
-    private static LinkedBlockingQueue<String> events;
 
     @Before
     public void before() {
         lastEvent = null;
-        events = new LinkedBlockingQueue<>();
     }
 
     @Test
@@ -61,8 +57,8 @@ public class TTSManagerTest implements TTSListener {
               new LifecycleRegistry(mock(LifecycleOwner.class));
 
         TTSManager manager = new TTSManager.Builder()
-              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
-              .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
+              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSTestUtils$Service")
+              .setOutputClass("io.spokestack.spokestack.tts.TTSTestUtils$Output")
               .setProperty("spokestack-id", "test")
               .setConfig(new SpeechConfig())
               .setAndroidContext(context)
@@ -70,7 +66,10 @@ public class TTSManagerTest implements TTSListener {
               .addTTSListener(this)
               .build();
 
-        assertThrows(IllegalStateException.class, manager::prepare);
+        LinkedBlockingQueue<String> events =
+              ((TTSTestUtils.Output) manager.getOutput()).getEvents();
+
+        manager.prepare();
         assertNotNull(manager.getTtsService());
         assertNotNull(manager.getOutput());
 
@@ -99,6 +98,7 @@ public class TTSManagerTest implements TTSListener {
         assertNotNull(manager.getOutput());
 
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
+        events = ((TTSTestUtils.Output) manager.getOutput()).getEvents();
         event = events.poll(1, TimeUnit.SECONDS);
         assertEquals("onResume", event, "onResume not called");
 
@@ -111,7 +111,7 @@ public class TTSManagerTest implements TTSListener {
     @Test
     public void testStop() throws Exception {
         TTSManager manager = new TTSManager.Builder()
-              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
+              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSTestUtils$Service")
               .setProperty("spokestack-id", "test")
               .setConfig(new SpeechConfig())
               .setAndroidContext(context)
@@ -122,76 +122,23 @@ public class TTSManagerTest implements TTSListener {
         manager.stopPlayback();
 
         manager = new TTSManager.Builder()
-              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSManagerTest$Input")
-              .setOutputClass("io.spokestack.spokestack.tts.TTSManagerTest$Output")
+              .setTTSServiceClass("io.spokestack.spokestack.tts.TTSTestUtils$Service")
+              .setOutputClass("io.spokestack.spokestack.tts.TTSTestUtils$Output")
               .setProperty("spokestack-id", "test")
               .setConfig(new SpeechConfig())
               .setAndroidContext(context)
               .addTTSListener(this)
               .build();
 
+        LinkedBlockingQueue<String> events =
+              ((TTSTestUtils.Output) manager.getOutput()).getEvents();
+
         manager.stopPlayback();
         assertEquals("stop", events.remove(), "stop not called on output");
     }
 
     @Override
-    public void eventReceived(TTSEvent event) {
+    public void eventReceived(@NonNull TTSEvent event) {
         lastEvent = event;
-    }
-
-    public static class Input extends TTSService {
-
-        public Input(SpeechConfig config) {
-            String key = config.getString("spokestack-id", "default");
-            if (!key.equals("default")) {
-                fail("custom client ID should not be set by tests");
-            }
-        }
-
-        @Override
-        public void synthesize(SynthesisRequest request) {
-            TTSEvent synthesisComplete =
-                  new TTSEvent(TTSEvent.Type.AUDIO_AVAILABLE);
-            AudioResponse response = new AudioResponse(Uri.EMPTY);
-            synthesisComplete.setTtsResponse(response);
-            dispatch(synthesisComplete);
-        }
-
-        @Override
-        public void close() {
-        }
-    }
-
-    public static class Output extends SpeechOutput
-          implements DefaultLifecycleObserver {
-
-        @SuppressWarnings("unused")
-        public Output(SpeechConfig config) { }
-
-        @Override
-        public void onResume(@NotNull LifecycleOwner owner) {
-            // protect against multiple calls by the registry during tests
-            if (events.isEmpty()) {
-                events.add("onResume");
-            }
-        }
-
-        @Override
-        public void audioReceived(AudioResponse response) {
-            events.add("audioReceived");
-        }
-
-        @Override
-        public void stopPlayback() {
-            events.add("stop");
-        }
-
-        @Override
-        public void setAndroidContext(Context appContext) { }
-
-        @Override
-        public void close() {
-            throw new RuntimeException("can't close won't close");
-        }
     }
 }

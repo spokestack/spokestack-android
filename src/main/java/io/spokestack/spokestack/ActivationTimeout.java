@@ -21,12 +21,12 @@ import java.nio.ByteBuffer;
  *
  * <ul>
  *   <li>
- *      <b>active-min</b> (integer): the minimum length of an
+ *      <b>wake-active-min</b> (integer): the minimum length of an
  *      activation, in milliseconds, used to ignore a VAD deactivation after
  *      the manual activation
  *   </li>
  *   <li>
- *      <b>active-max</b> (integer): the maximum length of an
+ *      <b>wake-active-max</b> (integer): the maximum length of an
  *      activation, in milliseconds, used to time out the activation
  *   </li>
  * </ul>
@@ -48,10 +48,10 @@ public final class ActivationTimeout implements SpeechProcessor {
      */
     public ActivationTimeout(SpeechConfig config) {
         int frameWidth = config.getInteger("frame-width");
-        this.minActive = config.getInteger("active-min", DEFAULT_ACTIVE_MIN)
-              / frameWidth;
-        this.maxActive = config.getInteger("active-max", DEFAULT_ACTIVE_MAX)
-              / frameWidth;
+        this.minActive = config
+              .getInteger("wake-active-min", DEFAULT_ACTIVE_MIN) / frameWidth;
+        this.maxActive = config
+              .getInteger("wake-active-max", DEFAULT_ACTIVE_MAX) / frameWidth;
     }
 
     @Override
@@ -71,14 +71,12 @@ public final class ActivationTimeout implements SpeechProcessor {
     }
 
     @Override
-    public void close() {
-        reset();
+    public void reset() {
+        close();
     }
 
-    /**
-     * Reset the trigger's activity timer.
-     */
-    public void reset() {
+    @Override
+    public void close() {
         this.activeLength = 0;
     }
 }

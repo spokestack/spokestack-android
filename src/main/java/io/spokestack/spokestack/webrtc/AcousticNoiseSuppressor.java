@@ -95,9 +95,14 @@ public class AcousticNoiseSuppressor implements SpeechProcessor {
             throw new OutOfMemoryError();
     }
 
+    @Override
+    public void reset() {
+    }
+
     /**
      * destroys the unmanaged ans instance.
      */
+    @Override
     public void close() {
         destroy(this.ansHandle);
     }

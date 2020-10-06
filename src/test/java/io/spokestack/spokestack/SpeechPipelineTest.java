@@ -5,6 +5,9 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.nio.ByteBuffer;
 
+import androidx.annotation.NonNull;
+import io.spokestack.spokestack.android.AudioRecordError;
+import io.spokestack.spokestack.util.EventTracer;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -15,12 +18,15 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
           io.spokestack.spokestack.profile.PushToTalkAndroidASR.class,
           io.spokestack.spokestack.profile.PushToTalkAzureASR.class,
           io.spokestack.spokestack.profile.PushToTalkGoogleASR.class,
+          io.spokestack.spokestack.profile.PushToTalkSpokestackASR.class,
           io.spokestack.spokestack.profile.TFWakewordAndroidASR.class,
           io.spokestack.spokestack.profile.TFWakewordAzureASR.class,
           io.spokestack.spokestack.profile.TFWakewordGoogleASR.class,
+          io.spokestack.spokestack.profile.TFWakewordSpokestackASR.class,
           io.spokestack.spokestack.profile.VADTriggerAndroidASR.class,
           io.spokestack.spokestack.profile.VADTriggerAzureASR.class,
-          io.spokestack.spokestack.profile.VADTriggerGoogleASR.class
+          io.spokestack.spokestack.profile.VADTriggerGoogleASR.class,
+          io.spokestack.spokestack.profile.VADTriggerSpokestackASR.class
     );
 
     private List<SpeechContext.Event> events = new ArrayList<>();
@@ -117,6 +123,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .setProperty("sample-rate", 16000)
             .setProperty("frame-width", 20)
             .setProperty("buffer-width", 300)
+            .setProperty("trace-level", EventTracer.Level.DEBUG.value())
             .addOnSpeechEventListener(this)
             .build();
 
@@ -127,10 +134,9 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         assertEquals(0, Input.counter);
         assertTrue(Stage.open);
 
-        // invalid restart
-        assertThrows(IllegalStateException.class, new Executable() {
-            public void execute() throws Exception { pipeline.start(); }
-        });
+        // idempotent restart
+        pipeline.start();
+        assertEquals(SpeechContext.Event.TRACE, this.events.get(0));
 
         // first frame
         transact(false);
@@ -142,10 +148,16 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         assertEquals(SpeechContext.Event.DEACTIVATE, this.events.get(0));
         assertFalse(pipeline.getContext().isActive());
 
+        // third frame reactivates the context
+        transact(false);
+        assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
+        assertTrue(pipeline.getContext().isActive());
+
         // shutdown
         Input.stop();
         pipeline.close();
         assertFalse(pipeline.isRunning());
+        assertFalse(pipeline.getContext().isActive());
         assertEquals(-1, Input.counter);
         assertFalse(Stage.open);
     }
@@ -157,7 +169,11 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
             .addOnSpeechEventListener(this)
             .build();
         pipeline.start();
-        pipeline.stop();
+
+        // wait for pipeline to shut down due to error
+        while (pipeline.isRunning()) {
+            Thread.sleep(1);
+        }
         assertEquals(SpeechContext.Event.ERROR, this.events.get(0));
     }
 
@@ -196,13 +212,20 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
 
         // still no event, and the external activation isn't overridden by the
         // stage, which would normally deactivate on the second frame
-        pipeline.getContext().setActive(true);
+        pipeline.activate();
         transact(true);
         assertTrue(this.events.isEmpty());
         assertTrue(pipeline.getContext().isActive());
 
-        // turn off external management and get the expected activations/events
-        pipeline.getContext().setManaged(false);
+        // ensure that manual deactivation resets stages
+        assertFalse(Stage.reset);
+        pipeline.deactivate();
+        assertTrue(Stage.reset);
+        assertFalse(pipeline.getContext().isActive());
+        assertFalse(pipeline.getContext().isManaged());
+
+        // now that external management is off,
+        // we get the expected activations/events
         transact(false);
         assertEquals(SpeechContext.Event.ACTIVATE, this.events.get(0));
         assertTrue(pipeline.getContext().isActive());
@@ -221,7 +244,8 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         }
     }
 
-    public void onEvent(SpeechContext.Event event, SpeechContext context) {
+    public void onEvent(@NonNull SpeechContext.Event event,
+                        @NonNull SpeechContext context) {
         this.events.add(event);
     }
 
@@ -264,7 +288,8 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         }
 
         @Override
-        public void read(SpeechContext context, ByteBuffer frame) throws InterruptedException {
+        public void read(SpeechContext context, ByteBuffer frame)
+              throws InterruptedException {
             if (!context.isManaged()) {
                 super.read(context, frame);
             }
@@ -273,9 +298,15 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
 
     public static class Stage implements SpeechProcessor {
         public static boolean open;
+        public static boolean reset = false;
 
         public Stage(SpeechConfig config) {
             open = true;
+        }
+
+        public void reset() {
+            reset = true;
+            close();
         }
 
         public void close() {
@@ -310,12 +341,16 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
 
         public void read(SpeechContext context, ByteBuffer frame)
               throws Exception {
-            throw new Exception("fail");
+            throw new AudioRecordError(-3);
         }
     }
 
     public static class FailStage implements SpeechProcessor {
         public FailStage(SpeechConfig config) {
+        }
+
+        public void reset() throws Exception {
+            close();
         }
 
         public void close() throws Exception {
@@ -331,6 +366,10 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
     public static class ConfigRequiredStage implements SpeechProcessor {
         public ConfigRequiredStage(SpeechConfig config) {
             config.getString("required-property");
+        }
+
+        public void reset() throws Exception {
+            close();
         }
 
         public void close() throws Exception {

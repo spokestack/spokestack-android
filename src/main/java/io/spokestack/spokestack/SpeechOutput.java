@@ -1,6 +1,7 @@
 package io.spokestack.spokestack;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleObserver;
 import io.spokestack.spokestack.tts.AudioResponse;
 import io.spokestack.spokestack.tts.TTSComponent;
@@ -38,7 +39,7 @@ public abstract class SpeechOutput extends TTSComponent
       implements AutoCloseable, LifecycleObserver, TTSListener {
 
     @Override
-    public void eventReceived(TTSEvent event) {
+    public void eventReceived(@NonNull TTSEvent event) {
         if (event.type == TTSEvent.Type.AUDIO_AVAILABLE) {
             audioReceived(event.getTtsResponse());
         }

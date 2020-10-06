@@ -1,5 +1,6 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
+import androidx.annotation.NonNull;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import io.spokestack.spokestack.SpeechConfig;
@@ -154,11 +155,12 @@ public class TFNLUOutputTest {
         slotValues.put("feature_2", "9");
 
         expected = new HashMap<>();
-        Slot implicitSlot = new Slot("feature_1", "default", "default");
+        Slot implicitSlot =
+              new Slot("feature_1", "entity", "default", "default");
         // no value is present in the output, so the implicit value is used
         expected.put("feature_1", implicitSlot);
         // note the name override
-        Slot captureNameSlot = new Slot("test_num", "9", 9);
+        Slot captureNameSlot = new Slot("test_num", "integer", "9", 9);
         expected.put("test_num", captureNameSlot);
 
         result = outputParser.parseSlots(intent, slotValues);
@@ -169,11 +171,12 @@ public class TFNLUOutputTest {
         slotValues.put("feature_1", "overridden");
 
         expected = new HashMap<>();
-        implicitSlot = new Slot("feature_1", "overridden", "overridden");
+        implicitSlot =
+              new Slot("feature_1", "entity", "overridden", "overridden");
         expected.put("feature_1", implicitSlot);
 
         // not present in slot tagger output, but included in client output
-        expected.put("test_num", new Slot("test_num", null, null));
+        expected.put("test_num", new Slot("test_num", "integer", null, null));
 
         result = outputParser.parseSlots(intent, slotValues);
         assertEquals(expected, result);
@@ -211,7 +214,7 @@ public class TFNLUOutputTest {
         private String lastMessage;
 
         @Override
-        public void onTrace(EventTracer.Level level, String message) {
+        public void onTrace(@NonNull EventTracer.Level level, @NonNull String message) {
             this.lastLevel = level;
             this.lastMessage = message;
         }

@@ -1,5 +1,7 @@
 package io.spokestack.spokestack.tts;
 
+import androidx.annotation.NonNull;
+
 /**
  * Text-to-speech event callback interface. Response listeners are called when a
  * TTS service returns an audio URL that can be played by a {@link
@@ -15,6 +17,6 @@ public interface TTSListener {
      *
      * @param event The event from the TTS system.
      */
-    void eventReceived(TTSEvent event);
+    void eventReceived(@NonNull TTSEvent event);
 
 }

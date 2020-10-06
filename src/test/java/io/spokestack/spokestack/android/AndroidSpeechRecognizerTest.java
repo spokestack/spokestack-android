@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.speech.SpeechRecognizer;
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.OnSpeechEventListener;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
@@ -22,15 +23,22 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.powermock.api.mockito.PowerMockito.doAnswer;
+import static org.powermock.api.mockito.PowerMockito.when;
 import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SpeechRecognizer.class, Bundle.class})
 public class AndroidSpeechRecognizerTest {
 
-    private ContextWrapper emptyAppContext = mock(ContextWrapper.class);
-    private SpeechRecognizer successfulRecognizer = mock(SpeechRecognizer.class);
-    private SpeechRecognizer unsuccessfulRecognizer = mock(SpeechRecognizer.class);
+    private final ContextWrapper emptyAppContext = mock(ContextWrapper.class);
+    private final SpeechRecognizer successfulRecognizer =
+          mock(SpeechRecognizer.class);
+    private final SpeechRecognizer unsuccessfulRecognizer =
+          mock(SpeechRecognizer.class);
 
     @Before
     public void before() throws Exception {
@@ -67,6 +75,29 @@ public class AndroidSpeechRecognizerTest {
     }
 
     @Test
+    public void testClose() {
+        SpeechConfig config = new SpeechConfig();
+        config.put("trace-level", EventTracer.Level.DEBUG.value());
+        config.put("min-active", 500);
+        AndroidSpeechRecognizer speechRecognizer =
+              spy(new AndroidSpeechRecognizer(config, new TaskHandler(false)));
+        doReturn(null).when(speechRecognizer).createRecognitionIntent();
+
+        // closing before establishing a recognizer is safe
+        assertDoesNotThrow(speechRecognizer::close);
+
+        SpeechContext context = new SpeechContext(config);
+        context.setActive(true);
+        ByteBuffer frame = ByteBuffer.allocateDirect(32);
+
+        // ASR active
+        speechRecognizer.process(context, frame);
+
+        // closing still safe
+        assertDoesNotThrow(speechRecognizer::close);
+    }
+
+    @Test
     public void testProcess() {
         SpeechConfig config = new SpeechConfig();
         config.put("trace-level", EventTracer.Level.DEBUG.value());
@@ -82,18 +113,49 @@ public class AndroidSpeechRecognizerTest {
         // ASR inactive
         speechRecognizer.process(context, frame);
         assertNull(listener.transcript);
+        assertFalse(listener.receivedPartial);
         assertNull(listener.error);
 
         // ASR active
+        AndroidSpeechRecognizer.SpokestackListener asrListener =
+              speechRecognizer.getListener();
+
+        // empty result
+        listener.clear();
+        Bundle results = MockRecognizer.speechResults("");
+        asrListener.onPartialResults(results);
+        assertFalse(listener.receivedPartial);
+        assertNull(listener.transcript);
+
+        // partial result
+        listener.clear();
+        String transcript = "partial";
+        results = MockRecognizer.speechResults(transcript);
+        asrListener.onPartialResults(results);
+        assertEquals(transcript, listener.transcript);
+        assertTrue(listener.receivedPartial);
+        assertNull(listener.error);
+
+        // full result
         listener.clear();
         context.setActive(true);
         speechRecognizer.process(context, frame);
         assertEquals(MockRecognizer.TRANSCRIPT, listener.transcript);
+        assertFalse(listener.receivedPartial);
         assertNull(listener.error);
 
         // make sure all the events fired, but only once because they
         // shouldn't fire when ASR is inactive
-        assertEquals(7, listener.traces.size());
+        assertEquals(6, listener.traces.size());
+
+        // empty final result
+        listener.clear();
+        transcript = "";
+        results = MockRecognizer.speechResults(transcript);
+        asrListener.onResults(results);
+        assertEquals(EventListener.TIMEOUT, listener.traces.get(0));
+        assertNull(listener.transcript);
+        assertNull(listener.error);
 
         // ASR received an error
         listener.clear();
@@ -138,16 +200,13 @@ public class AndroidSpeechRecognizerTest {
         assertFalse(context.isSpeech());
 
         asrListener.onBeginningOfSpeech();
-        assertTrue(context.isActive());
         assertTrue(context.isSpeech());
 
         asrListener.onEndOfSpeech();
-        assertFalse(context.isActive());
         assertFalse(context.isSpeech());
 
         // restart speech, then throw some errors
         asrListener.onBeginningOfSpeech();
-        assertTrue(context.isActive());
         assertTrue(context.isSpeech());
 
         asrListener.onError(
@@ -156,6 +215,15 @@ public class AndroidSpeechRecognizerTest {
         assertFalse(context.isSpeech());
         assertNull(eventListener.error);
         int numTraces = eventListener.traces.size();
+        assertEquals(eventListener.traces.get(numTraces - 1),
+              EventListener.TIMEOUT);
+
+        // recognition match -> timeout (presumed Google bug)
+        eventListener.clear();
+        asrListener.onError(
+              SpeechRecognizerError.Description.NO_RECOGNITION_MATCH.ordinal());
+        assertNull(eventListener.error);
+        numTraces = eventListener.traces.size();
         assertEquals(eventListener.traces.get(numTraces - 1),
               EventListener.TIMEOUT);
 
@@ -180,6 +248,7 @@ public class AndroidSpeechRecognizerTest {
         List<String> traces = new ArrayList<>();
         double confidence;
         Throwable error;
+        boolean receivedPartial;
 
         EventListener() {
         }
@@ -188,11 +257,16 @@ public class AndroidSpeechRecognizerTest {
             this.transcript = null;
             this.confidence = 0.0;
             this.error = null;
+            this.receivedPartial = false;
+            this.traces.clear();
         }
 
         @Override
-        public void onEvent(SpeechContext.Event event, SpeechContext context) {
+        public void onEvent(@NonNull SpeechContext.Event event,
+                            @NonNull SpeechContext context) {
             switch (event) {
+                case PARTIAL_RECOGNIZE:
+                    this.receivedPartial = true;
                 case RECOGNIZE:
                     this.transcript = context.getTranscript();
                     this.confidence = context.getConfidence();

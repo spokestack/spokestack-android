@@ -99,17 +99,25 @@ public final class GoogleSpeechRecognizer implements SpeechProcessor {
             .build();
         this.config = StreamingRecognitionConfig.newBuilder()
             .setConfig(recognitionConfig)
-            .setInterimResults(false)
+            .setInterimResults(true)
             .build();
+    }
+
+    @Override
+    public void reset() {
+        if (this.request != null) {
+            this.request.onCompleted();
+        }
     }
 
     /**
      * releases the resources associated with the recognizer.
-     * @throws Exception on error
      */
-    public void close() throws Exception {
-        if (this.request != null)
+    @Override
+    public void close() {
+        if (this.request != null) {
             this.request.onCompleted();
+        }
         this.client.close();
     }
 
@@ -192,6 +200,11 @@ public final class GoogleSpeechRecognizer implements SpeechProcessor {
             SpeechRecognitionAlternative alt = result.getAlternatives(0);
             this.transcript = alt.getTranscript();
             this.confidence = alt.getConfidence();
+            boolean isFinal = result.getIsFinal();
+            if (!(isFinal || this.transcript.equals(""))) {
+                dispatchResult(alt.getTranscript(), alt.getConfidence(),
+                      SpeechContext.Event.PARTIAL_RECOGNIZE);
+            }
         }
 
         @Override
@@ -202,12 +215,20 @@ public final class GoogleSpeechRecognizer implements SpeechProcessor {
 
         @Override
         public void onCompleted() {
-            this.context.setTranscript(this.transcript);
-            this.context.setConfidence(this.confidence);
-            if (!this.transcript.equals(""))
-                this.context.dispatch(SpeechContext.Event.RECOGNIZE);
-            else
+            if (!this.transcript.equals("")) {
+                dispatchResult(this.transcript, this.confidence,
+                      SpeechContext.Event.RECOGNIZE);
+            } else {
                 this.context.dispatch(SpeechContext.Event.TIMEOUT);
+            }
+        }
+
+        private void dispatchResult(String text,
+                                    double conf,
+                                    SpeechContext.Event event) {
+            this.context.setTranscript(text);
+            this.context.setConfidence(conf);
+            this.context.dispatch(event);
         }
     }
 }
