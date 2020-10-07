@@ -241,6 +241,43 @@ public final class Spokestack extends SpokestackAdapter
 
     // listeners
 
+    /**
+     * Add a new listener to receive events from Spokestack subsystems.
+     *
+     * @param listener A listener that will receive events from all Spokestack
+     *                 subsystems.
+     */
+    public void addListener(SpokestackAdapter listener) {
+        this.listeners.add(listener);
+        if (this.speechPipeline != null) {
+            this.speechPipeline.addListener(listener);
+        }
+        if (this.nlu != null) {
+            this.nlu.addListener(listener);
+        }
+        if (this.tts != null) {
+            this.tts.addListener(listener);
+        }
+    }
+
+    /**
+     * Remove a Spokestack event listener, allowing it to be garbage collected.
+     *
+     * @param listener The listener to be removed.
+     */
+    public void removeListener(SpokestackAdapter listener) {
+        this.listeners.remove(listener);
+        if (this.speechPipeline != null) {
+            this.speechPipeline.removeListener(listener);
+        }
+        if (this.nlu != null) {
+            this.nlu.removeListener(listener);
+        }
+        if (this.tts != null) {
+            this.tts.removeListener(listener);
+        }
+    }
+
     @Override
     public void onEvent(@NotNull SpeechContext.Event event,
                         @NotNull SpeechContext context) {
@@ -284,7 +321,6 @@ public final class Spokestack extends SpokestackAdapter
      * @see Builder#Builder()
      */
     public static class Builder {
-        private final SpeechConfig speechConfig;
         private final SpeechPipeline.Builder pipelineBuilder;
         private final TensorflowNLU.Builder nluBuilder;
         private final TTSManager.Builder ttsBuilder;
@@ -296,6 +332,7 @@ public final class Spokestack extends SpokestackAdapter
         private boolean useTTS = true;
         private boolean useTTSPlayback = true;
 
+        private SpeechConfig speechConfig;
         private TranscriptEditor transcriptEditor;
         private Context appContext;
         private Lifecycle appLifecycle;
@@ -415,7 +452,7 @@ public final class Spokestack extends SpokestackAdapter
             config.put("frame-width", DEFAULT_FRAME_WIDTH);
             config.put("buffer-width", DEFAULT_BUFFER_WIDTH);
 
-            // NLU
+            // other
             config.put("trace-level", EventTracer.Level.ERROR.value());
         }
 
@@ -475,6 +512,7 @@ public final class Spokestack extends SpokestackAdapter
          * @return the updated builder
          */
         public Builder setConfig(SpeechConfig config) {
+            this.speechConfig = config;
             this.pipelineBuilder.setConfig(config);
             this.nluBuilder.setConfig(config);
             this.ttsBuilder.setConfig(config);

@@ -141,6 +141,22 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     /**
+     * Add a new listener to receive events from the speech pipeline.
+     * @param listener The listener to add.
+     */
+    public void addListener(OnSpeechEventListener listener) {
+        this.context.addOnSpeechEventListener(listener);
+    }
+
+    /**
+     * Remove a pipeline listener, allowing it to be garbage collected.
+     * @param listener The listener to remove.
+     */
+    public void removeListener(OnSpeechEventListener listener) {
+        this.context.removeOnSpeechEventListener(listener);
+    }
+
+    /**
      * starts up the speech pipeline.
      *
      * @throws Exception on configuration/startup error
