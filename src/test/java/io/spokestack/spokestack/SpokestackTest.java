@@ -284,6 +284,8 @@ public class SpokestackTest {
         LinkedBlockingQueue<TTSEvent> ttsEvents = new LinkedBlockingQueue<>();
         LinkedBlockingQueue<SpeechContext.Event> speechEvents =
               new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<String> traces = new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
 
         public void setSpokestack(Spokestack spokestack) {
             this.spokestack = spokestack;
@@ -294,28 +296,42 @@ public class SpokestackTest {
             this.speechEvents.clear();
             this.nluResults.clear();
             this.ttsEvents.clear();
+            this.traces.clear();
+            this.errors.clear();
         }
 
         @Override
-        public void onEvent(@NotNull SpeechContext.Event event,
-                            @NotNull SpeechContext context) {
+        public void speechEvent(@NotNull SpeechContext.Event event,
+                                @NotNull SpeechContext context) {
             this.speechEvents.add(event);
             this.speechContext = context;
         }
 
         @Override
-        public void eventReceived(@NotNull TTSEvent event) {
+        public void ttsEvent(@NotNull TTSEvent event) {
             this.ttsEvents.add(event);
         }
 
         @Override
-        public void call(@NotNull NLUResult result) {
+        public void nluResult(@NotNull NLUResult result) {
             this.nluResults.add(result);
             if (this.spokestack != null) {
                 SynthesisRequest request =
                       new SynthesisRequest.Builder(result.getIntent()).build();
                 this.spokestack.synthesize(request);
             }
+        }
+
+        @Override
+        public void trace(@NotNull SpokestackModule module,
+                          @NotNull String message) {
+            this.traces.add(message);
+        }
+
+        @Override
+        public void error(@NotNull SpokestackModule module,
+                          @NotNull Throwable error) {
+            this.errors.add(error);
         }
     }
 }
