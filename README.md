@@ -30,7 +30,7 @@ For a brief introduction, read on, but for more detailed guides, see the followi
 * [**Quickstart**](https://www.spokestack.io/docs/Android/getting-started)
 * [**Configuration Guide**](https://www.spokestack.io/docs/Android/turnkey-configuration)
 * [**API Reference**](https://www.javadoc.io/doc/io.spokestack/spokestack-android/latest/index.html)
-* [**Tutorials**](https://www.spokestack.io/blog/tag/tutorial)
+* [**Tutorials**](https://www.spokestack.io/tutorials)
 
 
 ## Installation
@@ -102,7 +102,7 @@ This example assumes you're storing wakeword and NLU models in your app's [cache
 
 To use the demo "Spokestack" wakeword, download the TensorFlow Lite models: [detect](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/detect.tflite) | [encode](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/encode.tflite) | [filter](https://d3dmqd7cy685il.cloudfront.net/model/wake/spokestack/filter.tflite)
 
-If you don't want to bother with that yet, just disable wakeword detection and NLU, and you can leave out all the paths above:
+If you don't want to bother with that yet, just disable wakeword detection and NLU, and you can leave out all the file paths above:
 
 ```kotlin
 spokestack = Spokestack.Builder()
