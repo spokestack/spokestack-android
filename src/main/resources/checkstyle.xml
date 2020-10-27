@@ -78,11 +78,11 @@
     <!-- </module> -->
 
     <!-- honor warning suppression annotations -->
-    <module name="SuppressWarningsFilter" />
+    <module name="SuppressWarningsFilter"/>
 
     <module name="TreeWalker">
         <!-- recognize warning suppression annotations -->
-        <module name="SuppressWarningsHolder" />
+        <module name="SuppressWarningsHolder"/>
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
@@ -109,7 +109,11 @@
 
         <!-- Checks for imports                              -->
         <!-- See http://checkstyle.sf.net/config_import.html -->
-        <module name="AvoidStarImport"/>
+        <module name="AvoidStarImport">
+            <property name="excludes"
+                      value="io.spokestack.spokestack.dialogue.policy.Model,
+io.spokestack.spokestack.dialogue.policy.DialogueAct"/>
+        </module>
         <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
         <module name="RedundantImport"/>
         <module name="UnusedImports">

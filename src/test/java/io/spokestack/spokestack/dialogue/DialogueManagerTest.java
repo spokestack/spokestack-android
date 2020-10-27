@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -105,9 +106,12 @@ public class DialogueManagerTest {
               .withDataStore(conversationData)
               .build();
 
+        assertNull(manager.getLastTurn());
+
         NLUResult result = new NLUResult.Builder("error").build();
 
         manager.processTurn(result);
+        assertEquals(result, manager.getLastTurn());
         assertEquals(EventTracer.Level.ERROR, listener.traces.get(0).first());
         assertTrue(listener.traces.get(0).second().contains("dialogue error"));
         listener.clear();
@@ -160,7 +164,7 @@ public class DialogueManagerTest {
             ConversationState conversationState =
                   new ConversationState.Builder()
                         .withNode(state)
-                        .withAction("complete")
+                        .withAction("complete", new HashMap<>())
                         .build();
             DialogueEvent event = new DialogueEvent(
                   DialogueEvent.Type.ACTION, conversationState);
