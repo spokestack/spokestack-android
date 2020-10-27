@@ -2,6 +2,7 @@ package io.spokestack.spokestack.nlu;
 
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.util.EventTracer;
+import io.spokestack.spokestack.util.TraceListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,9 +27,8 @@ public final class NLUContext {
         int traceLevel = config.getInteger(
               "trace-level",
               EventTracer.Level.ERROR.value());
-
-        this.tracer = new EventTracer(traceLevel);
         this.listeners = new ArrayList<>();
+        this.tracer = new EventTracer(traceLevel, this.listeners);
         this.requestMetadata = new HashMap<>();
     }
 
@@ -142,25 +142,6 @@ public final class NLUContext {
           EventTracer.Level level,
           String format,
           Object... params) {
-        if (this.tracer.canTrace(level)) {
-            String message = String.format(format, params);
-            dispatchTrace(level, message);
-        }
-    }
-
-    /**
-     * Dispatches an NLU trace message.
-     *
-     * @param level the severity level of the trace
-     * @param message the trace message to publish
-     */
-    public void dispatchTrace(EventTracer.Level level, String message) {
-        for (TraceListener listener : this.listeners) {
-            try {
-                listener.onTrace(level, message);
-            } catch (Exception e) {
-                // failed traces fail in silence
-            }
-        }
+        this.tracer.trace(level, format, params);
     }
 }

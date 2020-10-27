@@ -3,6 +3,7 @@ package io.spokestack.spokestack.nlu;
 import androidx.annotation.NonNull;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.util.EventTracer;
+import io.spokestack.spokestack.util.TraceListener;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

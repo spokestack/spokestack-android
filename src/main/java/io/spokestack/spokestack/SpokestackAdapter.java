@@ -1,11 +1,11 @@
 package io.spokestack.spokestack;
 
 import io.spokestack.spokestack.nlu.NLUResult;
-import io.spokestack.spokestack.nlu.TraceListener;
 import io.spokestack.spokestack.tts.TTSEvent;
 import io.spokestack.spokestack.tts.TTSListener;
 import io.spokestack.spokestack.util.Callback;
 import io.spokestack.spokestack.util.EventTracer;
+import io.spokestack.spokestack.util.TraceListener;
 import org.jetbrains.annotations.NotNull;
 
 /**

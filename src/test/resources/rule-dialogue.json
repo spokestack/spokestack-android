@@ -1,0 +1,138 @@
+{
+    "features": [{
+            "name": "exit_player",
+            "id": "9535f900-2ae3-4187-a260-4cd94e616e5e",
+            "destination": "04ee181d-348f-4b96-abe0-13c3e1a74b47",
+            "prompts": [{
+                "id": "8d1d429c-7601-4b55-83ca-b3c416f4172e",
+                "text": "Exiting.",
+                "voice": "Exiting."
+            }],
+            "rules": [{
+                "id": "78f81771-cf1d-4edf-8b54-0a124421c8d7",
+                "type": "confirmation",
+                "prompts": [{
+                    "id": "d8f23f01-cad4-46b2-a4ae-c28355ffa8fe",
+                    "text": "Are you sure?",
+                    "voice": "Are you sure?",
+                    "proposal": {
+                        "accept": "confirm"
+                    }
+                }]
+            }]
+        },
+        {
+            "name": "search",
+            "id": "faafbc88-aec7-4b70-902b-59b3f3b6338b",
+            "destination": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+            "prompts": [{
+                "id": "21f7e348-c6db-45c8-864a-12e04a5699e3",
+                "text": "OK, searching",
+                "voice": "OK, searching."
+            }],
+            "rules": [{
+                "id": "f2301552-96c2-43dc-8ef8-bb1d50c67204",
+                "type": "slot_one_of",
+                "keys": [
+                    "artist",
+                    "album"
+                ],
+                "prompts": [{
+                    "id": "dfc12b59-ab67-4455-8fab-a4382c0b6192",
+                    "text": "I need either an artist or an album",
+                    "voice": "I need either an artist or an album"
+                }]
+            }]
+        },
+        {
+            "name": "play",
+            "id": "54349295-091d-4a82-a7b1-eed25db8e2dd",
+            "destination": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+            "prompts": [{
+                "id": "6be284aa-08a7-49a4-8134-aecdd6e6036c",
+                "text": "Playing {{song}}",
+                "voice": "Playing {{song}}"
+            }],
+            "rules": [{
+                "id": "65a21a90-34b7-4e48-ae5e-27144c144154",
+                "type": "slot",
+                "key": "song",
+                "prompts": [{
+                    "id": "94c46341-afc1-48f0-8d0f-4f626365a06d",
+                    "text": "Give me a song to play",
+                    "voice": "Give me a song to play"
+                }]
+            }]
+        }
+    ],
+    "frames": [{
+            "id": "519e7289-e08f-4521-a56c-01eb6f23c8ab",
+            "name": "greet",
+            "nodes": [{
+                    "name": "greet.__base__",
+                    "id": "04ee181d-348f-4b96-abe0-13c3e1a74b47",
+                    "next": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+                    "prompts": [],
+                    "rules": [{
+                            "id": "52af602a-ad74-4a3d-882b-632bc9f051b8",
+                            "type": "redirect_positive",
+                            "redirectTo": "1472e4e2-9ccc-4b98-a11b-49a94977e80c",
+                            "key": "new_user",
+                            "value": true
+                        },
+                        {
+                            "id": "52af602a-ad74-4a3d-882b-632bc9f051b8",
+                            "type": "redirect_negative",
+                            "redirectTo": "458d75dd-5613-4a15-a3c6-726aa8d8e10d",
+                            "key": "visits",
+                            "value": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "greet.new_user",
+                    "id": "1472e4e2-9ccc-4b98-a11b-49a94977e80c",
+                    "next": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+                    "prompts": [{
+                        "id": "a0ad27db-e480-4a7b-8776-f88ba61a3570",
+                        "text": "Welcome aboard",
+                        "voice": "Welcome aboard"
+                    }],
+                    "rules": []
+                },
+                {
+                    "name": "greet.return_user",
+                    "id": "458d75dd-5613-4a15-a3c6-726aa8d8e10d",
+                    "next": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+                    "prompts": [{
+                        "id": "bbd794cc-23f2-4f0f-8918-382b20825665",
+                        "text": "Thanks for coming back!",
+                        "voice": "Thanks for coming back!"
+                    }],
+                    "rules": [{
+                        "id": "1af98d92-e54b-4fac-b89c-5b86f5354bfa",
+                        "type": "redirect_positive",
+                        "redirectTo": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+                        "key": "visits",
+                        "value": 3
+                    }]
+                }
+            ]
+        },
+        {
+            "id": "e058aeff-231e-47bf-a619-835975067e91",
+            "name": "player",
+            "nodes": [{
+                "name": "player.__base__",
+                "id": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+                "prompts": [],
+                "rules": [{
+                    "id": "270c0862-b397-4acb-9c5c-b628d69cc922",
+                    "type": "intent_override",
+                    "key": "navigate.next",
+                    "value": "command.next_song"
+                }]
+            }]
+        }
+    ]
+}

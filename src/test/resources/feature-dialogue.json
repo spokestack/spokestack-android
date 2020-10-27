@@ -1,0 +1,81 @@
+{
+    "features": [{
+            "name": "select",
+            "id": "9535f900-2ae3-4187-a260-4cd94e616e5e",
+            "source": "79abb655-7e3d-44d7-8710-7c52f0d16ff0",
+            "destination": "c960c819-c76f-4aff-8b43-25e20526f0b5",
+            "prompts": [],
+            "rules": []
+        },
+        {
+            "name": "select",
+            "id": "905c9fa8-97d0-4706-a3f6-847ccc3c554d",
+            "source": "49b5d7cf-69fc-4b75-b893-e99b7a565155",
+            "destination": "c4e14ea8-c8cb-431d-bf01-cb1b58111440",
+            "prompts": [],
+            "rules": []
+        }
+    ],
+    "frames": [{
+            "id": "519e7289-e08f-4521-a56c-01eb6f23c8ab",
+            "name": "greet",
+            "nodes": [{
+                "name": "greet.__base__",
+                "id": "04ee181d-348f-4b96-abe0-13c3e1a74b47",
+                "next": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+                "prompts": [],
+                "rules": []
+            }]
+        },
+        {
+            "id": "a8a2a226-131b-4c28-912a-2b9637247e09",
+            "name": "search_results",
+            "nodes": [{
+                    "name": "search_results.__base__",
+                    "id": "79abb655-7e3d-44d7-8710-7c52f0d16ff0",
+                    "prompts": [{
+                        "id": "879b4284-f9fa-4bce-9fe7-09d7284a6668",
+                        "text": "Here's what I found",
+                        "voice": "Here's what I found"
+                    }],
+                    "rules": []
+                },
+                {
+                    "name": "search_results.two",
+                    "id": "49b5d7cf-69fc-4b75-b893-e99b7a565155",
+                    "prompts": [{
+                        "id": "a6907770-5256-47e8-8c2e-9e5e6417e8fa",
+                        "text": "Here are some different results",
+                        "voice": "Here are some different results"
+                    }],
+                    "rules": []
+                }
+            ]
+        },
+        {
+            "id": "7e04adf1-ca36-4e30-93bf-d2a0168150fd",
+            "name": "details",
+            "nodes": [{
+                    "name": "details.__base__",
+                    "id": "c960c819-c76f-4aff-8b43-25e20526f0b5",
+                    "prompts": [{
+                        "id": "e6e9cfaa-f365-4219-941f-c7112181f6c6",
+                        "text": "Details for the first selection feature",
+                        "voice": "Details for the first selection feature"
+                    }],
+                    "rules": []
+                },
+                {
+                    "name": "details.two",
+                    "id": "c4e14ea8-c8cb-431d-bf01-cb1b58111440",
+                    "prompts": [{
+                        "id": "6e804cfb-793d-4342-9a93-c7523dd07f69",
+                        "text": "Details for the second selection feature",
+                        "voice": "Details for the second selection feature"
+                    }],
+                    "rules": []
+                }
+            ]
+        }
+    ]
+}

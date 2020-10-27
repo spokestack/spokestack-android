@@ -1,7 +1,6 @@
-package io.spokestack.spokestack.nlu;
+package io.spokestack.spokestack.util;
 
 import androidx.annotation.NonNull;
-import io.spokestack.spokestack.util.EventTracer;
 
 /**
  * A simple interface implemented by classes interested in receiving trace
