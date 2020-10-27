@@ -1,0 +1,17 @@
+{
+    "features": [],
+    "frames": [{
+        "id": "519e7289-e08f-4521-a56c-01eb6f23c8ab",
+        "name": "wat",
+        "nodes": [{
+            "name": "wat.__base__",
+            "id": "04ee181d-348f-4b96-abe0-13c3e1a74b47",
+            "prompts": [{
+                "id": "232932e3-4724-4581-a81d-365c75bcc504",
+                "text": "Hi",
+                "voice": "Hi"
+            }],
+          "rules": []
+        }]
+    }]
+}

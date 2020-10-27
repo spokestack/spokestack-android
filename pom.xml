@@ -2,7 +2,7 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>io.spokestack</groupId>
    <artifactId>spokestack-android</artifactId>
-   <version>9.0.1-SNAPSHOT</version>
+   <version>9.1.1-SNAPSHOT</version>
    <packaging>aar</packaging>
    <name>Spokestack Library for Android</name>
    <description>Core library of the Spokestack framework for Android</description>
@@ -149,7 +149,7 @@
       <dependency>
          <groupId>junit</groupId>
          <artifactId>junit</artifactId>
-         <version>4.12</version>
+         <version>4.13.1</version>
          <scope>test</scope>
       </dependency>
       <dependency>

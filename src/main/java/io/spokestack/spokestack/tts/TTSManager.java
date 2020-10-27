@@ -151,6 +151,22 @@ public final class TTSManager implements AutoCloseable {
         }
     }
 
+    /**
+     * Add a new listener to receive events from the TTS subsystem.
+     * @param listener The listener to add.
+     */
+    public void addListener(TTSListener listener) {
+        this.listeners.add(listener);
+    }
+
+    /**
+     * Remove a TTS listener, allowing it to be garbage collected.
+     * @param listener The listener to remove.
+     */
+    public void removeListener(TTSListener listener) {
+        this.listeners.remove(listener);
+    }
+
     @Override
     public void close() {
         release();

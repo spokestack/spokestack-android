@@ -12,6 +12,7 @@ import io.spokestack.spokestack.tts.SynthesisRequest;
 import io.spokestack.spokestack.tts.TTSEvent;
 import io.spokestack.spokestack.tts.TTSManager;
 import io.spokestack.spokestack.tts.TTSTestUtils;
+import io.spokestack.spokestack.util.EventTracer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -122,8 +123,11 @@ public class SpokestackTest {
     public void testNlu() throws Exception {
         TestAdapter listener = new TestAdapter();
 
-        Spokestack spokestack = mockedNluBuilder()
+        Spokestack spokestack = new Spokestack
+              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
               .addListener(listener)
+              .withoutWakeword()
+              .withoutTts()
               .build();
 
         listener.setSpokestack(spokestack);
@@ -151,10 +155,13 @@ public class SpokestackTest {
     public void testAutoClassification() throws Exception {
         TestAdapter listener = new TestAdapter();
 
-        Spokestack spokestack = mockedNluBuilder()
+        Spokestack.Builder builder = new Spokestack
+              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
+              .withoutWakeword()
               .withoutAutoClassification()
-              .addListener(listener)
-              .build();
+              .addListener(listener);
+
+        Spokestack spokestack = mockAndroidComponents(builder).build();
 
         // automatic classification can be disabled
         listener.clear();
@@ -170,10 +177,13 @@ public class SpokestackTest {
     public void testTranscriptEditing() throws Exception {
         TestAdapter listener = new TestAdapter();
 
-        Spokestack spokestack = mockedNluBuilder()
+        Spokestack.Builder builder = new Spokestack
+              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
+              .withoutWakeword()
               .addListener(listener)
-              .withTranscriptEditor(String::toUpperCase)
-              .build();
+              .withTranscriptEditor(String::toUpperCase);
+
+        Spokestack spokestack = mockAndroidComponents(builder).build();
 
         // transcripts can be edited before automatic classification
         String transcript = "test";
@@ -192,53 +202,20 @@ public class SpokestackTest {
         assertEquals(transcript, result.getUtterance());
     }
 
-    private Spokestack.Builder mockedNluBuilder() throws Exception {
-        mockStatic(SystemClock.class);
-
-        NLUTestUtils.TestEnv nluEnv = new NLUTestUtils.TestEnv();
-        TensorflowNLU.Builder nluBuilder = nluEnv.nluBuilder;
-
-        return new Spokestack.Builder(
-              new SpeechPipeline.Builder(),
-              nluBuilder,
-              new TTSManager.Builder()
-        )
-              .withoutWakeword()
-              .withoutTts();
-    }
-
     @Test
     public void testTts() throws Exception {
-        mockStatic(SystemClock.class);
         TestAdapter listener = new TestAdapter();
 
         // inject fake builders into wrapper's builder
         // speech pipeline
         SpeechPipeline.Builder pipelineBuilder = new SpeechPipeline.Builder();
 
-        // NLU
-        NLUTestUtils.TestEnv nluEnv = new NLUTestUtils.TestEnv();
-        TensorflowNLU.Builder nluBuilder = nluEnv.nluBuilder;
-
-        // TTS
-        Context context = mock(Context.class);
-        LifecycleRegistry lifecycleRegistry =
-              new LifecycleRegistry(mock(LifecycleOwner.class));
-
-        TTSManager.Builder ttsBuilder = new TTSManager.Builder()
-              .setTTSServiceClass(
-                    "io.spokestack.spokestack.tts.TTSTestUtils$Service")
-              .setOutputClass(
-                    "io.spokestack.spokestack.tts.TTSTestUtils$Output")
-              .setProperty("spokestack-id", "default");
-
-        Spokestack spokestack = new Spokestack
-              .Builder(pipelineBuilder, nluBuilder, ttsBuilder)
+        Spokestack.Builder builder = new Spokestack
+              .Builder(pipelineBuilder, mockNlu(), mockTts())
               .withoutWakeword()
-              .withAndroidContext(context)
-              .withLifecycle(lifecycleRegistry)
-              .addListener(listener)
-              .build();
+              .addListener(listener);
+
+        Spokestack spokestack = mockAndroidComponents(builder).build();
 
         listener.setSpokestack(spokestack);
         TTSManager tts = spokestack.getTts();
@@ -269,6 +246,82 @@ public class SpokestackTest {
         assertDoesNotThrow(spokestack::close);
     }
 
+    @Test
+    public void testListenerManagement() throws Exception {
+        mockStatic(SystemClock.class);
+        TestAdapter listener = new TestAdapter();
+        TestAdapter listener2 = new TestAdapter();
+
+        Spokestack.Builder builder = new Spokestack
+              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
+              .withoutWakeword()
+              .setConfig(testConfig())
+              .setProperty("trace-level", EventTracer.Level.INFO.value())
+              .addListener(listener);
+
+        builder = mockAndroidComponents(builder);
+        builder.getPipelineBuilder().setStageClasses(new ArrayList<>());
+        Spokestack spokestack = builder.build();
+        spokestack.addListener(listener2);
+
+        spokestack.getSpeechPipeline().activate();
+        SpeechContext.Event event =
+              listener.speechEvents.poll(1, TimeUnit.SECONDS);
+        assertEquals(SpeechContext.Event.ACTIVATE, event);
+        event = listener2.speechEvents.poll(1, TimeUnit.SECONDS);
+        assertEquals(SpeechContext.Event.ACTIVATE, event);
+
+        spokestack.removeListener(listener2);
+
+        SpeechContext context = spokestack.getSpeechPipeline().getContext();
+        String message = "trace";
+        context.traceInfo(message);
+        event = listener.speechEvents.poll(500, TimeUnit.MILLISECONDS);
+        assertEquals(SpeechContext.Event.TRACE, event);
+        // second listener should no longer receive events
+        event = listener2.speechEvents.poll(500, TimeUnit.MILLISECONDS);
+        assertNull(event);
+        // trace message also sent through the convenience tracing method
+        String trace = listener.traces.poll(500, TimeUnit.MILLISECONDS);
+        assertEquals(message, trace);
+
+        Throwable error = new NullPointerException();
+        context.setError(error);
+        context.dispatch(SpeechContext.Event.ERROR);
+        event = listener.speechEvents.poll(500, TimeUnit.MILLISECONDS);
+        assertEquals(SpeechContext.Event.ERROR, event);
+        // error also sent through the convenience error handling method
+        Throwable err = listener.errors.poll(500, TimeUnit.MILLISECONDS);
+        assertEquals(error, err);
+    }
+
+    private TensorflowNLU.Builder mockNlu() throws Exception {
+        mockStatic(SystemClock.class);
+
+        NLUTestUtils.TestEnv nluEnv = new NLUTestUtils.TestEnv();
+        return nluEnv.nluBuilder;
+    }
+
+    private TTSManager.Builder mockTts() {
+        return new TTSManager.Builder()
+              .setTTSServiceClass(
+                    "io.spokestack.spokestack.tts.TTSTestUtils$Service")
+              .setOutputClass(
+                    "io.spokestack.spokestack.tts.TTSTestUtils$Output")
+              .setProperty("spokestack-id", "default");
+    }
+
+    private Spokestack.Builder mockAndroidComponents(
+          Spokestack.Builder builder) {
+        Context context = mock(Context.class);
+        LifecycleRegistry lifecycleRegistry =
+              new LifecycleRegistry(mock(LifecycleOwner.class));
+
+        return builder
+              .withAndroidContext(context)
+              .withLifecycle(lifecycleRegistry);
+    }
+
     private SpeechConfig testConfig() {
         SpeechConfig config = NLUTestUtils.testConfig();
         config.put("sample-rate", 16000);
@@ -284,6 +337,8 @@ public class SpokestackTest {
         LinkedBlockingQueue<TTSEvent> ttsEvents = new LinkedBlockingQueue<>();
         LinkedBlockingQueue<SpeechContext.Event> speechEvents =
               new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<String> traces = new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<Throwable> errors = new LinkedBlockingQueue<>();
 
         public void setSpokestack(Spokestack spokestack) {
             this.spokestack = spokestack;
@@ -294,28 +349,42 @@ public class SpokestackTest {
             this.speechEvents.clear();
             this.nluResults.clear();
             this.ttsEvents.clear();
+            this.traces.clear();
+            this.errors.clear();
         }
 
         @Override
-        public void onEvent(@NotNull SpeechContext.Event event,
-                            @NotNull SpeechContext context) {
+        public void speechEvent(@NotNull SpeechContext.Event event,
+                                @NotNull SpeechContext context) {
             this.speechEvents.add(event);
             this.speechContext = context;
         }
 
         @Override
-        public void eventReceived(@NotNull TTSEvent event) {
+        public void ttsEvent(@NotNull TTSEvent event) {
             this.ttsEvents.add(event);
         }
 
         @Override
-        public void call(@NotNull NLUResult result) {
+        public void nluResult(@NotNull NLUResult result) {
             this.nluResults.add(result);
             if (this.spokestack != null) {
                 SynthesisRequest request =
                       new SynthesisRequest.Builder(result.getIntent()).build();
                 this.spokestack.synthesize(request);
             }
+        }
+
+        @Override
+        public void trace(@NotNull SpokestackModule module,
+                          @NotNull String message) {
+            this.traces.add(message);
+        }
+
+        @Override
+        public void error(@NotNull SpokestackModule module,
+                          @NotNull Throwable error) {
+            this.errors.add(error);
         }
     }
 }

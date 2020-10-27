@@ -1,0 +1,11 @@
+{
+    "features": [{
+            "name": "play",
+            "id": "444badb2-6b18-4857-8d45-3057eefee253",
+            "destination": "fdf2065e-38b9-4240-aaaa-8a15bb0245ba",
+            "prompts": [],
+            "rules": []
+        },
+    ],
+    "frames": []
+}
