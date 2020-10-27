@@ -6,7 +6,7 @@ import android.speech.RecognitionListener;
 import android.speech.SpeechRecognizer;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,7 +48,7 @@ public class MockRecognizer {
     public void startListening(Intent recognitionIntent) {
         Bundle results = mock(Bundle.class);
         ArrayList<String> nBest =
-              new ArrayList<>( Arrays.asList(TRANSCRIPT, "testy"));
+              new ArrayList<>(Collections.singletonList(TRANSCRIPT));
         when(results
               .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
               .thenReturn(nBest);
@@ -78,7 +78,7 @@ public class MockRecognizer {
     public static Bundle speechResults(String transcript, Float confidence) {
         Bundle results = mock(Bundle.class);
         ArrayList<String> nBest =
-              new ArrayList<>( Arrays.asList(TRANSCRIPT, transcript));
+              new ArrayList<>(Collections.singletonList(transcript));
         when(results
               .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION))
               .thenReturn(nBest);

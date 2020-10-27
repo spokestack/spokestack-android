@@ -42,6 +42,15 @@ public final class NLUContext {
     }
 
     /**
+     * Remove a trace listener, allowing it to be garbage collected.
+     *
+     * @param listener the listener to remove
+     */
+    public void removeTraceListener(TraceListener listener) {
+        this.listeners.remove(listener);
+    }
+
+    /**
      * @return the metadata for the current request.
      */
     public HashMap<String, Object> getRequestMetadata() {

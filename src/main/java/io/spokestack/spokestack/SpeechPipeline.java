@@ -130,7 +130,30 @@ public final class SpeechPipeline implements AutoCloseable {
 
     /** manually deactivate the speech pipeline. */
     public void deactivate() {
-        this.context.setActive(false);
+        this.context.reset();
+        for (SpeechProcessor stage : this.stages) {
+            try {
+                stage.reset();
+            } catch (Exception e) {
+                raiseError(e);
+            }
+        }
+    }
+
+    /**
+     * Add a new listener to receive events from the speech pipeline.
+     * @param listener The listener to add.
+     */
+    public void addListener(OnSpeechEventListener listener) {
+        this.context.addOnSpeechEventListener(listener);
+    }
+
+    /**
+     * Remove a pipeline listener, allowing it to be garbage collected.
+     * @param listener The listener to remove.
+     */
+    public void removeListener(OnSpeechEventListener listener) {
+        this.context.removeOnSpeechEventListener(listener);
     }
 
     /**
@@ -140,7 +163,7 @@ public final class SpeechPipeline implements AutoCloseable {
      */
     public void start() throws Exception {
         if (this.running) {
-            this.context.traceInfo(
+            this.context.traceDebug(
                   "attempting to start a running pipeline; ignoring");
             return;
         }

@@ -2,6 +2,8 @@ package io.spokestack.spokestack.util;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -16,7 +18,7 @@ import java.util.concurrent.FutureTask;
  */
 public class AsyncResult<T> extends FutureTask<T> {
 
-    private Callback<T> completionCallback;
+    private final List<Callback<T>> completionCallbacks = new ArrayList<>();
 
     /**
      * Create a new task.
@@ -35,7 +37,7 @@ public class AsyncResult<T> extends FutureTask<T> {
      * @param callback The function to be called with the task's result.
      */
     public void registerCallback(Callback<T> callback) {
-        this.completionCallback = callback;
+        this.completionCallbacks.add(callback);
         if (isDone()) {
             try {
                 callback.call(get());
@@ -48,12 +50,12 @@ public class AsyncResult<T> extends FutureTask<T> {
 
     @Override
     protected void done() {
-        if (this.completionCallback != null) {
+        for (Callback<T> callback : this.completionCallbacks) {
             try {
-                completionCallback.call(get());
+                callback.call(get());
             } catch (CancellationException | InterruptedException
                   | ExecutionException e) {
-                completionCallback.onError(e);
+                callback.onError(e);
             }
         }
         super.done();

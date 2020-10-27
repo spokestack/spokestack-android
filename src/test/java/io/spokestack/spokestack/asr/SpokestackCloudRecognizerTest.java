@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 public class SpokestackCloudRecognizerTest implements OnSpeechEventListener {
@@ -111,6 +112,10 @@ public class SpokestackCloudRecognizerTest implements OnSpeechEventListener {
         assertEquals("test two", context.getTranscript());
         assertEquals(0.9f, context.getConfidence(), 1e-5);
         assertEquals(SpeechContext.Event.RECOGNIZE, this.event);
+
+        this.event = null;
+        listener.onSpeech("", 0.9f, true);
+        assertEquals(SpeechContext.Event.TIMEOUT, this.event);
     }
 
     @Test

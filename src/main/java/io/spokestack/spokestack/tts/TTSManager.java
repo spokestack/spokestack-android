@@ -138,11 +138,10 @@ public final class TTSManager implements AutoCloseable {
 
     /**
      * Sets the android context for the TTS Subsystem. Some components may
-     * require an application context instead of an activity context;
-     * see individual component documentation for details.
+     * require an application context instead of an activity context; see
+     * individual component documentation for details.
      *
      * @param androidContext the android context for the TTS subsystem.
-     *
      * @see io.spokestack.spokestack.tts.SpokestackTTSOutput
      */
     public void setAndroidContext(Context androidContext) {
@@ -150,6 +149,22 @@ public final class TTSManager implements AutoCloseable {
         if (this.output != null) {
             this.output.setAndroidContext(androidContext);
         }
+    }
+
+    /**
+     * Add a new listener to receive events from the TTS subsystem.
+     * @param listener The listener to add.
+     */
+    public void addListener(TTSListener listener) {
+        this.listeners.add(listener);
+    }
+
+    /**
+     * Remove a TTS listener, allowing it to be garbage collected.
+     * @param listener The listener to remove.
+     */
+    public void removeListener(TTSListener listener) {
+        this.listeners.remove(listener);
     }
 
     @Override
@@ -162,29 +177,30 @@ public final class TTSManager implements AutoCloseable {
 
     /**
      * Dynamically constructs TTS component classes, allocating any resources
-     * they control.
+     * they control. It is only necessary to explicitly call this if the TTS
+     * subsystem's resources have been freed via {@link #release()}} or {@link
+     * #close()}.
      *
      * @throws Exception If there is an error constructing TTS components.
      */
     public void prepare() throws Exception {
-        if (this.ttsService != null) {
-            throw new IllegalStateException("already prepared");
-        }
-
-        this.ttsService =
-              createComponent(this.ttsServiceClass, TTSService.class);
-        if (this.outputClass != null && this.output == null) {
-            this.output = createComponent(this.outputClass, SpeechOutput.class);
-            this.output.setAndroidContext(appContext);
-            this.ttsService.addListener(this.output);
-            if (this.lifecycle != null) {
-                this.registerLifecycle(this.lifecycle);
+        if (this.ttsService == null) {
+            this.ttsService =
+                  createComponent(this.ttsServiceClass, TTSService.class);
+            if (this.outputClass != null && this.output == null) {
+                this.output = createComponent(
+                      this.outputClass, SpeechOutput.class);
+                this.output.setAndroidContext(appContext);
+                this.ttsService.addListener(this.output);
+                if (this.lifecycle != null) {
+                    this.registerLifecycle(this.lifecycle);
+                }
             }
-        }
-        for (TTSListener listener : this.listeners) {
-            this.ttsService.addListener(listener);
-            if (this.output != null) {
-                this.output.addListener(listener);
+            for (TTSListener listener : this.listeners) {
+                this.ttsService.addListener(listener);
+                if (this.output != null) {
+                    this.output.addListener(listener);
+                }
             }
         }
     }
@@ -202,6 +218,11 @@ public final class TTSManager implements AutoCloseable {
      * Stops activity in the TTS subsystem and releases any resources held by
      * its components. No internally queued audio will be played after this
      * method is called, and the queue will be cleared.
+     *
+     * <p>
+     * Once released, an explicit call to {@link #prepare()} is required to
+     * reallocate a manager's resources.
+     * </p>
      */
     public void release() {
         if (this.output != null) {
@@ -244,8 +265,11 @@ public final class TTSManager implements AutoCloseable {
 
         /**
          * Initializes a new builder with no default configuration.
+         *
+         * @see TTSManager
          */
-        public Builder() { }
+        public Builder() {
+        }
 
         /**
          * Sets the class name of the external TTS service component.
@@ -294,8 +318,8 @@ public final class TTSManager implements AutoCloseable {
 
         /**
          * Sets the Android context for the pipeline. Some components may
-         * require an Application context instead of an Activity context;
-         * see individual component documentation for details.
+         * require an Application context instead of an Activity context; see
+         * individual component documentation for details.
          *
          * @param androidContext The Android context for the pipeline.
          * @return this

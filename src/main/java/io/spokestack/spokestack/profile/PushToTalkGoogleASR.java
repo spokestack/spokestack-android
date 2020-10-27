@@ -3,9 +3,12 @@ package io.spokestack.spokestack.profile;
 import io.spokestack.spokestack.PipelineProfile;
 import io.spokestack.spokestack.SpeechPipeline;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * A speech pipeline profile that relies on manual pipeline activation,
- * using Google Speech for ASR.
+ * A speech pipeline profile that relies on manual pipeline activation, using
+ * Google Speech for ASR.
  *
  * <p>
  * Google Speech requires extra configuration, which must be added to the
@@ -27,17 +30,15 @@ import io.spokestack.spokestack.SpeechPipeline;
 public class PushToTalkGoogleASR implements PipelineProfile {
     @Override
     public SpeechPipeline.Builder apply(SpeechPipeline.Builder builder) {
+        List<String> stages = new ArrayList<>();
+        stages.add("io.spokestack.spokestack.webrtc.AutomaticGainControl");
+        stages.add("io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor");
+        stages.add("io.spokestack.spokestack.webrtc.VoiceActivityDetector");
+        stages.add("io.spokestack.spokestack.ActivationTimeout");
+        stages.add("io.spokestack.spokestack.google.GoogleSpeechRecognizer");
+
         return builder
-              .setInputClass(
-                    "io.spokestack.spokestack.android.MicrophoneInput")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AutomaticGainControl")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.AcousticNoiseSuppressor")
-              .addStageClass(
-                    "io.spokestack.spokestack.webrtc.VoiceActivityDetector")
-              .addStageClass("io.spokestack.spokestack.ActivationTimeout")
-              .addStageClass(
-                    "io.spokestack.spokestack.google.GoogleSpeechRecognizer");
+              .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
+              .setStageClasses(stages);
     }
 }

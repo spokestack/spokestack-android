@@ -61,15 +61,15 @@ public final class TensorflowNLU implements NLUService {
     private final ExecutorService executor =
           Executors.newSingleThreadExecutor();
     private final TextEncoder textEncoder;
+    private final NLUContext context;
+    private final int sepTokenId;
+    private final int padTokenId;
+    private final Thread loadThread;
 
     private TensorflowModel nluModel = null;
     private TFNLUOutput outputParser = null;
-    private NLUContext context;
     private int maxTokens;
-    private int sepTokenId;
-    private int padTokenId;
 
-    private Thread loadThread;
     private volatile boolean ready = false;
 
     /**
@@ -260,12 +260,28 @@ public final class TensorflowNLU implements NLUService {
     }
 
     /**
+     * Add a new listener to receive trace events from the NLU subsystem.
+     * @param listener The listener to add.
+     */
+    public void addListener(TraceListener listener) {
+        this.context.addTraceListener(listener);
+    }
+
+    /**
+     * Remove a trace listener, allowing it to be garbage collected.
+     * @param listener The listener to remove.
+     */
+    public void removeListener(TraceListener listener) {
+        this.context.removeTraceListener(listener);
+    }
+
+    /**
      * Fluent builder interface for initializing a TensorFlow NLU model.
      */
     public static class Builder {
+        private final List<TraceListener> traceListeners = new ArrayList<>();
+        private final Map<String, String> slotParserClasses = new HashMap<>();
         private NLUContext context;
-        private List<TraceListener> traceListeners = new ArrayList<>();
-        private Map<String, String> slotParserClasses = new HashMap<>();
         private SpeechConfig config = new SpeechConfig();
         private TensorflowModel.Loader modelLoader;
         private ThreadFactory threadFactory;

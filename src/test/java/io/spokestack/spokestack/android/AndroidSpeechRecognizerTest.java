@@ -120,11 +120,19 @@ public class AndroidSpeechRecognizerTest {
         AndroidSpeechRecognizer.SpokestackListener asrListener =
               speechRecognizer.getListener();
 
+        // empty result
+        listener.clear();
+        Bundle results = MockRecognizer.speechResults("");
+        asrListener.onPartialResults(results);
+        assertFalse(listener.receivedPartial);
+        assertNull(listener.transcript);
+
         // partial result
         listener.clear();
-        Bundle results = MockRecognizer.speechResults("partial");
+        String transcript = "partial";
+        results = MockRecognizer.speechResults(transcript);
         asrListener.onPartialResults(results);
-        assertEquals(MockRecognizer.TRANSCRIPT, listener.transcript);
+        assertEquals(transcript, listener.transcript);
         assertTrue(listener.receivedPartial);
         assertNull(listener.error);
 
@@ -139,6 +147,15 @@ public class AndroidSpeechRecognizerTest {
         // make sure all the events fired, but only once because they
         // shouldn't fire when ASR is inactive
         assertEquals(6, listener.traces.size());
+
+        // empty final result
+        listener.clear();
+        transcript = "";
+        results = MockRecognizer.speechResults(transcript);
+        asrListener.onResults(results);
+        assertEquals(EventListener.TIMEOUT, listener.traces.get(0));
+        assertNull(listener.transcript);
+        assertNull(listener.error);
 
         // ASR received an error
         listener.clear();
@@ -241,6 +258,7 @@ public class AndroidSpeechRecognizerTest {
             this.confidence = 0.0;
             this.error = null;
             this.receivedPartial = false;
+            this.traces.clear();
         }
 
         @Override

@@ -208,24 +208,28 @@ public class AndroidSpeechRecognizer implements SpeechProcessor {
 
         @Override
         public void onPartialResults(Bundle partialResults) {
-            dispatchRecognition(partialResults, true);
+            dispatchRecognition(partialResults, false);
         }
 
         @Override
         public void onResults(Bundle results) {
-            dispatchRecognition(results, false);
+            dispatchRecognition(results, true);
             relinquishContext();
         }
 
-        private void dispatchRecognition(Bundle results, boolean isPartial) {
-            SpeechContext.Event event = (isPartial)
-                  ? SpeechContext.Event.PARTIAL_RECOGNIZE
-                  : SpeechContext.Event.RECOGNIZE;
+        private void dispatchRecognition(Bundle results, boolean isFinal) {
+            SpeechContext.Event event = (isFinal)
+                  ? SpeechContext.Event.RECOGNIZE
+                  : SpeechContext.Event.PARTIAL_RECOGNIZE;
             String transcript = extractTranscript(results);
-            float confidence = extractConfidence(results);
-            this.context.setTranscript(transcript);
-            this.context.setConfidence(confidence);
-            this.context.dispatch(event);
+            if (!transcript.equals("")) {
+                float confidence = extractConfidence(results);
+                this.context.setTranscript(transcript);
+                this.context.setConfidence(confidence);
+                this.context.dispatch(event);
+            } else if (isFinal) {
+                this.context.dispatch(SpeechContext.Event.TIMEOUT);
+            }
         }
 
         private String extractTranscript(Bundle results) {
