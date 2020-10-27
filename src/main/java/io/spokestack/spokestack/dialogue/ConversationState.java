@@ -1,6 +1,5 @@
 package io.spokestack.spokestack.dialogue;
 
-
 import io.spokestack.spokestack.nlu.Slot;
 
 import java.util.HashMap;
