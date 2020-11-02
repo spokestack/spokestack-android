@@ -57,8 +57,8 @@ import static io.spokestack.spokestack.dialogue.policy.Model.*;
  * </p>
  * <ul>
  *   <li>
- *      <b>dialogue-policy-file</b> (string, required): file system path to the dialogue
- *      policy configuration.
+ *      <b>dialogue-policy-file</b> (string, required): file system path to the
+ *         dialogue policy configuration.
  *   </li>
  * </ul>
  */

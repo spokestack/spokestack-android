@@ -8,6 +8,8 @@ import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.SelsetParser;
+import io.spokestack.spokestack.rasa.RasaOpenSourceNLU;
+import io.spokestack.spokestack.rasa.RasaDialoguePolicy;
 import io.spokestack.spokestack.tts.SynthesisRequest;
 import io.spokestack.spokestack.tts.TTSEvent;
 import io.spokestack.spokestack.tts.TTSManager;
@@ -518,6 +520,13 @@ public final class Spokestack extends SpokestackAdapter
          *     </li>
          *     <li>
          *         <b>NLU</b> (properties)
+         *         <p>
+         *         Note that NLU properties are not required if Rasa NLU and
+         *         dialogue management are in use
+         *         (see {@link #useRasaOpenSource(String)}),
+         *         but other properties are required to configure the Rasa
+         *         integration.
+         *         </p>
          *     <ul>
          *   <li>
          *      <b>nlu-model-path</b> (string): file system path to the NLU
@@ -575,6 +584,24 @@ public final class Spokestack extends SpokestackAdapter
          *   </li>
          *   <li>
          *      <b>dialogue-policy-class</b> (string): Class name of a custom dialogue
+         *      policy.
+         *   </li>
+         *   </ul>
+         *     </li>
+         *     <li>
+         *         <b>Dialogue Management</b> (properties)
+         *         <p>
+         *         Like NLU, these properties are not required if Rasa NLU and
+         *         dialogue management are in use via
+         *         {@link #useRasaOpenSource(String)}.
+         *         </p>
+         *     <ul>
+         *   <li>
+         *      <b>policy-file</b> (string): Path to a JSON file used to
+         *      configure the rule-based dialogue policy.
+         *   </li>
+         *   <li>
+         *      <b>policy-class</b> (string): Class name of a custom dialogue
          *      policy.
          *   </li>
          *   </ul>
@@ -727,6 +754,30 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
+         * Use the Rasa Open Source NLU and dialogue policy components to
+         * handle user utterances.
+         *
+         * <p>
+         * This method sets the {@code rasa-oss-url} property automatically;
+         * (see {@link RasaOpenSourceNLU}
+         * and {@link io.spokestack.spokestack.rasa.RasaDialoguePolicy} for
+         * other relevant properties).
+         * </p>
+         *
+         * @param rasaCoreUrl URL to the Rasa Open Source server.
+         *                    The Rasa Open Source component is designed to use
+         *                    Rasa's REST channel.
+         * @return the updated builder
+         */
+        public Builder useRasaOpenSource(String rasaCoreUrl) {
+            this.setProperty("rasa-oss-url", rasaCoreUrl);
+            this.nluBuilder.setServiceClass(RasaOpenSourceNLU.class.getName());
+            this.dialogueBuilder
+                  .withDialoguePolicy(RasaDialoguePolicy.class.getName());
+            return this;
+        }
+
+        /**
          * Sets a transcript editor used to alter ASR transcripts before they
          * are classified by the NLU module.
          *
@@ -847,6 +898,17 @@ public final class Spokestack extends SpokestackAdapter
          */
         public Builder withoutAutoPlayback() {
             this.useTTSPlayback = false;
+            return this;
+        }
+
+        /**
+         * Signal that Spokestack's dialogue management module should not be
+         * used.
+         *
+         * @return the updated builder
+         */
+        public Builder withoutDialogueManagement() {
+            this.useDialogue = false;
             return this;
         }
 
