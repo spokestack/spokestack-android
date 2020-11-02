@@ -242,8 +242,8 @@ public final class DialogueManager implements Callback<NLUResult> {
          * policy for the manager to use.
          *
          * <p>
-         * This is a convenience method for {@code setProperty("dialogue-policy-file",
-         * file)}.
+         * This is a convenience method for {@code
+         * setProperty("dialogue-policy-file", file)}.
          * </p>
          *
          * @param file Path to a dialogue configuration file.
@@ -258,8 +258,8 @@ public final class DialogueManager implements Callback<NLUResult> {
          * Specify the dialogue policy for the manager to use.
          *
          * <p>
-         * This is a convenience method for {@code setProperty("dialogue-policy-class",
-         * file)}.
+         * This is a convenience method for {@code
+         * setProperty("dialogue-policy-class", policyClass)}.
          * </p>
          *
          * @param policyClass The name of the class containing the dialogue

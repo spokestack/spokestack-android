@@ -56,6 +56,7 @@ public class SpokestackTest {
         Spokestack.Builder noOutputBuilder = new Spokestack.Builder()
               .withoutSpeechPipeline()
               .withoutNlu()
+              .withoutDialogueManagement()
               .withoutAutoPlayback();
         noOutputBuilder.getTtsBuilder().setTTSServiceClass(
               "io.spokestack.spokestack.tts.TTSTestUtils$Service");
@@ -71,6 +72,7 @@ public class SpokestackTest {
               .withoutWakeword()
               .withoutSpeechPipeline()
               .withoutNlu()
+              .withoutDialogueManagement()
               .withoutTts()
               .withoutAutoPlayback()
               .setProperty("test", "test")
@@ -90,6 +92,7 @@ public class SpokestackTest {
               .withoutWakeword()
               .withoutNlu()
               .withoutTts()
+              .withoutDialogueManagement()
               .addListener(listener);
 
         builder.getPipelineBuilder().setStageClasses(new ArrayList<>());
@@ -225,13 +228,8 @@ public class SpokestackTest {
               .withoutWakeword()
               .addListener(listener);
 
+        builder = mockAndroidComponents(builder);
         Spokestack spokestack = new Spokestack(builder, mockNlu());
-
-        // handle context separately to make sure the convenience
-        // methods work
-        Context androidContext = mock(Context.class);
-
-        spokestack.setAndroidContext(androidContext);
 
         listener.setSpokestack(spokestack);
         TTSManager tts = spokestack.getTts();
