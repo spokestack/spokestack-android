@@ -8,7 +8,7 @@ import io.spokestack.spokestack.nlu.NLUContext;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.nlu.NLUService;
 import io.spokestack.spokestack.nlu.Slot;
-import io.spokestack.spokestack.nlu.TraceListener;
+import io.spokestack.spokestack.util.TraceListener;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;

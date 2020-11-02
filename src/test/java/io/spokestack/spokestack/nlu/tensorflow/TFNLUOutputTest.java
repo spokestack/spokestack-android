@@ -208,7 +208,7 @@ public class TFNLUOutputTest {
     }
 
     static class TraceListener
-          implements io.spokestack.spokestack.nlu.TraceListener {
+          implements io.spokestack.spokestack.util.TraceListener {
 
         private EventTracer.Level lastLevel;
         private String lastMessage;
