@@ -157,6 +157,12 @@ public final class TTSManager implements AutoCloseable {
      */
     public void addListener(TTSListener listener) {
         this.listeners.add(listener);
+        if (this.ttsService != null) {
+            this.ttsService.addListener(listener);
+        }
+        if (this.output != null) {
+            this.output.addListener(listener);
+        }
     }
 
     /**
@@ -165,6 +171,12 @@ public final class TTSManager implements AutoCloseable {
      */
     public void removeListener(TTSListener listener) {
         this.listeners.remove(listener);
+        if (this.ttsService != null) {
+            this.ttsService.removeListener(listener);
+        }
+        if (this.output != null) {
+            this.output.removeListener(listener);
+        }
     }
 
     @Override
