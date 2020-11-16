@@ -28,10 +28,11 @@ import java.util.List;
  * In order to translate between NLU results and dynamic app actions, the
  * manager relies on a <i>dialogue policy</i>. An app may use Spokestack's
  * rule-based policy by providing the path to a JSON file describing the
- * policy's configuration under the {@code "policy-file"} configuration key, or
- * may use a different/custom policy by passing its class name under the {@code
- * "policy-class"} key. The class specified by the latter key must contain a
- * single-argument constructor that accepts a {@link SpeechConfig} instance.
+ * policy's configuration under the {@code "dialogue-policy-file"} configuration
+ * key, or may use a different/custom policy by passing its class name under the
+ * {@code "dialogue-policy-class"} key. The class specified by the latter key
+ * must contain a single-argument constructor that accepts a {@link
+ * SpeechConfig} instance.
  * </p>
  *
  * <p>
@@ -72,7 +73,7 @@ public final class DialogueManager implements Callback<NLUResult> {
     private DialoguePolicy buildPolicy(Builder builder) throws Exception {
         String defaultPolicy = RuleBasedDialoguePolicy.class.getName();
         String policyClass =
-              builder.config.getString("policy-class", defaultPolicy);
+              builder.config.getString("dialogue-policy-class", defaultPolicy);
 
         Object constructed;
         try {
@@ -241,7 +242,7 @@ public final class DialogueManager implements Callback<NLUResult> {
          * policy for the manager to use.
          *
          * <p>
-         * This is a convenience method for {@code setProperty("policy-file",
+         * This is a convenience method for {@code setProperty("dialogue-policy-file",
          * file)}.
          * </p>
          *
@@ -249,7 +250,7 @@ public final class DialogueManager implements Callback<NLUResult> {
          * @return the updated builder state
          */
         public Builder withPolicyFile(String file) {
-            setProperty("policy-file", file);
+            setProperty("dialogue-policy-file", file);
             return this;
         }
 
@@ -257,7 +258,7 @@ public final class DialogueManager implements Callback<NLUResult> {
          * Specify the dialogue policy for the manager to use.
          *
          * <p>
-         * This is a convenience method for {@code setProperty("policy-class",
+         * This is a convenience method for {@code setProperty("dialogue-policy-class",
          * file)}.
          * </p>
          *
@@ -266,7 +267,7 @@ public final class DialogueManager implements Callback<NLUResult> {
          * @return the updated builder state
          */
         public Builder withDialoguePolicy(String policyClass) {
-            setProperty("policy-class", policyClass);
+            setProperty("dialogue-policy-class", policyClass);
             return this;
         }
 
@@ -311,6 +312,9 @@ public final class DialogueManager implements Callback<NLUResult> {
          * @throws Exception if there is an error building the manager.
          */
         public DialogueManager build() throws Exception {
+            if (this.config.containsKey("trace-level")) {
+                withTraceLevel(this.config.getInteger("trace-level"));
+            }
             return new DialogueManager(this);
         }
     }

@@ -2,6 +2,7 @@ package io.spokestack.spokestack;
 
 import android.content.Context;
 import androidx.lifecycle.Lifecycle;
+import io.spokestack.spokestack.dialogue.DialogueManager;
 import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
@@ -22,12 +23,12 @@ import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_FRAME_WIDTH;
 import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_SAMPLE_RATE;
 
 /**
- * This class combines all Spokestack subsystems into a single component to
- * provide a unified interface to the library's ASR, NLU, and TTS features. Like
- * the individual subsystems, it is configurable using a fluent builder pattern,
- * but it provides a default configuration; only a few parameters are required
- * from the calling application, and those only for specific features noted in
- * the documentation for the builder's methods.
+ * This class combines all Spokestack modules into a single component to provide
+ * a unified interface to the library's ASR, NLU, and TTS features. Like the
+ * individual modules, it is configurable using a fluent builder pattern, but it
+ * provides a default configuration; only a few parameters are required from the
+ * calling application, and those only for specific features noted in the
+ * documentation for the builder's methods.
  *
  * <p>
  * Client applications may wish to establish event listeners for purposes such
@@ -51,20 +52,20 @@ import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_SAMPLE_RATE;
  *
  * <p>
  * Convenience methods are provided to interact with the most important features
- * of individual subsystems, but they do not completely duplicate the
- * subsystems' public APIs. Each subsystem in use can be retrieved via its own
- * getter, enabling use of its full API.
+ * of individual modules, but they do not completely duplicate the modules'
+ * public APIs. Each module in use can be retrieved via its own getter, enabling
+ * use of its full API.
  * </p>
  *
  * <p>
- * Any convenience methods called on a subsystem that has been explicitly
- * disabled will result in a {@code NullPointerException}.
+ * Any convenience methods called on a module that has been explicitly disabled
+ * will result in a {@code NullPointerException}.
  * </p>
  *
  * <p>
  * This class is not threadsafe; public methods used to interact with Spokestack
- * subsystems should be called from the same thread. The subsystems themselves
- * use background threads where appropriate to perform intensive tasks.
+ * modules should be called from the same thread. The modules themselves use
+ * background threads where appropriate to perform intensive tasks.
  * </p>
  *
  * @see SpeechPipeline
@@ -80,6 +81,7 @@ public final class Spokestack extends SpokestackAdapter
     private SpeechPipeline speechPipeline;
     private NLUManager nlu;
     private TTSManager tts;
+    private DialogueManager dialogueManager;
 
     /**
      * Construct a new Spokestack wrapper from an existing builder.
@@ -109,6 +111,9 @@ public final class Spokestack extends SpokestackAdapter
             this.tts = builder.getTtsBuilder()
                   .addTTSListener(this)
                   .build();
+        }
+        if (builder.useDialogue) {
+            this.dialogueManager = builder.dialogueBuilder.build();
         }
     }
 
@@ -242,7 +247,7 @@ public final class Spokestack extends SpokestackAdapter
     /**
      * Dynamically constructs TTS component classes, allocating any resources
      * they control. It is only necessary to explicitly call this if the TTS
-     * subsystem's resources have been freed via {@link #releaseTts()} or {@link
+     * module's resources have been freed via {@link #releaseTts()} or {@link
      * #close()}.
      *
      * @throws Exception If there is an error constructing TTS components.
@@ -254,9 +259,9 @@ public final class Spokestack extends SpokestackAdapter
     }
 
     /**
-     * Stops activity in the TTS subsystem and releases any resources held by
-     * its components. No internally queued audio will be played after this
-     * method is called, and the queue will be cleared.
+     * Stops activity in the TTS module and releases any resources held by its
+     * components. No internally queued audio will be played after this method
+     * is called, and the queue will be cleared.
      *
      * <p>
      * Once released, an explicit call to {@link #prepareTts()} is required to
@@ -293,10 +298,10 @@ public final class Spokestack extends SpokestackAdapter
     // listeners
 
     /**
-     * Add a new listener to receive events from Spokestack subsystems.
+     * Add a new listener to receive events from Spokestack modules.
      *
      * @param listener A listener that will receive events from all Spokestack
-     *                 subsystems.
+     *                 modules.
      */
     public void addListener(SpokestackAdapter listener) {
         this.listeners.add(listener);
@@ -308,6 +313,9 @@ public final class Spokestack extends SpokestackAdapter
         }
         if (this.tts != null) {
             this.tts.addListener(listener);
+        }
+        if (this.dialogueManager != null) {
+            this.dialogueManager.addListener(listener);
         }
     }
 
@@ -326,6 +334,9 @@ public final class Spokestack extends SpokestackAdapter
         }
         if (this.tts != null) {
             this.tts.removeListener(listener);
+        }
+        if (this.dialogueManager != null) {
+            this.dialogueManager.removeListener(listener);
         }
     }
 
@@ -357,6 +368,9 @@ public final class Spokestack extends SpokestackAdapter
         for (SpokestackAdapter listener : this.listeners) {
             result.registerCallback(listener);
         }
+        if (this.dialogueManager != null) {
+            result.registerCallback(this.dialogueManager);
+        }
         return result;
     }
 
@@ -380,6 +394,7 @@ public final class Spokestack extends SpokestackAdapter
         private final SpeechPipeline.Builder pipelineBuilder;
         private final NLUManager.Builder nluBuilder;
         private final TTSManager.Builder ttsBuilder;
+        private final DialogueManager.Builder dialogueBuilder;
         private final List<SpokestackAdapter> listeners = new ArrayList<>();
 
         private boolean useAsr = true;
@@ -387,6 +402,7 @@ public final class Spokestack extends SpokestackAdapter
         private boolean autoClassify = true;
         private boolean useTTS = true;
         private boolean useTTSPlayback = true;
+        private boolean useDialogue = true;
 
         private SpeechConfig speechConfig;
         private TranscriptEditor transcriptEditor;
@@ -400,20 +416,20 @@ public final class Spokestack extends SpokestackAdapter
          *
          * <p>
          * Internally, this builder delegates to the builder APIs of individual
-         * subsystems. These individual builders can be retrieved and customized
-         * as desired. Calls to {@link #setProperty(String, Object)} are
-         * propagated to all subsystems.
+         * modules. These individual builders can be retrieved and customized as
+         * desired. Calls to {@link #setProperty(String, Object)} are propagated
+         * to all modules.
          * </p>
          *
          * <p>
-         * Some subsystems require additional configuration that cannot be set
+         * Some modules require additional configuration that cannot be set
          * automatically. Properties are set via {@link #setProperty(String,
          * Object)}; other configuration is listed by method:
          * </p>
          *
          * <ul>
          *     <li>
-         *         Wakeword detection (properties)
+         *         <b>Wakeword detection</b> (properties)
          *     <ul>
          *   <li>
          *      <b>wake-filter-path</b> (string): file system path to the
@@ -430,7 +446,7 @@ public final class Spokestack extends SpokestackAdapter
          *     </ul>
          *     </li>
          *     <li>
-         *         NLU (properties)
+         *         <b>NLU</b> (properties)
          *     <ul>
          *   <li>
          *      <b>nlu-model-path</b> (string): file system path to the NLU
@@ -448,7 +464,7 @@ public final class Spokestack extends SpokestackAdapter
          *     </ul>
          *     </li>
          *     <li>
-         *         TTS (properties)
+         *         <b>TTS</b> (properties)
          *     <ul>
          *   <li>
          *      <b>spokestack-id</b> (string): client ID used to authorize TTS
@@ -464,7 +480,7 @@ public final class Spokestack extends SpokestackAdapter
          *   </ul>
          *     </li>
          *     <li>
-         *         TTS (other)
+         *         <b>TTS</b> (other)
          *     <ul>
          *   <li>
          *       {@link #withAndroidContext(android.content.Context)}:
@@ -475,6 +491,25 @@ public final class Spokestack extends SpokestackAdapter
          *       {@link #withLifecycle(androidx.lifecycle.Lifecycle)}:
          *       Android lifecycle context used to manage automatic pausing and
          *       resuming of audio on application lifecycle events.
+         *   </li>
+         *   </ul>
+         *     </li>
+         *     <li>
+         *         <b>Dialogue Management</b> (properties)
+         *         <p>
+         *             Dialogue management is an optional feature that will be
+         *             disabled by default. To use it, one of the following
+         *             properties is required. If both are included,
+         *             {@code dialogue-policy-class} will take precedence.
+         *         </p>
+         *     <ul>
+         *   <li>
+         *      <b>dialogue-policy-file</b> (string): Path to a JSON file used to
+         *      configure the rule-based dialogue policy.
+         *   </li>
+         *   <li>
+         *      <b>dialogue-policy-class</b> (string): Class name of a custom dialogue
+         *      policy.
          *   </li>
          *   </ul>
          *     </li>
@@ -500,6 +535,8 @@ public final class Spokestack extends SpokestackAdapter
                         .setTTSServiceClass(ttsServiceClass)
                         .setOutputClass(ttsOutputClass)
                         .setConfig(this.speechConfig);
+            this.dialogueBuilder =
+                  new DialogueManager.Builder(this.speechConfig);
         }
 
         private void setDefaults(SpeechConfig config) {
@@ -519,8 +556,8 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
-         * Construct a wrapper builder with specific subsystem builders. Used
-         * for testing.
+         * Construct a wrapper builder with specific module builders. Used for
+         * testing.
          *
          * @param pipeline the speech pipeline builder
          * @param tts      the TTS builder
@@ -530,6 +567,8 @@ public final class Spokestack extends SpokestackAdapter
             this.pipelineBuilder = pipeline;
             this.nluBuilder = new NLUManager.Builder();
             this.ttsBuilder = tts;
+            this.dialogueBuilder =
+                  new DialogueManager.Builder(this.speechConfig);
         }
 
         /**
@@ -540,21 +579,28 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
-         * @return The builder used to configure the NLU subsystem.
+         * @return The builder used to configure the NLU module.
          */
         public NLUManager.Builder getNluBuilder() {
             return nluBuilder;
         }
 
         /**
-         * @return The builder used to configure the TTS subsystem.
+         * @return The builder used to configure the TTS module.
          */
         public TTSManager.Builder getTtsBuilder() {
             return ttsBuilder;
         }
 
         /**
-         * Sets configuration for all subsystem builders.
+         * @return The builder used to configure the dialogue management module.
+         */
+        public DialogueManager.Builder getDialogueBuilder() {
+            return dialogueBuilder;
+        }
+
+        /**
+         * Sets configuration for all module builders.
          *
          * <p>
          * Note that the following low-level properties are set to default
@@ -599,7 +645,7 @@ public final class Spokestack extends SpokestackAdapter
 
         /**
          * Sets a transcript editor used to alter ASR transcripts before they
-         * are classified by the NLU subsystem.
+         * are classified by the NLU module.
          *
          * <p>
          * This can be used to alter ASR results that frequently contain a
@@ -612,9 +658,9 @@ public final class Spokestack extends SpokestackAdapter
          * If a transcript editor is in use, registered listeners will receive
          * {@code RECOGNIZE} events from the speech pipeline with the unedited
          * transcripts, but the editor will automatically run on those
-         * transcripts before the NLU subsystem operates on them. Thus, the
-         * {@code utterance} inside the {@code NLUResult} returned by
-         * classification will reflect the edited version of the transcript.
+         * transcripts before the NLU module operates on them. Thus, the {@code
+         * utterance} inside the {@code NLUResult} returned by classification
+         * will reflect the edited version of the transcript.
          * </p>
          *
          * <p>
@@ -692,7 +738,7 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
-         * Signal that Spokestack's NLU subsystem should not be used.
+         * Signal that Spokestack's NLU module should not be used.
          *
          * @return the updated builder
          */
@@ -702,10 +748,10 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
-         * Signal that Spokestack's NLU subsystem should not be automatically
-         * run on ASR transcripts. NLU will still be initialized and available
-         * from the {@code Spokestack} instance unless explicitly disabled via
-         * {@link #withoutNlu()}.
+         * Signal that Spokestack's NLU module should not be automatically run
+         * on ASR transcripts. NLU will still be initialized and available from
+         * the {@code Spokestack} instance unless explicitly disabled via {@link
+         * #withoutNlu()}.
          *
          * @return the updated builder
          */
@@ -715,7 +761,7 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
-         * Signal that Spokestack's TTS subsystem should not be used.
+         * Signal that Spokestack's TTS module should not be used.
          *
          * @return the updated builder
          */
@@ -737,19 +783,20 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
-         * Add a listener that receives events from all subsystems. This method
-         * is provided as a convenience; if desired, specific listeners can
-         * still be added by retrieving the relevant subsystem builder and
-         * adding a purpose-built listener to it.
+         * Add a listener that receives events from all modules. This method is
+         * provided as a convenience; if desired, specific listeners can still
+         * be added by retrieving the relevant module builder and adding a
+         * purpose-built listener to it.
          *
          * @param listener A listener that will receive events from all
-         *                 Spokestack subsystems.
+         *                 Spokestack modules.
          * @return the updated builder
          */
         public Builder addListener(SpokestackAdapter listener) {
             this.pipelineBuilder.addOnSpeechEventListener(listener);
             this.nluBuilder.addTraceListener(listener);
             this.ttsBuilder.addTTSListener(listener);
+            this.dialogueBuilder.addListener(listener);
             this.listeners.add(listener);
             return this;
         }
@@ -775,6 +822,10 @@ public final class Spokestack extends SpokestackAdapter
                           + "required for playback management; see"
                           + "TTSManager.Builder.setLifecycle()");
                 }
+            }
+            if (!this.speechConfig.containsKey("dialogue-policy-file")
+                  && !this.speechConfig.containsKey("dialogue-policy-class")) {
+                this.useDialogue = false;
             }
             return new Spokestack(this);
         }

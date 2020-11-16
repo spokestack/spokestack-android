@@ -87,7 +87,7 @@ public final class DialoguePolicyTest {
             SPEECH_CONFIG = new SpeechConfig();
         }
 
-        SPEECH_CONFIG.put("policy-file", policyFile);
+        SPEECH_CONFIG.put("dialogue-policy-file", policyFile);
         POLICY = new RuleBasedDialoguePolicy(SPEECH_CONFIG);
         clearPolicyState();
     }

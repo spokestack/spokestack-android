@@ -57,7 +57,7 @@ import static io.spokestack.spokestack.dialogue.policy.Model.*;
  * </p>
  * <ul>
  *   <li>
- *      <b>policy-file</b> (string, required): file system path to the dialogue
+ *      <b>dialogue-policy-file</b> (string, required): file system path to the dialogue
  *      policy configuration.
  *   </li>
  * </ul>
@@ -81,7 +81,7 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
      */
     public RuleBasedDialoguePolicy(SpeechConfig config)
           throws IOException, MalformedJsonException {
-        String policyFile = config.getString("policy-file");
+        String policyFile = config.getString("dialogue-policy-file");
         this.gson = new GsonBuilder()
               .disableHtmlEscaping()
               .create();

@@ -1,5 +1,7 @@
 package io.spokestack.spokestack;
 
+import io.spokestack.spokestack.dialogue.DialogueEvent;
+import io.spokestack.spokestack.dialogue.DialogueListener;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.tts.TTSEvent;
 import io.spokestack.spokestack.tts.TTSListener;
@@ -19,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class SpokestackAdapter implements
       Callback<NLUResult>,
+      DialogueListener,
       OnSpeechEventListener,
       TraceListener,
       TTSListener {
@@ -154,6 +157,14 @@ public abstract class SpokestackAdapter implements
      * @param event The event from the TTS module.
      */
     public void ttsEvent(@NotNull TTSEvent event) {
+    }
+
+    /**
+     * Receive events from the dialogue management module.
+     * @param event The dialogue event.
+     */
+    @Override
+    public void onDialogueEvent(@NotNull DialogueEvent event) {
     }
 
     /**
