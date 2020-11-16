@@ -1,6 +1,7 @@
 package io.spokestack.spokestack.dialogue.policy;
 
 import androidx.annotation.NonNull;
+import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.dialogue.ConversationData;
 import io.spokestack.spokestack.dialogue.DialogueDispatcher;
 import io.spokestack.spokestack.dialogue.DialogueEvent;
@@ -78,12 +79,16 @@ public final class DialoguePolicyTest {
           Collections.singletonList(LISTENER));
     private static ConversationData DATA = new InMemoryConversationData();
     private static RuleBasedDialoguePolicy POLICY;
-    private static String POLICY_FILE;
+    private static SpeechConfig SPEECH_CONFIG;
 
     public static void setPolicy(String policyFile)
           throws IOException {
-        POLICY_FILE = policyFile;
-        POLICY = new RuleBasedDialoguePolicy(policyFile);
+        if (SPEECH_CONFIG == null) {
+            SPEECH_CONFIG = new SpeechConfig();
+        }
+
+        SPEECH_CONFIG.put("policy-file", policyFile);
+        POLICY = new RuleBasedDialoguePolicy(SPEECH_CONFIG);
         clearPolicyState();
     }
 
@@ -123,7 +128,7 @@ public final class DialoguePolicyTest {
 
     public static void clearPolicyState() throws IOException {
         DATA = new InMemoryConversationData();
-        POLICY = new RuleBasedDialoguePolicy(POLICY_FILE);
+        POLICY = new RuleBasedDialoguePolicy(SPEECH_CONFIG);
         clearEvents();
     }
 

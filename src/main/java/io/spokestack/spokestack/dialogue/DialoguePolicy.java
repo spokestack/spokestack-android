@@ -10,8 +10,9 @@ import io.spokestack.spokestack.nlu.NLUResult;
  * </p>
  *
  * <p>
- * A dialogue policy must have a no-argument constructor to be used by the
- * dialogue management system.
+ * A dialogue policy must have a constructor that accepts a {@link
+ * io.spokestack.spokestack.SpeechConfig} instance to be used by the dialogue
+ * management system.
  * </p>
  */
 public interface DialoguePolicy {

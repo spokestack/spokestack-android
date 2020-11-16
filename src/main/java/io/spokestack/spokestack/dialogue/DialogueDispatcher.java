@@ -35,4 +35,22 @@ public final class DialogueDispatcher extends EventTracer {
             listener.onDialogueEvent(event);
         }
     }
+
+    /**
+     * Add a new listener to receive events from the dispatcher.
+     *
+     * @param listener The listener to add.
+     */
+    public void addListener(DialogueListener listener) {
+        this.listeners.add(listener);
+    }
+
+    /**
+     * Remove a dialogue listener, allowing it to be garbage collected.
+     *
+     * @param listener The listener to remove.
+     */
+    public void removeListener(DialogueListener listener) {
+        this.listeners.remove(listener);
+    }
 }
