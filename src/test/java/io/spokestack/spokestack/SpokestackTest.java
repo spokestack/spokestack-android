@@ -4,10 +4,9 @@ import android.content.Context;
 import android.os.SystemClock;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LifecycleRegistry;
-import io.spokestack.spokestack.nlu.NLUContext;
+import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.nlu.tensorflow.NLUTestUtils;
-import io.spokestack.spokestack.nlu.tensorflow.TensorflowNLU;
 import io.spokestack.spokestack.tts.SynthesisRequest;
 import io.spokestack.spokestack.tts.TTSEvent;
 import io.spokestack.spokestack.tts.TTSManager;
@@ -72,12 +71,6 @@ public class SpokestackTest {
               .setProperty("test", "test")
               .build();
 
-        // no subsystems exist to handle these calls
-        assertThrows(NullPointerException.class, spokestack::start);
-        assertThrows(NullPointerException.class,
-              () -> spokestack.classify("test"));
-        assertThrows(NullPointerException.class, spokestack::stopPlayback);
-
         // closing with no active subsystems is fine
         assertDoesNotThrow(spokestack::close);
     }
@@ -123,13 +116,13 @@ public class SpokestackTest {
     public void testNlu() throws Exception {
         TestAdapter listener = new TestAdapter();
 
-        Spokestack spokestack = new Spokestack
-              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
+        Spokestack.Builder builder = new Spokestack
+              .Builder(new SpeechPipeline.Builder(), mockTts())
               .addListener(listener)
               .withoutWakeword()
-              .withoutTts()
-              .build();
+              .withoutTts();
 
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
         listener.setSpokestack(spokestack);
 
         NLUResult result = spokestack.classify("test").get();
@@ -137,8 +130,7 @@ public class SpokestackTest {
         assertNotNull(lastResult);
         assertEquals(result.getIntent(), lastResult.getIntent());
 
-        NLUContext fakeContext = new NLUContext(testConfig());
-        result = spokestack.getNlu().classify("test", fakeContext).get();
+        result = spokestack.getNlu().classify("test").get();
         assertEquals(result.getIntent(), lastResult.getIntent());
 
         // classification is called automatically on ASR results
@@ -156,12 +148,13 @@ public class SpokestackTest {
         TestAdapter listener = new TestAdapter();
 
         Spokestack.Builder builder = new Spokestack
-              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
+              .Builder(new SpeechPipeline.Builder(), mockTts())
               .withoutWakeword()
               .withoutAutoClassification()
               .addListener(listener);
 
-        Spokestack spokestack = mockAndroidComponents(builder).build();
+        builder = mockAndroidComponents(builder);
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
 
         // automatic classification can be disabled
         listener.clear();
@@ -178,12 +171,13 @@ public class SpokestackTest {
         TestAdapter listener = new TestAdapter();
 
         Spokestack.Builder builder = new Spokestack
-              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
+              .Builder(new SpeechPipeline.Builder(), mockTts())
               .withoutWakeword()
               .addListener(listener)
               .withTranscriptEditor(String::toUpperCase);
 
-        Spokestack spokestack = mockAndroidComponents(builder).build();
+        builder = mockAndroidComponents(builder);
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
 
         // transcripts can be edited before automatic classification
         String transcript = "test";
@@ -191,7 +185,7 @@ public class SpokestackTest {
         SpeechContext context = spokestack.getSpeechPipeline().getContext();
         context.setTranscript(transcript);
         context.dispatch(SpeechContext.Event.RECOGNIZE);
-        NLUResult result = spokestack.classify("test").get();
+        NLUResult result = spokestack.classify("TEST").get();
         NLUResult lastResult = listener.nluResults.poll(1, TimeUnit.SECONDS);
         assertNotNull(lastResult);
         assertEquals(result.getIntent(), lastResult.getIntent());
@@ -211,11 +205,12 @@ public class SpokestackTest {
         SpeechPipeline.Builder pipelineBuilder = new SpeechPipeline.Builder();
 
         Spokestack.Builder builder = new Spokestack
-              .Builder(pipelineBuilder, mockNlu(), mockTts())
+              .Builder(pipelineBuilder, mockTts())
               .withoutWakeword()
               .addListener(listener);
 
-        Spokestack spokestack = mockAndroidComponents(builder).build();
+        builder = mockAndroidComponents(builder);
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
 
         listener.setSpokestack(spokestack);
         TTSManager tts = spokestack.getTts();
@@ -253,7 +248,7 @@ public class SpokestackTest {
         TestAdapter listener2 = new TestAdapter();
 
         Spokestack.Builder builder = new Spokestack
-              .Builder(new SpeechPipeline.Builder(), mockNlu(), mockTts())
+              .Builder(new SpeechPipeline.Builder(), mockTts())
               .withoutWakeword()
               .setConfig(testConfig())
               .setProperty("trace-level", EventTracer.Level.INFO.value())
@@ -261,7 +256,7 @@ public class SpokestackTest {
 
         builder = mockAndroidComponents(builder);
         builder.getPipelineBuilder().setStageClasses(new ArrayList<>());
-        Spokestack spokestack = builder.build();
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
         spokestack.addListener(listener2);
 
         spokestack.getSpeechPipeline().activate();
@@ -295,11 +290,8 @@ public class SpokestackTest {
         assertEquals(error, err);
     }
 
-    private TensorflowNLU.Builder mockNlu() throws Exception {
-        mockStatic(SystemClock.class);
-
-        NLUTestUtils.TestEnv nluEnv = new NLUTestUtils.TestEnv();
-        return nluEnv.nluBuilder;
+    private NLUManager mockNlu() throws Exception {
+        return NLUTestUtils.mockManager();
     }
 
     private TTSManager.Builder mockTts() {

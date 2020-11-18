@@ -2,9 +2,12 @@ package io.spokestack.spokestack;
 
 import android.content.Context;
 import androidx.lifecycle.Lifecycle;
+import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
-import io.spokestack.spokestack.nlu.NLUService;
-import io.spokestack.spokestack.nlu.tensorflow.TensorflowNLU;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.SelsetParser;
 import io.spokestack.spokestack.tts.SynthesisRequest;
 import io.spokestack.spokestack.tts.TTSManager;
 import io.spokestack.spokestack.util.AsyncResult;
@@ -65,7 +68,7 @@ import static io.spokestack.spokestack.SpeechPipeline.DEFAULT_SAMPLE_RATE;
  * </p>
  *
  * @see SpeechPipeline
- * @see TensorflowNLU
+ * @see io.spokestack.spokestack.nlu.tensorflow.TensorflowNLU
  * @see TTSManager
  */
 public final class Spokestack extends SpokestackAdapter
@@ -75,7 +78,7 @@ public final class Spokestack extends SpokestackAdapter
     private final boolean autoClassify;
     private final TranscriptEditor transcriptEditor;
     private SpeechPipeline speechPipeline;
-    private TensorflowNLU nlu;
+    private NLUManager nlu;
     private TTSManager tts;
 
     /**
@@ -109,6 +112,35 @@ public final class Spokestack extends SpokestackAdapter
         }
     }
 
+    /**
+     * Package-private constructor used for testing with an injected NLU.
+     *
+     * @param builder    The builder to use for everything but NLU.
+     * @param nluManager The NLU manager to inject.
+     */
+    Spokestack(Builder builder, NLUManager nluManager) throws Exception {
+        this.listeners = new ArrayList<>();
+        this.listeners.addAll(builder.listeners);
+        this.autoClassify = builder.autoClassify;
+        this.transcriptEditor = builder.transcriptEditor;
+        if (builder.useAsr) {
+            this.speechPipeline = builder.getPipelineBuilder()
+                  .addOnSpeechEventListener(this)
+                  .build();
+        }
+        if (builder.useNLU) {
+            this.nlu = nluManager;
+        }
+        if (builder.useTTS) {
+            if (!builder.useTTSPlayback) {
+                builder.ttsBuilder.setOutputClass(null);
+            }
+            this.tts = builder.getTtsBuilder()
+                  .addTTSListener(this)
+                  .build();
+        }
+    }
+
     // speech pipeline
 
     /**
@@ -126,14 +158,18 @@ public final class Spokestack extends SpokestackAdapter
      *                   pipeline.
      */
     public void start() throws Exception {
-        this.speechPipeline.start();
+        if (this.speechPipeline != null) {
+            this.speechPipeline.start();
+        }
     }
 
     /**
      * Stops the speech pipeline and releases all its internal resources.
      */
     public void stop() {
-        this.speechPipeline.stop();
+        if (this.speechPipeline != null) {
+            this.speechPipeline.stop();
+        }
     }
 
     /**
@@ -142,7 +178,9 @@ public final class Spokestack extends SpokestackAdapter
      * conjunction with a microphone button.
      */
     public void activate() {
-        this.speechPipeline.activate();
+        if (this.speechPipeline != null) {
+            this.speechPipeline.activate();
+        }
     }
 
     /**
@@ -156,15 +194,17 @@ public final class Spokestack extends SpokestackAdapter
      * </p>
      */
     public void deactivate() {
-        this.speechPipeline.deactivate();
+        if (this.speechPipeline != null) {
+            this.speechPipeline.deactivate();
+        }
     }
 
     // NLU
 
     /**
-     * @return The NLU service currently in use.
+     * @return The NLU manager currently in use.
      */
-    public NLUService getNlu() {
+    public NLUManager getNlu() {
         return nlu;
     }
 
@@ -184,7 +224,10 @@ public final class Spokestack extends SpokestackAdapter
      * classification.
      */
     public AsyncResult<NLUResult> classify(String utterance) {
-        return classifyInternal(utterance);
+        if (this.nlu != null) {
+            return classifyInternal(utterance);
+        }
+        return null;
     }
 
     // TTS
@@ -205,7 +248,9 @@ public final class Spokestack extends SpokestackAdapter
      * @throws Exception If there is an error constructing TTS components.
      */
     public void prepareTts() throws Exception {
-        this.tts.prepare();
+        if (this.tts != null) {
+            this.tts.prepare();
+        }
     }
 
     /**
@@ -219,7 +264,9 @@ public final class Spokestack extends SpokestackAdapter
      * </p>
      */
     public void releaseTts() {
-        this.tts.release();
+        if (this.tts != null) {
+            this.tts.release();
+        }
     }
 
     /**
@@ -229,14 +276,18 @@ public final class Spokestack extends SpokestackAdapter
      * @param request The synthesis request data.
      */
     public void synthesize(SynthesisRequest request) {
-        this.tts.synthesize(request);
+        if (this.tts != null) {
+            this.tts.synthesize(request);
+        }
     }
 
     /**
      * Stops playback of any playing or queued synthesis results.
      */
     public void stopPlayback() {
-        this.tts.stopPlayback();
+        if (this.tts != null) {
+            this.tts.stopPlayback();
+        }
     }
 
     // listeners
@@ -294,6 +345,11 @@ public final class Spokestack extends SpokestackAdapter
         }
     }
 
+    @Override
+    public void nluResult(@NotNull NLUResult result) {
+        super.nluResult(result);
+    }
+
     private AsyncResult<NLUResult> classifyInternal(String text) {
         AsyncResult<NLUResult> result =
               this.nlu.classify(text);
@@ -322,7 +378,7 @@ public final class Spokestack extends SpokestackAdapter
      */
     public static class Builder {
         private final SpeechPipeline.Builder pipelineBuilder;
-        private final TensorflowNLU.Builder nluBuilder;
+        private final NLUManager.Builder nluBuilder;
         private final TTSManager.Builder ttsBuilder;
         private final List<SpokestackAdapter> listeners = new ArrayList<>();
 
@@ -434,7 +490,7 @@ public final class Spokestack extends SpokestackAdapter
                         .setConfig(this.speechConfig)
                         .useProfile(profileClass);
             this.nluBuilder =
-                  new TensorflowNLU.Builder().setConfig(this.speechConfig);
+                  new NLUManager.Builder().setConfig(this.speechConfig);
             String ttsServiceClass =
                   "io.spokestack.spokestack.tts.SpokestackTTSService";
             String ttsOutputClass =
@@ -452,6 +508,12 @@ public final class Spokestack extends SpokestackAdapter
             config.put("frame-width", DEFAULT_FRAME_WIDTH);
             config.put("buffer-width", DEFAULT_BUFFER_WIDTH);
 
+            // nlu
+            config.put("slot-digits", DigitsParser.class.getName());
+            config.put("slot-integer", IntegerParser.class.getName());
+            config.put("slot-selset", SelsetParser.class.getName());
+            config.put("slot-entity", IdentityParser.class.getName());
+
             // other
             config.put("trace-level", EventTracer.Level.ERROR.value());
         }
@@ -461,14 +523,12 @@ public final class Spokestack extends SpokestackAdapter
          * for testing.
          *
          * @param pipeline the speech pipeline builder
-         * @param nlu      the NLU builder
          * @param tts      the TTS builder
          */
-        Builder(SpeechPipeline.Builder pipeline, TensorflowNLU.Builder nlu,
-                TTSManager.Builder tts) {
+        Builder(SpeechPipeline.Builder pipeline, TTSManager.Builder tts) {
             this.speechConfig = new SpeechConfig();
             this.pipelineBuilder = pipeline;
-            this.nluBuilder = nlu;
+            this.nluBuilder = new NLUManager.Builder();
             this.ttsBuilder = tts;
         }
 
@@ -482,7 +542,7 @@ public final class Spokestack extends SpokestackAdapter
         /**
          * @return The builder used to configure the NLU subsystem.
          */
-        public TensorflowNLU.Builder getNluBuilder() {
+        public NLUManager.Builder getNluBuilder() {
             return nluBuilder;
         }
 
@@ -507,6 +567,12 @@ public final class Spokestack extends SpokestackAdapter
          *     <li>frame-width</li>
          *     <li>buffer-width</li>
          * </ul>
+         *
+         * <p>
+         * Other module builders may set their own default values; builders for
+         * the modules in use should be consulted before overwriting their
+         * configuration.
+         * </p>
          *
          * @param config configuration to attach
          * @return the updated builder

@@ -8,7 +8,6 @@ import io.spokestack.spokestack.nlu.NLUContext;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.nlu.NLUService;
 import io.spokestack.spokestack.nlu.Slot;
-import io.spokestack.spokestack.util.TraceListener;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;
@@ -16,6 +15,7 @@ import io.spokestack.spokestack.nlu.tensorflow.parsers.SelsetParser;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
 import io.spokestack.spokestack.util.AsyncResult;
 import io.spokestack.spokestack.util.EventTracer;
+import io.spokestack.spokestack.util.TraceListener;
 import io.spokestack.spokestack.util.Tuple;
 
 import java.io.FileReader;
@@ -55,19 +55,25 @@ import java.util.concurrent.ThreadFactory;
  *      <b>wordpiece-vocab-path</b> (string, required): file system path to the
  *      wordpiece vocabulary file used by the wordpiece token encoder.
  *   </li>
+ *   <li>
+ *      <b>slot-&lt;slotType&gt;</b> (string, optional): class name of a slot
+ *      parser capable of parsing slots with the {@code slotType} type. For
+ *      example, a custom slot parser used to parse slots listed as {@code user}
+ *      in the NLU metadata should be provided under the key {@code slot-user}.
+ *   </li>
  * </ul>
  */
 public final class TensorflowNLU implements NLUService {
     private final ExecutorService executor =
           Executors.newSingleThreadExecutor();
-    private final TextEncoder textEncoder;
     private final NLUContext context;
-    private final int sepTokenId;
-    private final int padTokenId;
-    private final Thread loadThread;
 
-    private TensorflowModel nluModel = null;
-    private TFNLUOutput outputParser = null;
+    private TextEncoder textEncoder;
+    private int sepTokenId;
+    private int padTokenId;
+    private Thread loadThread;
+    private TensorflowModel nluModel;
+    private TFNLUOutput outputParser;
     private int maxTokens;
 
     private volatile boolean ready = false;
@@ -80,18 +86,75 @@ public final class TensorflowNLU implements NLUService {
      * @param builder builder with configuration parameters
      */
     private TensorflowNLU(Builder builder) {
-        String modelPath = builder.config.getString("nlu-model-path");
-        String metadataPath = builder.config.getString("nlu-metadata-path");
         this.context = builder.context;
-        this.textEncoder = builder.textEncoder;
-        this.loadThread = builder.threadFactory.newThread(
+        SpeechConfig config = transferSlotParsers(
+              builder.slotParserClasses, builder.config);
+        load(config,
+              builder.textEncoder,
+              builder.modelLoader,
+              builder.threadFactory);
+    }
+
+    private SpeechConfig transferSlotParsers(Map<String, String> parserClasses,
+                                             SpeechConfig config) {
+        for (Map.Entry<String, String> parser : parserClasses.entrySet()) {
+            String key = "slot-" + parser.getKey();
+            if (!config.containsKey(key)) {
+                config.put(key, parser.getValue());
+            }
+        }
+        return config;
+    }
+
+    /**
+     * Public constructor for {@code NLUManager} participation. Uses a {@link
+     * WordpieceTextEncoder} and a default TensorFlow model loader.
+     *
+     * <p>
+     * The model and text encoder are loaded on a background thread.
+     * </p>
+     *
+     * @param speechConfig configuration properties
+     * @param nluContext   The context used to register listeners and deliver
+     *                     trace and error events.
+     */
+    public TensorflowNLU(SpeechConfig speechConfig, NLUContext nluContext) {
+        this.context = nluContext;
+        load(speechConfig,
+              new WordpieceTextEncoder(speechConfig, this.context),
+              new TensorflowModel.Loader(),
+              Thread::new);
+    }
+
+    private void load(SpeechConfig config,
+                      TextEncoder encoder,
+                      TensorflowModel.Loader loader,
+                      ThreadFactory threadFactory) {
+        String modelPath = config.getString("nlu-model-path");
+        String metadataPath = config.getString("nlu-metadata-path");
+        Map<String, String> slotParsers = getSlotParsers(config);
+        this.textEncoder = encoder;
+        this.loadThread = threadFactory.newThread(
               () -> {
-                  loadModel(builder.modelLoader, metadataPath, modelPath);
-                  initParsers(builder.slotParserClasses);
+                  loadModel(loader, metadataPath, modelPath);
+                  initParsers(slotParsers);
               });
         this.loadThread.start();
-        this.padTokenId = this.textEncoder.encodeSingle("[PAD]");
-        this.sepTokenId = this.textEncoder.encodeSingle("[SEP]");
+
+        this.padTokenId = encoder.encodeSingle("[PAD]");
+        this.sepTokenId = encoder.encodeSingle("[SEP]");
+    }
+
+    private Map<String, String> getSlotParsers(SpeechConfig config) {
+        HashMap<String, String> slotParsers = new HashMap<>();
+
+        for (Map.Entry<String, Object> prop : config.getParams().entrySet()) {
+            if (prop.getKey().startsWith("slot-")) {
+                String slotType = prop.getKey().replace("slot-", "");
+                slotParsers.put(slotType, String.valueOf(prop.getValue()));
+            }
+        }
+        return slotParsers;
     }
 
     private void initParsers(Map<String, String> parserClasses) {
@@ -103,12 +166,13 @@ public final class TensorflowNLU implements NLUService {
                       .getConstructor()
                       .newInstance();
                 slotParsers.put(slotType, parser);
-                this.outputParser.registerSlotParsers(slotParsers);
             } catch (Exception e) {
                 this.context.traceError("Error loading slot parsers: %s",
                       e.getLocalizedMessage());
             }
         }
+        this.outputParser.registerSlotParsers(slotParsers);
+        this.ready = true;
     }
 
     private void loadModel(TensorflowModel.Loader loader,
@@ -126,7 +190,6 @@ public final class TensorflowNLU implements NLUService {
                   / this.nluModel.getInputSize();
             this.outputParser = new TFNLUOutput(metadata);
             warmup();
-            this.ready = true;
         } catch (IOException e) {
             this.context.traceError("Error loading NLU model: %s",
                   e.getLocalizedMessage());
@@ -261,6 +324,7 @@ public final class TensorflowNLU implements NLUService {
 
     /**
      * Add a new listener to receive trace events from the NLU subsystem.
+     *
      * @param listener The listener to add.
      */
     public void addListener(TraceListener listener) {
@@ -269,6 +333,7 @@ public final class TensorflowNLU implements NLUService {
 
     /**
      * Remove a trace listener, allowing it to be garbage collected.
+     *
      * @param listener The listener to remove.
      */
     public void removeListener(TraceListener listener) {
@@ -328,7 +393,7 @@ public final class TensorflowNLU implements NLUService {
          * @param loader The TensorFlow model loader to use.
          * @return this
          */
-        public Builder setModelLoader(TensorflowModel.Loader loader) {
+        Builder setModelLoader(TensorflowModel.Loader loader) {
             this.modelLoader = loader;
             return this;
         }
@@ -339,7 +404,7 @@ public final class TensorflowNLU implements NLUService {
          * @param encoder The text encoder to use.
          * @return this
          */
-        public Builder setTextEncoder(TextEncoder encoder) {
+        Builder setTextEncoder(TextEncoder encoder) {
             this.textEncoder = encoder;
             return this;
         }

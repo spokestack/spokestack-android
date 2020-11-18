@@ -26,6 +26,7 @@ final class TFNLUOutput {
 
     /**
      * Set the parsers that should be used for a collection of slot types.
+     *
      * @param parsers A map of slot type to the parser used for that type.
      */
     public void registerSlotParsers(Map<String, SlotParser> parsers) {
@@ -35,7 +36,7 @@ final class TFNLUOutput {
     /**
      * Extract the intent from the model's output tensor.
      *
-     * @param output   The output tensor containing the intent prediction.
+     * @param output The output tensor containing the intent prediction.
      * @return A tuple consisting of the intent from the model's output tensor
      * and the model's posterior probability (confidence value) for that
      * prediction.
@@ -50,10 +51,10 @@ final class TFNLUOutput {
      * Extract the slot values captured for a specific utterance from the
      * model's slot tag output tensor.
      *
-     * @param context  The context used to communicate trace events.
-     * @param encoded  The original encoded input, used to determine string
-     *                 values for model output.
-     * @param output   The output tensor containing slot tag predictions.
+     * @param context The context used to communicate trace events.
+     * @param encoded The original encoded input, used to determine string
+     *                values for model output.
+     * @param output  The output tensor containing slot tag predictions.
      * @return A map of slot name to raw string values.
      */
     public Map<String, String> getSlots(
@@ -183,7 +184,12 @@ final class TFNLUOutput {
     }
 
     private Slot parseSlotValue(Metadata.Slot metaSlot, String slotValue) {
-        SlotParser parser = this.slotParsers.get(metaSlot.getType());
+        String slotType = metaSlot.getType();
+        SlotParser parser = this.slotParsers.get(slotType);
+        if (parser == null) {
+            throw new IllegalArgumentException(
+                  "No parser found for \"" + slotType + "\" slot");
+        }
         String slotName = metaSlot.getCaptureName();
         try {
             Object parsed = parser.parse(metaSlot.getFacets(), slotValue);

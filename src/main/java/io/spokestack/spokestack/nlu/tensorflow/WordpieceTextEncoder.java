@@ -28,11 +28,12 @@ final class WordpieceTextEncoder implements TextEncoder {
     private static final String UNKNOWN = "[UNK]";
     private static final String SUFFIX_MARKER = "##";
 
-    private NLUContext context;
+    private final Thread loadThread;
+    private final NLUContext context;
+
     private HashMap<String, Integer> vocabulary;
 
     private volatile boolean ready = false;
-    private Thread loadThread;
 
     /**
      * Creates a new Wordpiece token encoder.
@@ -56,7 +57,7 @@ final class WordpieceTextEncoder implements TextEncoder {
      *                      thread.
      */
     WordpieceTextEncoder(SpeechConfig config, NLUContext nluContext,
-                                ThreadFactory threadFactory) {
+                         ThreadFactory threadFactory) {
         String vocabFile = config.getString("wordpiece-vocab-path");
         this.context = nluContext;
         this.loadThread = threadFactory.newThread(() -> loadVocab(vocabFile));

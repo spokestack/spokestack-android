@@ -1,11 +1,14 @@
 package io.spokestack.spokestack.nlu.tensorflow;
 
-import android.os.SystemClock;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 import io.spokestack.spokestack.SpeechConfig;
+import io.spokestack.spokestack.nlu.NLUContext;
+import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
+import io.spokestack.spokestack.nlu.NLUService;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
+import io.spokestack.spokestack.util.AsyncResult;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -16,7 +19,6 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 public class NLUTestUtils {
 
@@ -25,6 +27,13 @@ public class NLUTestUtils {
               .put("nlu-model-path", "model-path")
               .put("nlu-metadata-path", "src/test/resources/nlu.json")
               .put("wordpiece-vocab-path", "src/test/resources/vocab.txt");
+    }
+
+    public static NLUManager mockManager() throws Exception {
+        return new NLUManager.Builder()
+              .setServiceClass(NLUTestUtils.class.getCanonicalName()
+                    + "$MockNLU")
+              .build();
     }
 
     public static class TestModel extends TensorflowModel {
@@ -133,5 +142,26 @@ public class NLUTestUtils {
             encoded.setOriginalIndices(originalIndices);
             return encoded;
         }
+    }
+
+    public static class MockNLU implements NLUService {
+
+        public MockNLU(SpeechConfig config, NLUContext context) {
+            // empty constructor so it can be built by the manager
+        }
+
+        @Override
+        public AsyncResult<NLUResult> classify(
+              String utterance,
+              NLUContext context
+        ) {
+            AsyncResult<NLUResult> result = new AsyncResult<>(() ->
+                  new NLUResult.Builder(utterance)
+                        .withIntent(utterance)
+                        .build());
+            result.run();
+            return result;
+        }
+
     }
 }

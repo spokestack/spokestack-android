@@ -5,6 +5,12 @@ import io.spokestack.spokestack.util.AsyncResult;
 /**
  * A simple interface for components that provide intent classification and slot
  * recognition, either on-device or via a network request.
+ *
+ * <p>
+ * To participate in Spokestack's {@link NLUManager}, an NLUService must have a
+ * constructor that accepts instances of {@link io.spokestack.spokestack.SpeechConfig}
+ * and {@link NLUContext}.
+ * </p>
  */
 public interface NLUService {
 
