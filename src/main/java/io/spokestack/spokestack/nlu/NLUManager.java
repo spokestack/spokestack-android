@@ -2,6 +2,10 @@ package io.spokestack.spokestack.nlu;
 
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.nlu.tensorflow.TensorflowNLU;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.SelsetParser;
 import io.spokestack.spokestack.util.AsyncResult;
 import io.spokestack.spokestack.util.EventTracer;
 import io.spokestack.spokestack.util.TraceListener;
@@ -88,6 +92,10 @@ public final class NLUManager {
          */
         public Builder() {
             config.put("trace-level", EventTracer.Level.ERROR.value());
+            config.put("slot-digits", DigitsParser.class.getName());
+            config.put("slot-integer", IntegerParser.class.getName());
+            config.put("slot-selset", SelsetParser.class.getName());
+            config.put("slot-entity", IdentityParser.class.getName());
             this.serviceClass = TensorflowNLU.class.getCanonicalName();
         }
 

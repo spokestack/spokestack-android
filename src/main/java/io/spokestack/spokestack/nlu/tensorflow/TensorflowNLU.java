@@ -166,13 +166,13 @@ public final class TensorflowNLU implements NLUService {
                       .getConstructor()
                       .newInstance();
                 slotParsers.put(slotType, parser);
-                this.outputParser.registerSlotParsers(slotParsers);
-                this.ready = true;
             } catch (Exception e) {
                 this.context.traceError("Error loading slot parsers: %s",
                       e.getLocalizedMessage());
             }
         }
+        this.outputParser.registerSlotParsers(slotParsers);
+        this.ready = true;
     }
 
     private void loadModel(TensorflowModel.Loader loader,

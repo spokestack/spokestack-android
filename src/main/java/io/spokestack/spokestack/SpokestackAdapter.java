@@ -72,7 +72,12 @@ public abstract class SpokestackAdapter implements
      */
     @Override
     public void call(@NotNull NLUResult result) {
-        nluResult(result);
+        Throwable error = result.getError();
+        if (error != null) {
+            onError(error);
+        } else {
+            nluResult(result);
+        }
     }
 
     /**

@@ -4,6 +4,10 @@ import android.content.Context;
 import androidx.lifecycle.Lifecycle;
 import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;
+import io.spokestack.spokestack.nlu.tensorflow.parsers.SelsetParser;
 import io.spokestack.spokestack.tts.SynthesisRequest;
 import io.spokestack.spokestack.tts.TTSManager;
 import io.spokestack.spokestack.util.AsyncResult;
@@ -504,6 +508,12 @@ public final class Spokestack extends SpokestackAdapter
             config.put("frame-width", DEFAULT_FRAME_WIDTH);
             config.put("buffer-width", DEFAULT_BUFFER_WIDTH);
 
+            // nlu
+            config.put("slot-digits", DigitsParser.class.getName());
+            config.put("slot-integer", IntegerParser.class.getName());
+            config.put("slot-selset", SelsetParser.class.getName());
+            config.put("slot-entity", IdentityParser.class.getName());
+
             // other
             config.put("trace-level", EventTracer.Level.ERROR.value());
         }
@@ -557,6 +567,12 @@ public final class Spokestack extends SpokestackAdapter
          *     <li>frame-width</li>
          *     <li>buffer-width</li>
          * </ul>
+         *
+         * <p>
+         * Other module builders may set their own default values; builders for
+         * the modules in use should be consulted before overwriting their
+         * configuration.
+         * </p>
          *
          * @param config configuration to attach
          * @return the updated builder
