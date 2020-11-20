@@ -160,6 +160,12 @@ public class SpokestackTTSOutputTest {
         assertEquals(1, listener.events.size());
         assertEquals(TTSEvent.Type.PLAYBACK_COMPLETE,
               listener.events.get(0).type);
+
+        // remove the listener and make sure it doesn't receive a second event
+        ttsOutput.removeListener(listener);
+        ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
+        ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
+        assertEquals(1, listener.events.size());
     }
 
     @Test

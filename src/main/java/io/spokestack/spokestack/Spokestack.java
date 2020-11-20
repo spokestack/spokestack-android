@@ -146,6 +146,33 @@ public final class Spokestack extends SpokestackAdapter
         }
     }
 
+    /**
+     * Update the Android application context used for on-device ASR and the TTS
+     * manager.
+     *
+     * @param context The new Android context.
+     */
+    public void setAndroidContext(Context context) {
+        if (this.speechPipeline != null) {
+            this.speechPipeline.getContext().setAndroidContext(context);
+        }
+
+        if (this.tts != null) {
+            this.tts.setAndroidContext(context);
+        }
+    }
+
+    /**
+     * Update the Android lifecycle used by the TTS manager.
+     *
+     * @param lifecycle The new Android lifecycle.
+     */
+    public void setAndroidLifecycle(Lifecycle lifecycle) {
+        if (this.tts != null) {
+            this.tts.registerLifecycle(lifecycle);
+        }
+    }
+
     // speech pipeline
 
     /**

@@ -13,7 +13,7 @@ public abstract class TTSComponent {
     /**
      * Listeners that receive TTS events dispatched by this component.
      */
-    private List<TTSListener> listeners = new ArrayList<>();
+    private final List<TTSListener> listeners = new ArrayList<>();
 
     /**
      * Add a TTS listener to receive events from this component.
@@ -22,6 +22,15 @@ public abstract class TTSComponent {
      */
     public void addListener(TTSListener listener) {
         listeners.add(listener);
+    }
+
+    /**
+     * Remove a TTS listener so it can be garbage collected.
+     *
+     * @param listener The listener to remove.
+     */
+    public void removeListener(TTSListener listener) {
+        listeners.remove(listener);
     }
 
     /**

@@ -156,9 +156,11 @@ public class SpokestackTTSOutput extends SpeechOutput
     @Override
     public void close() {
         this.taskHandler.run(() -> {
-            savePlayerSettings();
-            this.mediaPlayer.release();
-            this.mediaPlayer = null;
+            if (this.mediaPlayer != null) {
+                savePlayerSettings();
+                this.mediaPlayer.release();
+                this.mediaPlayer = null;
+            }
         });
     }
 

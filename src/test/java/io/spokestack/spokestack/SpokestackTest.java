@@ -209,8 +209,16 @@ public class SpokestackTest {
               .withoutWakeword()
               .addListener(listener);
 
-        builder = mockAndroidComponents(builder);
         Spokestack spokestack = new Spokestack(builder, mockNlu());
+
+        // handle context/lifecycle separately to make sure the convenience
+        // methods work
+        Context androidContext = mock(Context.class);
+        LifecycleRegistry lifecycleRegistry =
+              new LifecycleRegistry(mock(LifecycleOwner.class));
+
+        spokestack.setAndroidContext(androidContext);
+        spokestack.setAndroidLifecycle(lifecycleRegistry);
 
         listener.setSpokestack(spokestack);
         TTSManager tts = spokestack.getTts();
