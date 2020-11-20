@@ -53,15 +53,15 @@ android {
 dependencies {
     // ...
 
-    implementation 'io.spokestack:spokestack-android:9.1.0'
+    implementation 'io.spokestack:spokestack-android:10.0.0'
 
     // for TensorFlow Lite-powered wakeword detection and/or NLU, add this one too
     implementation 'org.tensorflow:tensorflow-lite:2.3.0'
 
     // for automatic playback of TTS audio
     implementation 'androidx.lifecycle:lifecycle-common-java8:2.1.0'
-    implementation 'androidx.media:media:1.1.0'
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.11.0'
+    implementation 'androidx.media:media:1.2.0'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.11.7'
 }
 ```
 
