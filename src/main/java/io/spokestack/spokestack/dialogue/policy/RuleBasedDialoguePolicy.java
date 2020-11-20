@@ -3,6 +3,7 @@ package io.spokestack.spokestack.dialogue.policy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.MalformedJsonException;
+import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.dialogue.ConversationData;
 import io.spokestack.spokestack.dialogue.ConversationState;
 import io.spokestack.spokestack.dialogue.DialogueDispatcher;
@@ -50,6 +51,16 @@ import static io.spokestack.spokestack.dialogue.policy.Model.*;
  * on the dialogue manager in use so that any follow-up navigation/prompts can
  * occur.
  * </p>
+ *
+ * <p>
+ * This component supports the following configuration properties:
+ * </p>
+ * <ul>
+ *   <li>
+ *      <b>dialogue-policy-file</b> (string, required): file system path to the dialogue
+ *      policy configuration.
+ *   </li>
+ * </ul>
  */
 public class RuleBasedDialoguePolicy implements DialoguePolicy {
     static final String STATE_KEY =
@@ -61,15 +72,16 @@ public class RuleBasedDialoguePolicy implements DialoguePolicy {
     private PendingTurn pendingTurn;
 
     /**
-     * Creates a dialogue policy from the supplied file.
+     * Creates a dialogue policy from the supplied configuration.
      *
-     * @param policyFile Path to a JSON configuration for the dialogue.
+     * @param config Configuration containing the path to a policy file.
      * @throws IOException            if there is an error reading the policy
      *                                file.
      * @throws MalformedJsonException if the policy file contains invalid JSON.
      */
-    public RuleBasedDialoguePolicy(String policyFile)
+    public RuleBasedDialoguePolicy(SpeechConfig config)
           throws IOException, MalformedJsonException {
+        String policyFile = config.getString("dialogue-policy-file");
         this.gson = new GsonBuilder()
               .disableHtmlEscaping()
               .create();

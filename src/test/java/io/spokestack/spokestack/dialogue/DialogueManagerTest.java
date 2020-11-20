@@ -1,6 +1,7 @@
 package io.spokestack.spokestack.dialogue;
 
 import com.google.gson.stream.MalformedJsonException;
+import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.util.EventTracer;
 import io.spokestack.spokestack.util.Tuple;
@@ -8,9 +9,11 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -22,13 +25,6 @@ public class DialogueManagerTest {
         // no policy
         assertThrows(IllegalArgumentException.class, () ->
               new DialogueManager.Builder().build());
-
-        // set both custom policy and policy file
-        assertThrows(IllegalArgumentException.class, () ->
-              new DialogueManager.Builder()
-                    .withPolicyFile("src/test/resources/dialogue.json")
-                    .withCustomPolicy(new InternalPolicy())
-                    .build());
 
         // bad policy file path
         assertThrows(IOException.class, () ->
@@ -66,10 +62,13 @@ public class DialogueManagerTest {
     @Test
     public void dataOperations() throws Exception {
         ConversationData conversationData = new InMemoryConversationData();
-        InternalPolicy policy = new InternalPolicy();
+        AtomicReference<String> policyState = new AtomicReference<>(null);
+        SpeechConfig config = new SpeechConfig();
+        config.put("state", policyState);
+        String policy = InternalPolicy.class.getName();
 
-        DialogueManager manager = new DialogueManager.Builder()
-              .withCustomPolicy(policy)
+        DialogueManager manager = new DialogueManager.Builder(config)
+              .withDialoguePolicy(policy)
               .withDataStore(conversationData)
               .build();
 
@@ -83,25 +82,25 @@ public class DialogueManagerTest {
               ConversationData.Format.TEXT));
 
         // load the saved state into the policy
-        policy.clear();
-        assertNull(policy.state);
+        policyState.set(null);
+        assertNull(manager.dump());
 
         manager.load(null);
-        assertNull(policy.state);
+        assertNull(manager.dump());
 
         manager.load("newState");
-        assertEquals("newState", policy.state);
+        assertEquals("newState", manager.dump());
     }
 
     @Test
     public void dialogueTurns() throws Exception {
         ConversationData conversationData = new InMemoryConversationData();
         Listener listener = new Listener();
-        InternalPolicy policy = new InternalPolicy();
+        String policy = InternalPolicy.class.getName();
 
         DialogueManager manager = new DialogueManager.Builder()
               .addListener(listener)
-              .withCustomPolicy(policy)
+              .withDialoguePolicy(policy)
               .withTraceLevel(EventTracer.Level.DEBUG.value())
               .withDataStore(conversationData)
               .build();
@@ -130,20 +129,25 @@ public class DialogueManagerTest {
     }
 
     static class InternalPolicy implements DialoguePolicy {
-        String state = null;
+        AtomicReference<String> state;
 
-        public void clear() {
-            state = null;
+        public InternalPolicy(SpeechConfig config) {
+            this.state =
+                  (AtomicReference<String>) config.getParams().get("state");
+
+            if (this.state == null) {
+                this.state = new AtomicReference<>(null);
+            }
         }
 
         @Override
         public String dump(ConversationData conversationData) {
-            conversationData.set("state", this.state);
-            return this.state;
+            conversationData.set("state", this.state.get());
+            return this.state.get();
         }
 
         public void load(String state, ConversationData conversationData) {
-            this.state = state;
+            this.state.set(state);
         }
 
         @Override
@@ -163,7 +167,7 @@ public class DialogueManagerTest {
                                  DialogueDispatcher eventDispatcher) {
             ConversationState conversationState =
                   new ConversationState.Builder()
-                        .withNode(state)
+                        .withNode(state.get())
                         .withAction("complete", new HashMap<>())
                         .build();
             DialogueEvent event = new DialogueEvent(

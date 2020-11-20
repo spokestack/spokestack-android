@@ -1,11 +1,13 @@
 package io.spokestack.spokestack.dialogue;
 
 import androidx.annotation.NonNull;
+import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.dialogue.policy.RuleBasedDialoguePolicy;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.util.Callback;
 import io.spokestack.spokestack.util.EventTracer;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,13 +28,15 @@ import java.util.List;
  * In order to translate between NLU results and dynamic app actions, the
  * manager relies on a <i>dialogue policy</i>. An app may use Spokestack's
  * rule-based policy by providing the path to a JSON file describing the
- * policy's configuration at build time, or a custom policy may be provided by
- * implementing {@link DialoguePolicy} and passing an instance of the
- * implementing class to the manager's builder.
+ * policy's configuration under the {@code "dialogue-policy-file"} configuration
+ * key, or may use a different/custom policy by passing its class name under the
+ * {@code "dialogue-policy-class"} key. The class specified by the latter key
+ * must contain a single-argument constructor that accepts a {@link
+ * SpeechConfig} instance.
  * </p>
  *
  * <p>
- * Dialogue management, like other Spokestack subsystems, is event-driven.
+ * Dialogue management, like other Spokestack modules, is event-driven.
  * Registered listeners will receive {@link DialogueEvent DialogueEvents} when
  * the system should make a change based on the user's last request. Events
  * include changes to the app's visual context, prompts to be read or displayed
@@ -48,18 +52,15 @@ public final class DialogueManager implements Callback<NLUResult> {
      */
     public static final String SLOT_PREFIX = "_";
 
-    private final DialoguePolicy policy;
     private final ConversationData dataStore;
     private final DialogueDispatcher eventDispatcher;
+
+    final DialoguePolicy policy;
 
     private NLUResult lastTurn;
 
     private DialogueManager(Builder builder) throws Exception {
-        if (builder.policyFile != null) {
-            this.policy = new RuleBasedDialoguePolicy(builder.policyFile);
-        } else {
-            this.policy = builder.dialoguePolicy;
-        }
+        this.policy = buildPolicy(builder);
         if (builder.conversationData != null) {
             this.dataStore = builder.conversationData;
         } else {
@@ -67,6 +68,23 @@ public final class DialogueManager implements Callback<NLUResult> {
         }
         this.eventDispatcher =
               new DialogueDispatcher(builder.traceLevel, builder.listeners);
+    }
+
+    private DialoguePolicy buildPolicy(Builder builder) throws Exception {
+        String defaultPolicy = RuleBasedDialoguePolicy.class.getName();
+        String policyClass =
+              builder.config.getString("dialogue-policy-class", defaultPolicy);
+
+        Object constructed;
+        try {
+            constructed = Class
+                  .forName(policyClass)
+                  .getConstructor(SpeechConfig.class)
+                  .newInstance(builder.config);
+        } catch (InvocationTargetException e) {
+            throw (Exception) e.getCause();
+        }
+        return (DialoguePolicy) constructed;
     }
 
     /**
@@ -99,6 +117,7 @@ public final class DialogueManager implements Callback<NLUResult> {
 
     /**
      * Get the last user turn processed by the dialogue manager.
+     *
      * @return The last user turn processed by the dialogue manager.
      */
     public NLUResult getLastTurn() {
@@ -159,36 +178,96 @@ public final class DialogueManager implements Callback<NLUResult> {
     }
 
     /**
+     * Add a new listener to receive events from the dialogue management
+     * module.
+     *
+     * @param listener The listener to add.
+     */
+    public void addListener(DialogueListener listener) {
+        this.eventDispatcher.addListener(listener);
+    }
+
+    /**
+     * Remove a dialogue listener, allowing it to be garbage collected.
+     *
+     * @param listener The listener to remove.
+     */
+    public void removeListener(DialogueListener listener) {
+        this.eventDispatcher.removeListener(listener);
+    }
+
+    /**
      * Dialogue manager builder API.
      */
     public static class Builder {
 
-        private String policyFile;
-        private DialoguePolicy dialoguePolicy;
+        private final SpeechConfig config;
+        private final List<DialogueListener> listeners = new ArrayList<>();
+
         private ConversationData conversationData;
         private int traceLevel;
-        private final List<DialogueListener> listeners = new ArrayList<>();
+
+        /**
+         * Create a new dialogue manager builder with a default configuration.
+         */
+        public Builder() {
+            this(new SpeechConfig());
+        }
+
+        /**
+         * Create a new dialogue manager builder with the supplied
+         * configuration.
+         *
+         * @param speechConfig The configuration to use for dialogue
+         *                     management.
+         */
+        public Builder(SpeechConfig speechConfig) {
+            this.config = speechConfig;
+        }
+
+        /**
+         * Sets a configuration value.
+         *
+         * @param key   configuration property name
+         * @param value property value
+         * @return the updated builder state
+         */
+        public Builder setProperty(String key, Object value) {
+            this.config.put(key, value);
+            return this;
+        }
 
         /**
          * Specify the path to the JSON file containing a Spokestack dialogue
          * policy for the manager to use.
          *
+         * <p>
+         * This is a convenience method for {@code setProperty("dialogue-policy-file",
+         * file)}.
+         * </p>
+         *
          * @param file Path to a dialogue configuration file.
          * @return the updated builder state
          */
         public Builder withPolicyFile(String file) {
-            this.policyFile = file;
+            setProperty("dialogue-policy-file", file);
             return this;
         }
 
         /**
          * Specify the dialogue policy for the manager to use.
          *
-         * @param policy The dialogue policy to follow for user interactions.
+         * <p>
+         * This is a convenience method for {@code setProperty("dialogue-policy-class",
+         * file)}.
+         * </p>
+         *
+         * @param policyClass The name of the class containing the dialogue
+         *                    policy to use.
          * @return the updated builder state
          */
-        public Builder withCustomPolicy(DialoguePolicy policy) {
-            this.dialoguePolicy = policy;
+        public Builder withDialoguePolicy(String policyClass) {
+            setProperty("dialogue-policy-class", policyClass);
             return this;
         }
 
@@ -233,12 +312,10 @@ public final class DialogueManager implements Callback<NLUResult> {
          * @throws Exception if there is an error building the manager.
          */
         public DialogueManager build() throws Exception {
-            if (this.policyFile == null ^ this.dialoguePolicy == null) {
-                return new DialogueManager(this);
+            if (this.config.containsKey("trace-level")) {
+                withTraceLevel(this.config.getInteger("trace-level"));
             }
-            throw new IllegalArgumentException("dialogue manager requires "
-                  + "either a policy file or custom policy, but cannot "
-                  + "have both");
+            return new DialogueManager(this);
         }
     }
 }
