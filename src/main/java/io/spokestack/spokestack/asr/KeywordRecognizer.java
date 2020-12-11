@@ -429,16 +429,15 @@ public final class KeywordRecognizer implements SpeechProcessor {
 
         context.traceInfo("keyword: %.3f %s", confidence, transcript);
 
-        // if we are under threshold, return the null class
-        if (confidence < this.threshold) {
-            transcript = "";
-            confidence = 1.0f - confidence;
+        if (confidence >= this.threshold) {
+            // raise the speech recognition event with the class transcript
+            context.setTranscript(transcript);
+            context.setConfidence(confidence);
+            context.dispatch(SpeechContext.Event.RECOGNIZE);
+        } else {
+            // if we are under threshold, time out without recognition
+            context.dispatch(SpeechContext.Event.TIMEOUT);
         }
-
-        // raise the speech recognition event with the class transcript
-        context.setTranscript(transcript);
-        context.setConfidence(confidence);
-        context.dispatch(SpeechContext.Event.RECOGNIZE);
 
         reset();
     }

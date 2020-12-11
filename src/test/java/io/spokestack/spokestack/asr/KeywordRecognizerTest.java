@@ -111,7 +111,7 @@ public class KeywordRecognizerTest {
 
     @Test
     public void testRecNullCtxDeactivate() throws Exception {
-        // verify that the null transcript is raised for the null class
+        // verify that a timeout is raised for the null class
         TestEnv env = new TestEnv(testConfig());
 
         env.context.setActive(true);
@@ -120,7 +120,7 @@ public class KeywordRecognizerTest {
         env.context.setActive(false);
         env.process();
 
-        assertEquals(SpeechContext.Event.RECOGNIZE, env.event);
+        assertEquals(SpeechContext.Event.TIMEOUT, env.event);
         assertEquals("", env.context.getTranscript());
     }
 
