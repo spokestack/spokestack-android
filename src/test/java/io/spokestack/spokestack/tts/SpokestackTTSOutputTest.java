@@ -38,6 +38,8 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ExoPlaybackException.class)
 public class SpokestackTTSOutputTest {
+
+    // to avoid a stubbed class error
     @Mock
     @SuppressWarnings("unused")
     LifecycleOwner owner;
@@ -51,9 +53,7 @@ public class SpokestackTTSOutputTest {
     @Mock
     private AudioManager mockManager;
 
-    @Mock
-    private ExoPlayer exoPlayer;
-    private MockPlayerFactory factory = new MockPlayerFactory();
+    private final MockPlayerFactory factory = new MockPlayerFactory();
 
     @Before
     public void before() throws Exception {
@@ -85,6 +85,7 @@ public class SpokestackTTSOutputTest {
 
     @Test
     public void testResourceManagement() {
+        factory.needMock = true;
         SpokestackTTSOutput ttsOutput =
               new SpokestackTTSOutput(null, factory);
         ttsOutput.setAndroidContext(mockContext);
@@ -113,6 +114,7 @@ public class SpokestackTTSOutputTest {
 
     @Test
     public void testCallbacks() {
+        factory.needMock = true;
         SpokestackTTSOutput ttsOutput = spiedOutput();
 
         ExoPlayer mediaPlayer = ttsOutput.getMediaPlayer();
@@ -138,7 +140,7 @@ public class SpokestackTTSOutputTest {
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
         assertTrue(ttsOutput.getPlayerState().hasContent);
 
-        ExoPlayer mediaPlayer = ttsOutput.getMediaPlayer();
+        TestExoPlayer mediaPlayer = (TestExoPlayer) ttsOutput.getMediaPlayer();
         assertNotNull(mediaPlayer);
         // this state change should do nothing
         ttsOutput.onPlayerStateChanged(false, Player.STATE_BUFFERING);
@@ -156,16 +158,31 @@ public class SpokestackTTSOutputTest {
 
         // now give it audio to play and check again
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
-        ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
-        assertEquals(1, listener.events.size());
-        assertEquals(TTSEvent.Type.PLAYBACK_COMPLETE,
+        ttsOutput.onIsPlayingChanged(true);
+        ttsOutput.onIsPlayingChanged(false);
+        assertEquals(2, listener.events.size());
+        assertEquals(TTSEvent.Type.PLAYBACK_STARTED,
               listener.events.get(0).type);
+        assertEquals(TTSEvent.Type.PLAYBACK_STOPPED,
+              listener.events.get(1).type);
 
-        // remove the listener and make sure it doesn't receive a second event
+        mediaPlayer.setPlaybackState(Player.STATE_ENDED);
+        ttsOutput.onIsPlayingChanged(false);
+        assertEquals(4, listener.events.size());
+        assertEquals(TTSEvent.Type.PLAYBACK_STOPPED,
+              listener.events.get(2).type);
+        assertEquals(TTSEvent.Type.PLAYBACK_COMPLETE,
+              listener.events.get(3).type);
+
+        mediaPlayer.setPlaybackState(Player.STATE_BUFFERING);
+        ttsOutput.onIsPlayingChanged(false);
+        assertEquals(4, listener.events.size());
+
+        // remove the listener and make sure it doesn't receive a fourth event
         ttsOutput.removeListener(listener);
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
-        ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
-        assertEquals(1, listener.events.size());
+        ttsOutput.onIsPlayingChanged(true);
+        assertEquals(4, listener.events.size());
     }
 
     @Test
@@ -185,6 +202,7 @@ public class SpokestackTTSOutputTest {
 
     @Test
     public void testFocusChanged() {
+        factory.needMock = true;
         SpokestackTTSOutput ttsOutput = spiedOutput();
         assertFalse(ttsOutput.getPlayerState().shouldPlay);
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
@@ -239,13 +257,18 @@ public class SpokestackTTSOutputTest {
         return ttsOutput;
     }
 
-    private class MockPlayerFactory
+    private static class MockPlayerFactory
           extends SpokestackTTSOutput.PlayerFactory {
 
+        public boolean needMock;
+
         @Override
-        ExoPlayer createPlayer(int usage, int contentType,
+        TestExoPlayer createPlayer(int usage, int contentType,
                                Context context) {
-            return exoPlayer;
+            if (needMock) {
+                return mock(TestExoPlayer.class);
+            }
+            return new TestExoPlayer();
         }
     }
 

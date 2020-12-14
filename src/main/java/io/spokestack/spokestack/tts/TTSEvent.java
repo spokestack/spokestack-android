@@ -27,6 +27,19 @@ public final class TTSEvent {
         PLAYBACK_COMPLETE,
 
         /**
+         * The Spokestack-managed media player has started playing synthesized
+         * TTS audio.
+         */
+        PLAYBACK_STARTED,
+
+        /**
+         * The Spokestack-managed media player has stopped playing audio
+         * (possibly because the system gave audio focus to another component),
+         * but may still have TTS data left to play.
+         */
+        PLAYBACK_STOPPED,
+
+        /**
          * An error has occurred during synthesis or output.
          */
         ERROR

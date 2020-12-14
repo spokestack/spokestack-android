@@ -212,13 +212,32 @@ public class SpokestackTTSOutput extends SpeechOutput
     }
 
     @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-        if (playbackState == Player.STATE_ENDED) {
-            // check for content produced by the TTS system; the player can
-            // also receive state change events for audio from another source
-            if (this.playerState.hasContent) {
-                dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_COMPLETE));
-                resetPlayerState();
+    public void onIsPlayingChanged(boolean isPlaying) {
+        // only dispatch events if we know about the content; the player can
+        // also receive state change events for audio from another source
+        // (i.e., the platform ASR activation/deactivation beeps)
+        if (!this.playerState.hasContent) {
+            return;
+        }
+        if (isPlaying) {
+            dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_STARTED));
+        } else {
+            // if playback has stopped due to an error, we rely on
+            // onPlayerError to dispatch that event separately
+            switch (mediaPlayer.getPlaybackState()) {
+                case Player.STATE_ENDED:
+                    // if the player only had one track, we'll just get
+                    // onIsPlayingChanged once
+                    dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_STOPPED));
+                    dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_COMPLETE));
+                    resetPlayerState();
+                    break;
+                case Player.STATE_BUFFERING:
+                    // do nothing
+                    break;
+                default:
+                    dispatch(new TTSEvent(TTSEvent.Type.PLAYBACK_STOPPED));
+                    break;
             }
         }
     }
@@ -414,7 +433,9 @@ public class SpokestackTTSOutput extends SpeechOutput
     public void onPlaybackSuppressionReasonChanged(
           int playbackSuppressionReason) { }
 
-    @Override public void onIsPlayingChanged(boolean isPlaying) { }
+    @Override
+    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+    }
 
     @Override public void onRepeatModeChanged(int repeatMode) { }
 
