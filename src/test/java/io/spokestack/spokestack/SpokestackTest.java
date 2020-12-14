@@ -308,6 +308,7 @@ public class SpokestackTest {
         // modules don't work after close()
         spokestack.close();
         assertNull(spokestack.getTts().getTtsService());
+        assertNull(spokestack.getNlu().getNlu());
         assertThrows(
               IllegalStateException.class,
               () -> spokestack.classify("test"));
@@ -320,6 +321,7 @@ public class SpokestackTest {
         // restart supported
         spokestack.prepare();
         assertNotNull(spokestack.getTts().getTtsService());
+        assertNotNull(spokestack.getNlu().getNlu());
         assertDoesNotThrow(() -> spokestack.classify("test"));
         assertDoesNotThrow(() -> spokestack.synthesize(request));
     }

@@ -63,6 +63,15 @@ public final class NLUManager implements AutoCloseable {
     }
 
     /**
+     * Get the NLU service currently in use.
+     *
+     * @return The current NLU service.
+     */
+    public NLUService getNlu() {
+        return nlu;
+    }
+
+    /**
      * Releases resources in use by the NLU module.
      */
     @Override
