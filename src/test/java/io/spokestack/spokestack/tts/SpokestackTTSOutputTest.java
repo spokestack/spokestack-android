@@ -102,10 +102,10 @@ public class SpokestackTTSOutputTest {
         // audioReceived ensures that the player gets set up
         mediaPlayer = ttsOutput.getMediaPlayer();
         assertNotNull(mediaPlayer);
-        verify(ttsOutput, times(1)).playContent();
+        verify(ttsOutput, times(1)).inlinePlay();
         verify(ttsOutput, times(1)).createMediaSource(Uri.EMPTY);
         verify(ttsOutput, times(1)).requestFocus();
-        verify(mediaPlayer, times(2)).prepare(any());
+        verify(mediaPlayer, times(1)).prepare(any());
         verify(mediaPlayer, times(1)).setPlayWhenReady(true);
     }
 
@@ -119,22 +119,26 @@ public class SpokestackTTSOutputTest {
 
         TestExoPlayer mediaPlayer = (TestExoPlayer) ttsOutput.getMediaPlayer();
         assertNotNull(mediaPlayer);
-        // this state change should do nothing
-        ttsOutput.onPlayerStateChanged(false, Player.STATE_BUFFERING);
+        // buffering doesn't send PLAYBACK_STOPPED events
+        mediaPlayer.setPlaybackState(Player.STATE_BUFFERING);
+        ttsOutput.onIsPlayingChanged(false);
         assertTrue(ttsOutput.getPlayerState().hasContent);
-
-        ttsOutput.stopPlayback();
-        assertFalse(ttsOutput.getPlayerState().shouldPlay);
-        assertFalse(ttsOutput.getPlayerState().hasContent);
-
-        ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
-        assertFalse(ttsOutput.getPlayerState().hasContent);
-        // no playback_complete event if the player didn't have content from
-        // the TTS system
         assertTrue(listener.events.isEmpty());
 
-        // now give it audio to play and check again
+        // simulate playing audio from a non-Spokestack source
+        ttsOutput.stopPlayback();
+        ttsOutput.onIsPlayingChanged(true);
+        ttsOutput.onIsPlayingChanged(false);
+        assertFalse(ttsOutput.getPlayerState().shouldPlay);
+        assertFalse(ttsOutput.getPlayerState().hasContent);
+        // no event for non-Spokestack audio
+        assertTrue(listener.events.isEmpty());
+
+        // give it Spokestack audio to play
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
+        // the player has to be recreated after `stopPlayback()` and receiving
+        // new audio
+        mediaPlayer = (TestExoPlayer) ttsOutput.getMediaPlayer();
         ttsOutput.onIsPlayingChanged(true);
         ttsOutput.onIsPlayingChanged(false);
         assertEquals(2, listener.events.size());
