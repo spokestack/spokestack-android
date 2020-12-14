@@ -163,5 +163,8 @@ public class NLUTestUtils {
             return result;
         }
 
+        @Override
+        public void close() {
+        }
     }
 }

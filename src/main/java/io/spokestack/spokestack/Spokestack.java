@@ -185,6 +185,12 @@ public final class Spokestack extends SpokestackAdapter
 
     /**
      * Stops the speech pipeline and releases all its internal resources.
+     *
+     * <p>
+     * This is useful for stopping passive listening (listening for wakeword
+     * activation); for fully releasing <em>all</em> internal resources held by
+     * Spokestack, see {@link #release()}.
+     * </p>
      */
     public void stop() {
         if (this.speechPipeline != null) {
@@ -257,36 +263,6 @@ public final class Spokestack extends SpokestackAdapter
      */
     public TTSManager getTts() {
         return tts;
-    }
-
-    /**
-     * Dynamically constructs TTS component classes, allocating any resources
-     * they control. It is only necessary to explicitly call this if the TTS
-     * module's resources have been freed via {@link #releaseTts()} or {@link
-     * #close()}.
-     *
-     * @throws Exception If there is an error constructing TTS components.
-     */
-    public void prepareTts() throws Exception {
-        if (this.tts != null) {
-            this.tts.prepare();
-        }
-    }
-
-    /**
-     * Stops activity in the TTS module and releases any resources held by its
-     * components. No internally queued audio will be played after this method
-     * is called, and the queue will be cleared.
-     *
-     * <p>
-     * Once released, an explicit call to {@link #prepareTts()} is required to
-     * reallocate TTS resources.
-     * </p>
-     */
-    public void releaseTts() {
-        if (this.tts != null) {
-            this.tts.release();
-        }
     }
 
     /**
@@ -389,13 +365,81 @@ public final class Spokestack extends SpokestackAdapter
         return result;
     }
 
-    @Override
-    public void close() {
-        if (this.speechPipeline != null) {
-            this.speechPipeline.close();
+    /**
+     * Prepares all registered Spokestack modules for use.
+     *
+     * <p>
+     * Calling this method is only necessary if internal resources have been
+     * released via {@link #close()} or {@link #release()}.
+     * </p>
+     *
+     * <p>
+     * The speech pipeline is not modified by this method since it
+     * manages its own resources via {@link #start()} and {@link #stop()},
+     * and some of its components are designed to be used immediately after
+     * construction.
+     * </p>
+     *
+     * @throws Exception if there is an error configuring or starting a module.
+     */
+    public void prepare() throws Exception {
+        if (this.nlu != null) {
+            this.nlu.prepare();
         }
         if (this.tts != null) {
-            this.tts.close();
+            this.tts.prepare();
+        }
+    }
+
+    /**
+     * Release internal resources held by all registered Spokestack modules.
+     *
+     * <p>
+     * If Spokestack is needed again after this method is called,
+     * {@link #prepare()} <em>must</em> be called to reconstruct the modules.
+     * </p>
+     *
+     * <p>
+     * In order to support such restarts, this method does not clear registered
+     * listeners. To do this, close then destroy the current Spokestack
+     * instance and build a new one.
+     * </p>
+     */
+    @Override
+    public void close() {
+        release();
+    }
+
+    /**
+     * Release internal resources held by all registered Spokestack modules.
+     *
+     * <p>
+     * If Spokestack is needed again after this method is called,
+     * {@link #prepare()} <em>must</em> be called to reconstruct the modules.
+     * </p>
+     *
+     * <p>
+     * In order to support such restarts, this method does not clear registered
+     * listeners. To do this, close then destroy the current Spokestack
+     * instance and build a new one.
+     * </p>
+     */
+    public void release() {
+        closeSafely(this.speechPipeline);
+        closeSafely(this.nlu);
+        closeSafely(this.tts);
+    }
+
+    private void closeSafely(AutoCloseable module) {
+        if (module == null) {
+            return;
+        }
+        try {
+            module.close();
+        } catch (Exception e) {
+            for (SpokestackAdapter listener : this.listeners) {
+                listener.onError(e);
+            }
         }
     }
 

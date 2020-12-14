@@ -24,9 +24,11 @@ import java.util.List;
  * perform these classifications and dispatch events to registered listeners.
  * </p>
  */
-public final class NLUManager {
-    private final NLUService nlu;
+public final class NLUManager implements AutoCloseable {
     private final NLUContext context;
+    private final String serviceClass;
+    private final SpeechConfig config;
+    private NLUService nlu;
 
     /**
      * Constructs a new {@code NLUManager} with an initialized NLU service.
@@ -36,15 +38,37 @@ public final class NLUManager {
      */
     private NLUManager(Builder builder) throws Exception {
         this.context = builder.context;
-        this.nlu = buildService(builder);
+        this.serviceClass = builder.serviceClass;
+        this.config = builder.config;
+        prepare();
     }
 
-    private NLUService buildService(Builder builder) throws Exception {
+    /**
+     * Initializes the NLU service.
+     *
+     * @throws Exception if there is an error during initialization.
+     */
+    public void prepare() throws Exception {
+        if (this.nlu == null) {
+            this.nlu = buildService();
+        }
+    }
+
+    private NLUService buildService() throws Exception {
         Object constructed = Class
-              .forName(builder.serviceClass)
+              .forName(this.serviceClass)
               .getConstructor(SpeechConfig.class, NLUContext.class)
-              .newInstance(builder.config, builder.context);
+              .newInstance(this.config, this.context);
         return (NLUService) constructed;
+    }
+
+    /**
+     * Releases resources in use by the NLU module.
+     */
+    @Override
+    public void close() throws Exception {
+        this.nlu.close();
+        this.nlu = null;
     }
 
     /**
@@ -57,6 +81,9 @@ public final class NLUManager {
      * classification.
      */
     public AsyncResult<NLUResult> classify(String utterance) {
+        if (this.nlu == null) {
+            throw new IllegalStateException("NLU closed; call prepare()");
+        }
         return this.nlu.classify(utterance, this.context);
     }
 

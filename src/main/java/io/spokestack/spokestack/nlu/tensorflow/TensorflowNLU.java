@@ -212,6 +212,15 @@ public final class TensorflowNLU implements NLUService {
         return this.maxTokens;
     }
 
+    @Override
+    public void close() throws Exception {
+        this.executor.shutdownNow();
+        this.nluModel.close();
+        this.nluModel = null;
+        this.textEncoder = null;
+        this.outputParser = null;
+    }
+
     /**
      * Classify a user utterance, returning a wrapper that can either block
      * until the classification is complete or call a registered callback when

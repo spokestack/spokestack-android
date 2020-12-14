@@ -227,10 +227,6 @@ public class SpokestackTest {
         assertEquals("audioReceived", outputEvent);
 
         // other convenience methods
-        spokestack.releaseTts();
-        assertNull(tts.getTtsService());
-        spokestack.prepareTts();
-        assertNotNull(tts.getTtsService());
         spokestack.stopPlayback();
         outputEvent = events.poll(1, TimeUnit.SECONDS);
         assertEquals("stop", outputEvent);
@@ -286,6 +282,46 @@ public class SpokestackTest {
         // error also sent through the convenience error handling method
         Throwable err = listener.errors.poll(500, TimeUnit.MILLISECONDS);
         assertEquals(error, err);
+    }
+
+    @Test
+    public void testClose() throws Exception {
+        mockStatic(SystemClock.class);
+        TestAdapter listener = new TestAdapter();
+
+        Spokestack.Builder builder = new Spokestack
+              .Builder(new SpeechPipeline.Builder(), mockTts())
+              .withoutWakeword()
+              .setConfig(testConfig())
+              .setProperty("trace-level", EventTracer.Level.INFO.value())
+              .addListener(listener);
+
+        builder = mockAndroidComponents(builder);
+        builder.getPipelineBuilder().setStageClasses(new ArrayList<>());
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
+
+        spokestack.getSpeechPipeline().activate();
+        SpeechContext.Event event =
+              listener.speechEvents.poll(1, TimeUnit.SECONDS);
+        assertEquals(SpeechContext.Event.ACTIVATE, event);
+
+        // modules don't work after close()
+        spokestack.close();
+        assertNull(spokestack.getTts().getTtsService());
+        assertThrows(
+              IllegalStateException.class,
+              () -> spokestack.classify("test"));
+        SynthesisRequest request =
+              new SynthesisRequest.Builder("test").build();
+        assertThrows(
+              IllegalStateException.class,
+              () -> spokestack.synthesize(request));
+
+        // restart supported
+        spokestack.prepare();
+        assertNotNull(spokestack.getTts().getTtsService());
+        assertDoesNotThrow(() -> spokestack.classify("test"));
+        assertDoesNotThrow(() -> spokestack.synthesize(request));
     }
 
     private NLUManager mockNlu() throws Exception {
