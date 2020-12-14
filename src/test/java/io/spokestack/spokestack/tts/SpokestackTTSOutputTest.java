@@ -6,9 +6,6 @@ import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.net.Uri;
 import androidx.annotation.NonNull;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.LifecycleRegistry;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackParameters;
@@ -21,7 +18,6 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -38,14 +34,6 @@ import static org.mockito.Mockito.*;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ExoPlaybackException.class)
 public class SpokestackTTSOutputTest {
-
-    // to avoid a stubbed class error
-    @Mock
-    @SuppressWarnings("unused")
-    LifecycleOwner owner;
-
-    @InjectMocks
-    private LifecycleRegistry lifecycleRegistry;
 
     @Mock
     private Context mockContext;
@@ -89,27 +77,16 @@ public class SpokestackTTSOutputTest {
         SpokestackTTSOutput ttsOutput =
               new SpokestackTTSOutput(null, factory);
         ttsOutput.setAndroidContext(mockContext);
-        lifecycleRegistry.addObserver(ttsOutput);
         ttsOutput.prepare();
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
 
         ExoPlayer mediaPlayer = ttsOutput.getMediaPlayer();
         assertNotNull(mediaPlayer);
         // no content, so nothing to play
         assertFalse(mediaPlayer.getPlayWhenReady());
 
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
-        verify(mediaPlayer, times(1)).setPlayWhenReady(false);
-
         ttsOutput.close();
         mediaPlayer = ttsOutput.getMediaPlayer();
         assertNull(mediaPlayer);
-
-        // included for test coverage; these should not throw errors
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
     }
 
     @Test

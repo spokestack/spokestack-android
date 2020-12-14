@@ -1,7 +1,6 @@
 package io.spokestack.spokestack;
 
 import android.content.Context;
-import androidx.lifecycle.Lifecycle;
 import io.spokestack.spokestack.dialogue.DialogueManager;
 import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
@@ -159,17 +158,6 @@ public final class Spokestack extends SpokestackAdapter
 
         if (this.tts != null) {
             this.tts.setAndroidContext(context);
-        }
-    }
-
-    /**
-     * Update the Android lifecycle used by the TTS manager.
-     *
-     * @param lifecycle The new Android lifecycle.
-     */
-    public void setAndroidLifecycle(Lifecycle lifecycle) {
-        if (this.tts != null) {
-            this.tts.registerLifecycle(lifecycle);
         }
     }
 
@@ -434,7 +422,6 @@ public final class Spokestack extends SpokestackAdapter
         private SpeechConfig speechConfig;
         private TranscriptEditor transcriptEditor;
         private Context appContext;
-        private Lifecycle appLifecycle;
 
         /**
          * Create a Spokestack builder with a default configuration. The speech
@@ -513,11 +500,6 @@ public final class Spokestack extends SpokestackAdapter
          *       {@link #withAndroidContext(android.content.Context)}:
          *       Android Application context used to manage the audio session
          *       for automatic playback.
-         *   </li>
-         *   <li>
-         *       {@link #withLifecycle(androidx.lifecycle.Lifecycle)}:
-         *       Android lifecycle context used to manage automatic pausing and
-         *       resuming of audio on application lifecycle events.
          *   </li>
          *   </ul>
          *     </li>
@@ -719,18 +701,6 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
-         * Sets the Android Lifecycle used for management of TTS playback.
-         *
-         * @param lifecycle the Android Lifecycle.
-         * @return the updated builder
-         */
-        public Builder withLifecycle(Lifecycle lifecycle) {
-            this.appLifecycle = lifecycle;
-            this.ttsBuilder.setLifecycle(lifecycle);
-            return this;
-        }
-
-        /**
          * Signal that Spokestack's speech pipeline should not be used to
          * recognize speech.
          *
@@ -843,11 +813,6 @@ public final class Spokestack extends SpokestackAdapter
                     throw new IllegalArgumentException("app context is "
                           + "required for playback management; see"
                           + "TTSManager.Builder.setAndroidContext()");
-                }
-                if (this.appLifecycle == null) {
-                    throw new IllegalArgumentException("app lifecycle is "
-                          + "required for playback management; see"
-                          + "TTSManager.Builder.setLifecycle()");
                 }
             }
             if (!this.speechConfig.containsKey("dialogue-policy-file")

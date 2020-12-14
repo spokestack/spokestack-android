@@ -4,9 +4,6 @@ package io.spokestack.spokestack.tts;
 import android.content.Context;
 import android.net.Uri;
 import androidx.annotation.NonNull;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.LifecycleRegistry;
 import io.spokestack.spokestack.SpeechConfig;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,18 +48,12 @@ public class TTSManagerTest implements TTSListener {
                     .setOutputClass("invalid")
                     .build());
 
-        // valid config, also demonstrating that setConfig overrides any
-        // previously set properties
-        LifecycleRegistry lifecycleRegistry =
-              new LifecycleRegistry(mock(LifecycleOwner.class));
-
         TTSManager manager = new TTSManager.Builder()
               .setTTSServiceClass("io.spokestack.spokestack.tts.TTSTestUtils$Service")
               .setOutputClass("io.spokestack.spokestack.tts.TTSTestUtils$Output")
               .setProperty("spokestack-id", "test")
               .setConfig(new SpeechConfig())
               .setAndroidContext(context)
-              .setLifecycle(lifecycleRegistry)
               .addTTSListener(this)
               .build();
 
@@ -73,17 +64,13 @@ public class TTSManagerTest implements TTSListener {
         assertNotNull(manager.getTtsService());
         assertNotNull(manager.getOutput());
 
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
-        String event = events.poll(1, TimeUnit.SECONDS);
-        assertEquals("onResume", event, "onResume not called");
-
         // synthesis
         SynthesisRequest request = new SynthesisRequest.Builder("test")
               .withVoice("voice-2")
               .withData(Collections.singletonMap("key", "value"))
               .build();
         manager.synthesize(request);
-        event = events.poll(1, TimeUnit.SECONDS);
+        String event = events.poll(1, TimeUnit.SECONDS);
         assertEquals("audioReceived", event, "audioReceived not called");
         assertEquals(TTSEvent.Type.AUDIO_AVAILABLE, lastEvent.type);
         assertEquals(Uri.EMPTY, lastEvent.getTtsResponse().getAudioUri());
@@ -96,11 +83,6 @@ public class TTSManagerTest implements TTSListener {
         manager.prepare();
         assertNotNull(manager.getTtsService());
         assertNotNull(manager.getOutput());
-
-        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
-        events = ((TTSTestUtils.Output) manager.getOutput()).getEvents();
-        event = events.poll(1, TimeUnit.SECONDS);
-        assertEquals("onResume", event, "onResume not called");
 
         String errorMsg = "can't close won't close";
         manager.close();
