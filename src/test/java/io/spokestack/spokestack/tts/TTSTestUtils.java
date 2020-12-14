@@ -2,8 +2,6 @@ package io.spokestack.spokestack.tts;
 
 import android.content.Context;
 import android.net.Uri;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechOutput;
 import org.jetbrains.annotations.NotNull;
@@ -37,8 +35,7 @@ public class TTSTestUtils {
         }
     }
 
-    public static class Output extends SpeechOutput
-          implements DefaultLifecycleObserver {
+    public static class Output extends SpeechOutput {
 
         LinkedBlockingQueue<String> events;
 
@@ -53,14 +50,6 @@ public class TTSTestUtils {
 
         public LinkedBlockingQueue<String> getEvents() {
             return events;
-        }
-
-        @Override
-        public void onResume(@NotNull LifecycleOwner owner) {
-            // protect against multiple calls by the registry during tests
-            if (this.events.isEmpty()) {
-                this.events.add("onResume");
-            }
         }
 
         @Override

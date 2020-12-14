@@ -2,8 +2,6 @@ package io.spokestack.spokestack;
 
 import android.content.Context;
 import android.os.SystemClock;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.LifecycleRegistry;
 import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.nlu.tensorflow.NLUTestUtils;
@@ -38,13 +36,8 @@ public class SpokestackTest {
 
         Spokestack.Builder builder = new Spokestack.Builder();
 
-        // missing lifecycle
-        assertThrows(IllegalArgumentException.class,
-              () -> {
-                  builder
-                        .withAndroidContext(mock(Context.class))
-                        .build();
-              });
+        // missing context
+        assertThrows(IllegalArgumentException.class, builder::build);
 
         // TTS playback disabled
         // avoid creating a real websocket by also faking the service class
@@ -211,14 +204,11 @@ public class SpokestackTest {
 
         Spokestack spokestack = new Spokestack(builder, mockNlu());
 
-        // handle context/lifecycle separately to make sure the convenience
+        // handle context separately to make sure the convenience
         // methods work
         Context androidContext = mock(Context.class);
-        LifecycleRegistry lifecycleRegistry =
-              new LifecycleRegistry(mock(LifecycleOwner.class));
 
         spokestack.setAndroidContext(androidContext);
-        spokestack.setAndroidLifecycle(lifecycleRegistry);
 
         listener.setSpokestack(spokestack);
         TTSManager tts = spokestack.getTts();
@@ -314,12 +304,9 @@ public class SpokestackTest {
     private Spokestack.Builder mockAndroidComponents(
           Spokestack.Builder builder) {
         Context context = mock(Context.class);
-        LifecycleRegistry lifecycleRegistry =
-              new LifecycleRegistry(mock(LifecycleOwner.class));
 
         return builder
-              .withAndroidContext(context)
-              .withLifecycle(lifecycleRegistry);
+              .withAndroidContext(context);
     }
 
     private SpeechConfig testConfig() {

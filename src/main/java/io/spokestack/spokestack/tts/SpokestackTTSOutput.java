@@ -6,8 +6,6 @@ import android.net.Uri;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
 import androidx.media.AudioAttributesCompat;
 import androidx.media.AudioFocusRequestCompat;
 import androidx.media.AudioManagerCompat;
@@ -38,15 +36,10 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The Spokestack audio player uses
  * <a href="https://exoplayer.dev/">ExoPlayer</a>
- * to handle automatic playback of TTS responses. It responds to events in the
- * Android component lifecycle, pausing and resuming itself along with its host
- * app's activities.
- * </p>
- *
- * <p>
- * Note that this audio player does not provide a UI. It is designed to be used
- * within a TTS subsystem controlled by a {@link TTSManager} in an app that
- * wants to delegate all media management to Spokestack; if fine control over
+ * to handle automatic playback of TTS responses. Note that it
+ * does not provide a UI. It is designed to be used within a TTS subsystem
+ * controlled by a {@link TTSManager} in an app that wants to delegate all
+ * media management to Spokestack; if fine control over
  * playback is desired, consider adding a {@link TTSListener} to the {@code
  * TTSManager} and managing audio via its methods.
  * </p>
@@ -61,7 +54,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SpokestackTTSOutput extends SpeechOutput
       implements Player.EventListener,
-      AudioManager.OnAudioFocusChangeListener, DefaultLifecycleObserver {
+      AudioManager.OnAudioFocusChangeListener {
 
     private final int contentType;
     private final int usage;
@@ -269,23 +262,6 @@ public class SpokestackTTSOutput extends SpeechOutput
         }
     }
 
-    @Override
-    public void onResume(@NonNull LifecycleOwner owner) {
-        this.taskHandler.run(() -> {
-            if (mediaPlayer != null) {
-                // restore player state
-                mediaPlayer.seekTo(playerState.window,
-                      playerState.curPosition);
-            }
-        });
-        playContent();
-    }
-
-    @Override
-    public void onStop(@NonNull LifecycleOwner owner) {
-        pauseContent();
-    }
-
     /**
      * Start or resume playback of any TTS responses.
      */
@@ -395,18 +371,6 @@ public class SpokestackTTSOutput extends SpeechOutput
             return player;
         }
     }
-
-    // these lifecycle methods are unused but must be implemented to maintain
-    // backwards compatibility with older Android APIs that don't allow the
-    // default implementations in DefaultLifecycleObserver
-
-    @Override public void onCreate(@NonNull LifecycleOwner owner) { }
-
-    @Override public void onStart(@NonNull LifecycleOwner owner) { }
-
-    @Override public void onPause(@NonNull LifecycleOwner owner) { }
-
-    @Override public void onDestroy(@NonNull LifecycleOwner owner) { }
 
     // similarly, implementing these listener methods maintains backwards
     // compatibility for ExoPlayer

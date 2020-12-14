@@ -1,8 +1,6 @@
 package io.spokestack.spokestack.tts;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
-import androidx.lifecycle.Lifecycle;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechOutput;
 
@@ -37,7 +35,6 @@ import java.util.List;
  *         "spokestack-secret",
  *         "5BD5483F573D691A15CFA493C1782F451D4BD666E39A9E7B2EBE287E6A72C6B6")
  *     .setAndroidContext(getApplicationContext())
- *     .setLifecycle(getLifecycle())
  *     .build();
  * }
  * </pre>
@@ -62,7 +59,6 @@ public final class TTSManager implements AutoCloseable {
     private final List<TTSListener> listeners = new ArrayList<>();
     private TTSService ttsService;
     private SpeechOutput output;
-    private Lifecycle lifecycle;
     private Context appContext;
 
     /**
@@ -93,7 +89,6 @@ public final class TTSManager implements AutoCloseable {
         this.ttsServiceClass = builder.ttsServiceClass;
         this.outputClass = builder.outputClass;
         this.config = builder.config;
-        this.lifecycle = builder.lifecycle;
         this.listeners.addAll(builder.listeners);
         this.appContext = builder.appContext;
         prepare();
@@ -115,24 +110,6 @@ public final class TTSManager implements AutoCloseable {
     public void stopPlayback() {
         if (this.output != null) {
             this.output.stopPlayback();
-        }
-    }
-
-    /**
-     * Registers the currently active lifecycle with the manager, allowing any
-     * output classes to handle media player components based on system
-     * lifecycle events.
-     *
-     * @param newLifecycle The current lifecycle.
-     */
-    public void registerLifecycle(@NonNull Lifecycle newLifecycle) {
-        Lifecycle currentLifecycle = this.lifecycle;
-        this.lifecycle = newLifecycle;
-        if (output != null) {
-            if (currentLifecycle != null) {
-                currentLifecycle.removeObserver(output);
-            }
-            this.lifecycle.addObserver(output);
         }
     }
 
@@ -204,9 +181,6 @@ public final class TTSManager implements AutoCloseable {
                       this.outputClass, SpeechOutput.class);
                 this.output.setAndroidContext(appContext);
                 this.ttsService.addListener(this.output);
-                if (this.lifecycle != null) {
-                    this.registerLifecycle(this.lifecycle);
-                }
             }
             for (TTSListener listener : this.listeners) {
                 this.ttsService.addListener(listener);
@@ -239,9 +213,6 @@ public final class TTSManager implements AutoCloseable {
     public void release() {
         if (this.output != null) {
             try {
-                if (this.lifecycle != null) {
-                    this.lifecycle.removeObserver(this.output);
-                }
                 this.output.close();
             } catch (Exception e) {
                 raiseError(e);
@@ -271,7 +242,6 @@ public final class TTSManager implements AutoCloseable {
         private String ttsServiceClass;
         private String outputClass;
         private Context appContext;
-        private Lifecycle lifecycle;
         private SpeechConfig config = new SpeechConfig();
         private List<TTSListener> listeners = new ArrayList<>();
 
@@ -339,18 +309,6 @@ public final class TTSManager implements AutoCloseable {
          */
         public Builder setAndroidContext(Context androidContext) {
             this.appContext = androidContext;
-            return this;
-        }
-
-        /**
-         * Sets the manager's current lifecycle.
-         *
-         * @param curLifecycle The lifecycle dispatching events to this TTS
-         *                     manager.
-         * @return this
-         */
-        public Builder setLifecycle(Lifecycle curLifecycle) {
-            this.lifecycle = curLifecycle;
             return this;
         }
 
