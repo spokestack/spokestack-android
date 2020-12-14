@@ -102,10 +102,10 @@ public class SpokestackTTSOutputTest {
         // audioReceived ensures that the player gets set up
         mediaPlayer = ttsOutput.getMediaPlayer();
         assertNotNull(mediaPlayer);
-        verify(ttsOutput, times(1)).playContent();
+        verify(ttsOutput, times(1)).inlinePlay();
         verify(ttsOutput, times(1)).createMediaSource(Uri.EMPTY);
         verify(ttsOutput, times(1)).requestFocus();
-        verify(mediaPlayer, times(2)).prepare(any());
+        verify(mediaPlayer, times(1)).prepare(any());
         verify(mediaPlayer, times(1)).setPlayWhenReady(true);
     }
 

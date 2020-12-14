@@ -135,15 +135,19 @@ public class SpokestackTTSOutput extends SpeechOutput
      * Establish the media player and allocate its internal resources.
      */
     public void prepare() {
-        this.taskHandler.run(() -> {
+        this.taskHandler.run(this::inlinePrepare);
+    }
+
+    void inlinePrepare() {
+        if (this.mediaPlayer == null) {
             ExoPlayer player = this.playerFactory.createPlayer(
                   this.usage,
                   this.contentType,
                   this.appContext);
             player.addListener(this);
+            player.prepare(mediaSource);
             this.mediaPlayer = player;
-            this.mediaPlayer.prepare(mediaSource);
-        });
+        }
     }
 
     @Override
@@ -159,30 +163,23 @@ public class SpokestackTTSOutput extends SpeechOutput
 
     @Override
     public void audioReceived(AudioResponse response) {
-        if (this.mediaPlayer == null) {
-            prepare();
-        }
-
         this.taskHandler.run(() -> {
+            inlinePrepare();
+
             Uri audioUri = response.getAudioUri();
             MediaSource newTrack = createMediaSource(audioUri);
 
-            if (mediaPlayer.isPlaying()) {
-                mediaSource.addMediaSource(newTrack);
-            } else {
-                mediaSource.clear();
-                mediaSource.addMediaSource(newTrack);
-                mediaPlayer.prepare(mediaSource);
-            }
+            mediaSource.addMediaSource(newTrack);
             this.playerState = new PlayerState(
                   true,
                   this.playerState.shouldPlay,
                   this.playerState.curPosition,
                   this.playerState.window
             );
+
+            inlinePlay();
         });
 
-        playContent();
     }
 
     @Override
@@ -236,6 +233,7 @@ public class SpokestackTTSOutput extends SpeechOutput
     }
 
     private void resetPlayerState() {
+        this.mediaSource.clear();
         this.playerState = new PlayerState(false, false, 0, 0);
     }
 
@@ -266,20 +264,20 @@ public class SpokestackTTSOutput extends SpeechOutput
      * Start or resume playback of any TTS responses.
      */
     public void playContent() {
-        this.taskHandler.run(() -> {
-            if (!playerState.hasContent) {
-                return;
-            }
+        this.taskHandler.run(this::inlinePlay);
+    }
 
-            if (mediaPlayer == null) {
-                prepare();
-            }
+    void inlinePlay() {
+        if (!playerState.hasContent) {
+            return;
+        }
 
-            // only play if focus is granted
-            if (requestFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                mediaPlayer.setPlayWhenReady(true);
-            }
-        });
+        inlinePrepare();
+
+        // only play if focus is granted
+        if (requestFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            mediaPlayer.setPlayWhenReady(true);
+        }
     }
 
     int requestFocus() {
