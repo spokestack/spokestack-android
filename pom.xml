@@ -91,7 +91,7 @@
       <dependency>
          <groupId>com.google.android.exoplayer</groupId>
          <artifactId>exoplayer-core</artifactId>
-         <version>2.11.0</version>
+         <version>2.12.2</version>
          <type>aar</type>
          <scope>provided</scope>
       </dependency>

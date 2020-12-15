@@ -3,15 +3,20 @@ package io.spokestack.spokestack.tts;
 import android.os.Looper;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.PlayerMessage;
 import com.google.android.exoplayer2.SeekParameters;
 import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ShuffleOrder;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 /**
  * Simple stubbed media player for testing TTS events.
@@ -61,6 +66,12 @@ public class TestExoPlayer implements ExoPlayer {
         return null;
     }
 
+    @Nullable
+    @Override
+    public DeviceComponent getDeviceComponent() {
+        return null;
+    }
+
     @Override
     public Looper getApplicationLooper() {
         return null;
@@ -75,6 +86,86 @@ public class TestExoPlayer implements ExoPlayer {
     }
 
     @Override
+    public void setMediaItems(List<MediaItem> list) {
+
+    }
+
+    @Override
+    public void setMediaItems(List<MediaItem> list, boolean b) {
+
+    }
+
+    @Override
+    public void setMediaItems(List<MediaItem> list, int i, long l) {
+
+    }
+
+    @Override
+    public void setMediaItem(MediaItem mediaItem) {
+
+    }
+
+    @Override
+    public void setMediaItem(MediaItem mediaItem, long l) {
+
+    }
+
+    @Override
+    public void setMediaItem(MediaItem mediaItem, boolean b) {
+
+    }
+
+    @Override
+    public void addMediaItem(MediaItem mediaItem) {
+
+    }
+
+    @Override
+    public void addMediaItem(int i, MediaItem mediaItem) {
+
+    }
+
+    @Override
+    public void addMediaItems(List<MediaItem> list) {
+
+    }
+
+    @Override
+    public void addMediaItems(int i, List<MediaItem> list) {
+
+    }
+
+    @Override
+    public void moveMediaItem(int i, int i1) {
+
+    }
+
+    @Override
+    public void moveMediaItems(int i, int i1, int i2) {
+
+    }
+
+    @Override
+    public void removeMediaItem(int i) {
+
+    }
+
+    @Override
+    public void removeMediaItems(int i, int i1) {
+
+    }
+
+    @Override
+    public void clearMediaItems() {
+
+    }
+
+    @Override
+    public void prepare() {
+
+    }
+
+    @Override
     public int getPlaybackSuppressionReason() {
         return 0;
     }
@@ -86,8 +177,24 @@ public class TestExoPlayer implements ExoPlayer {
 
     @Nullable
     @Override
+    public ExoPlaybackException getPlayerError() {
+        return null;
+    }
+
+    @Nullable
+    @Override
     public ExoPlaybackException getPlaybackError() {
         return null;
+    }
+
+    @Override
+    public void play() {
+
+    }
+
+    @Override
+    public void pause() {
+
     }
 
     @Override
@@ -192,6 +299,12 @@ public class TestExoPlayer implements ExoPlayer {
         return 0;
     }
 
+    @Nullable
+    @Override
+    public TrackSelector getTrackSelector() {
+        return null;
+    }
+
     @Override
     public TrackGroupArray getCurrentTrackGroups() {
         return null;
@@ -239,6 +352,22 @@ public class TestExoPlayer implements ExoPlayer {
         return null;
     }
 
+    @Nullable
+    @Override
+    public MediaItem getCurrentMediaItem() {
+        return null;
+    }
+
+    @Override
+    public int getMediaItemCount() {
+        return 0;
+    }
+
+    @Override
+    public MediaItem getMediaItemAt(int i) {
+        return null;
+    }
+
     @Override
     public long getDuration() {
         return 0;
@@ -272,6 +401,11 @@ public class TestExoPlayer implements ExoPlayer {
     @Override
     public boolean isCurrentWindowLive() {
         return false;
+    }
+
+    @Override
+    public long getCurrentLiveOffset() {
+        return 0;
     }
 
     @Override
@@ -327,6 +461,61 @@ public class TestExoPlayer implements ExoPlayer {
     }
 
     @Override
+    public void setMediaSources(List<MediaSource> list) {
+
+    }
+
+    @Override
+    public void setMediaSources(List<MediaSource> list, boolean b) {
+
+    }
+
+    @Override
+    public void setMediaSources(List<MediaSource> list, int i, long l) {
+
+    }
+
+    @Override
+    public void setMediaSource(MediaSource mediaSource) {
+
+    }
+
+    @Override
+    public void setMediaSource(MediaSource mediaSource, long l) {
+
+    }
+
+    @Override
+    public void setMediaSource(MediaSource mediaSource, boolean b) {
+
+    }
+
+    @Override
+    public void addMediaSource(MediaSource mediaSource) {
+
+    }
+
+    @Override
+    public void addMediaSource(int i, MediaSource mediaSource) {
+
+    }
+
+    @Override
+    public void addMediaSources(List<MediaSource> list) {
+
+    }
+
+    @Override
+    public void addMediaSources(int i, List<MediaSource> list) {
+
+    }
+
+    @Override
+    public void setShuffleOrder(ShuffleOrder shuffleOrder) {
+
+    }
+
+    @Override
     public PlayerMessage createMessage(PlayerMessage.Target target) {
         return null;
     }
@@ -343,5 +532,20 @@ public class TestExoPlayer implements ExoPlayer {
 
     @Override
     public void setForegroundMode(boolean b) {
+    }
+
+    @Override
+    public void setPauseAtEndOfMediaItems(boolean b) {
+
+    }
+
+    @Override
+    public boolean getPauseAtEndOfMediaItems() {
+        return false;
+    }
+
+    @Override
+    public void experimentalSetOffloadSchedulingEnabled(boolean b) {
+
     }
 }

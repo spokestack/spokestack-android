@@ -12,19 +12,10 @@ import androidx.media.AudioManagerCompat;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.Timeline;
 import com.google.android.exoplayer2.audio.AudioAttributes;
-import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
-import com.google.android.exoplayer2.source.MediaSource;
-import com.google.android.exoplayer2.source.ProgressiveMediaSource;
-import com.google.android.exoplayer2.source.TrackGroupArray;
-import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
-import com.google.android.exoplayer2.upstream.DataSource;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
-import com.google.android.exoplayer2.util.Util;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechOutput;
 import io.spokestack.spokestack.util.TaskHandler;
@@ -61,7 +52,6 @@ public class SpokestackTTSOutput extends SpeechOutput
     private TaskHandler taskHandler;
     private PlayerFactory playerFactory;
     private ExoPlayer mediaPlayer;
-    private final ConcatenatingMediaSource mediaSource;
     private Context appContext;
     private PlayerState playerState;
 
@@ -90,7 +80,6 @@ public class SpokestackTTSOutput extends SpeechOutput
         }
         this.taskHandler = new TaskHandler(true);
         this.playerFactory = new PlayerFactory();
-        this.mediaSource = new ConcatenatingMediaSource();
     }
 
     /**
@@ -145,7 +134,6 @@ public class SpokestackTTSOutput extends SpeechOutput
                   this.contentType,
                   this.appContext);
             player.addListener(this);
-            player.prepare(mediaSource);
             this.mediaPlayer = player;
         }
     }
@@ -167,9 +155,10 @@ public class SpokestackTTSOutput extends SpeechOutput
             inlinePrepare();
 
             Uri audioUri = response.getAudioUri();
-            MediaSource newTrack = createMediaSource(audioUri);
 
-            mediaSource.addMediaSource(newTrack);
+            MediaItem item = createMediaItem(audioUri);
+            this.mediaPlayer.addMediaItem(item);
+            this.mediaPlayer.prepare();
             this.playerState = new PlayerState(
                   true,
                   this.playerState.shouldPlay,
@@ -186,19 +175,16 @@ public class SpokestackTTSOutput extends SpeechOutput
     public void stopPlayback() {
         this.taskHandler.run(() -> {
             if (this.mediaPlayer != null) {
-                mediaPlayer.stop(true);
+                mediaPlayer.stop();
             }
         });
         resetPlayerState();
     }
 
     @NotNull
-    MediaSource createMediaSource(Uri audioUri) {
-        String userAgent = Util.getUserAgent(this.appContext, "spokestack");
-        DataSource.Factory dataSourceFactory =
-              new DefaultHttpDataSourceFactory(userAgent);
-        return new ProgressiveMediaSource.Factory(dataSourceFactory)
-              .createMediaSource(audioUri);
+    MediaItem createMediaItem(Uri audioUri) {
+        // separated into its own method for testability
+        return MediaItem.fromUri(audioUri);
     }
 
     @Override
@@ -233,7 +219,8 @@ public class SpokestackTTSOutput extends SpeechOutput
     }
 
     private void resetPlayerState() {
-        this.mediaSource.clear();
+        this.mediaPlayer.release();
+        this.mediaPlayer = null;
         this.playerState = new PlayerState(false, false, 0, 0);
     }
 
@@ -276,7 +263,7 @@ public class SpokestackTTSOutput extends SpeechOutput
 
         // only play if focus is granted
         if (requestFocus() == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            mediaPlayer.setPlayWhenReady(true);
+            mediaPlayer.play();
         }
     }
 
@@ -312,7 +299,7 @@ public class SpokestackTTSOutput extends SpeechOutput
             if (mediaPlayer == null) {
                 return;
             }
-            mediaPlayer.setPlayWhenReady(false);
+            mediaPlayer.pause();
             savePlayerSettings();
         });
     }
@@ -369,46 +356,4 @@ public class SpokestackTTSOutput extends SpeechOutput
             return player;
         }
     }
-
-    // similarly, implementing these listener methods maintains backwards
-    // compatibility for ExoPlayer
-
-    @Override public void onTimelineChanged(@NotNull Timeline timeline,
-                                            int reason) { }
-
-    @Override
-    // it's deprecated, but it's still a default method, so we have to
-    // implement it for older versions of Android
-    @SuppressWarnings("deprecation")
-    public void onTimelineChanged(@NotNull Timeline timeline,
-                                  @Nullable Object manifest, int reason) { }
-
-    @Override
-    public void onTracksChanged(@NotNull TrackGroupArray trackGroups,
-                                @NotNull TrackSelectionArray trackSelections) {
-
-    }
-
-    @Override public void onLoadingChanged(boolean isLoading) { }
-
-    @Override
-    public void onPlaybackSuppressionReasonChanged(
-          int playbackSuppressionReason) { }
-
-    @Override
-    public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-    }
-
-    @Override public void onRepeatModeChanged(int repeatMode) { }
-
-    @Override public void onShuffleModeEnabledChanged(
-          boolean shuffleModeEnabled) { }
-
-    @Override public void onPositionDiscontinuity(int reason) { }
-
-    @Override
-    public void onPlaybackParametersChanged(
-          @NotNull PlaybackParameters playbackParameters) { }
-
-    @Override public void onSeekProcessed() { }
 }

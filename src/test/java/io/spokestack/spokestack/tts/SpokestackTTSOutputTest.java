@@ -8,10 +8,10 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.MediaItem;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.Timeline;
-import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.SinglePeriodTimeline;
 import com.google.android.exoplayer2.source.TrackGroupArray;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
@@ -32,7 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(ExoPlaybackException.class)
+@PrepareForTest({ExoPlaybackException.class, MediaItem.class})
 public class SpokestackTTSOutputTest {
 
     @Mock
@@ -103,10 +103,10 @@ public class SpokestackTTSOutputTest {
         mediaPlayer = ttsOutput.getMediaPlayer();
         assertNotNull(mediaPlayer);
         verify(ttsOutput, times(1)).inlinePlay();
-        verify(ttsOutput, times(1)).createMediaSource(Uri.EMPTY);
+        verify(ttsOutput, times(1)).createMediaItem(Uri.EMPTY);
         verify(ttsOutput, times(1)).requestFocus();
-        verify(mediaPlayer, times(1)).prepare(any());
-        verify(mediaPlayer, times(1)).setPlayWhenReady(true);
+        verify(mediaPlayer, times(1)).prepare();
+        verify(mediaPlayer, times(1)).play();
     }
 
     @Test
@@ -119,22 +119,26 @@ public class SpokestackTTSOutputTest {
 
         TestExoPlayer mediaPlayer = (TestExoPlayer) ttsOutput.getMediaPlayer();
         assertNotNull(mediaPlayer);
-        // this state change should do nothing
-        ttsOutput.onPlayerStateChanged(false, Player.STATE_BUFFERING);
+        // buffering doesn't send PLAYBACK_STOPPED events
+        mediaPlayer.setPlaybackState(Player.STATE_BUFFERING);
+        ttsOutput.onIsPlayingChanged(false);
         assertTrue(ttsOutput.getPlayerState().hasContent);
-
-        ttsOutput.stopPlayback();
-        assertFalse(ttsOutput.getPlayerState().shouldPlay);
-        assertFalse(ttsOutput.getPlayerState().hasContent);
-
-        ttsOutput.onPlayerStateChanged(false, Player.STATE_ENDED);
-        assertFalse(ttsOutput.getPlayerState().hasContent);
-        // no playback_complete event if the player didn't have content from
-        // the TTS system
         assertTrue(listener.events.isEmpty());
 
-        // now give it audio to play and check again
+        // simulate playing audio from a non-Spokestack source
+        ttsOutput.stopPlayback();
+        ttsOutput.onIsPlayingChanged(true);
+        ttsOutput.onIsPlayingChanged(false);
+        assertFalse(ttsOutput.getPlayerState().shouldPlay);
+        assertFalse(ttsOutput.getPlayerState().hasContent);
+        // no event for non-Spokestack audio
+        assertTrue(listener.events.isEmpty());
+
+        // give it Spokestack audio to play
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
+        // the player has to be recreated after `stopPlayback()` and receiving
+        // new audio
+        mediaPlayer = (TestExoPlayer) ttsOutput.getMediaPlayer();
         ttsOutput.onIsPlayingChanged(true);
         ttsOutput.onIsPlayingChanged(false);
         assertEquals(2, listener.events.size());
@@ -185,17 +189,17 @@ public class SpokestackTTSOutputTest {
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
         ExoPlayer mediaPlayer = ttsOutput.getMediaPlayer();
         ttsOutput.onAudioFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT);
-        verify(mediaPlayer, times(1)).setPlayWhenReady(false);
+        verify(mediaPlayer, times(1)).pause();
         ttsOutput.onAudioFocusChange(AudioManager.AUDIOFOCUS_GAIN);
         // once for the audioReceived call, once for the focus gain
-        verify(mediaPlayer, times(2)).setPlayWhenReady(true);
+        verify(mediaPlayer, times(2)).play();
 
         // simulate a denied focus request
         doReturn(AudioManager.AUDIOFOCUS_REQUEST_FAILED)
               .when(ttsOutput).requestFocus();
         ttsOutput.audioReceived(new AudioResponse(Uri.EMPTY));
         // media player shouldn't be told to play this time
-        verify(mediaPlayer, times(2)).setPlayWhenReady(true);
+        verify(mediaPlayer, times(2)).play();
     }
 
     @Test
@@ -205,7 +209,9 @@ public class SpokestackTTSOutputTest {
 
         // these methods are implemented solely to maintain compatibility with
         // older Android APIs; calling them should do nothing
-        Timeline timeline = new SinglePeriodTimeline(0, false, false, false);
+        MediaItem mockItem = mock(MediaItem.class);
+        Timeline timeline =
+              new SinglePeriodTimeline(0, false, false, false, null, mockItem);
         ttsOutput.onTimelineChanged(timeline, 0);
         ttsOutput.onTimelineChanged(timeline, null, 0);
         TrackGroupArray groupArray = new TrackGroupArray();
@@ -227,8 +233,8 @@ public class SpokestackTTSOutputTest {
               spy(new SpokestackTTSOutput(null, factory));
         // mocked because Android system methods called indirectly by the code
         // under test are all stubbed or absent from the android/androidx deps
-        doReturn(mock(MediaSource.class))
-              .when(ttsOutput).createMediaSource(any());
+        doReturn(mock(MediaItem.class))
+              .when(ttsOutput).createMediaItem(any());
         doReturn(AudioManager.AUDIOFOCUS_REQUEST_GRANTED)
               .when(ttsOutput).requestFocus();
         return ttsOutput;
