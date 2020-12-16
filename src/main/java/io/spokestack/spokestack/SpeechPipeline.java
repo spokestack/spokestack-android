@@ -67,6 +67,7 @@ public final class SpeechPipeline implements AutoCloseable {
      */
     public static final int DEFAULT_BUFFER_WIDTH = 20;
 
+    private final Object lock = new Object();
     private final String inputClass;
     private final List<String> stageClasses;
     private final SpeechConfig config;
@@ -75,6 +76,7 @@ public final class SpeechPipeline implements AutoCloseable {
     private List<SpeechProcessor> stages;
     private Thread thread;
     private boolean running;
+    private boolean paused;
     private boolean managed;
 
     /**
@@ -117,10 +119,18 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     /**
-     * @return true if the pipeline has been started, false otherwise.
+     * @return true if the pipeline has been started and is not paused,
+     * false otherwise.
      */
     public boolean isRunning() {
-        return this.running;
+        return this.running && !isPaused();
+    }
+
+    /**
+     * @return true if the pipeline has been paused, false otherwise.
+     */
+    public boolean isPaused() {
+        return this.paused;
     }
 
     /** manually activate the speech pipeline. */
@@ -223,6 +233,40 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     /**
+     * Pauses the speech pipeline, temporarily stopping passive listening.
+     *
+     * <p>
+     * Note that active listening (an active ASR stage) cannot be paused, so
+     * the pipeline is deactivated before it is paused. This may prevent the
+     * delivery of a
+     * {@link io.spokestack.spokestack.SpeechContext.Event#RECOGNIZE} event if
+     * an ASR request is currently in progress.
+     * </p>
+     *
+     * <p>
+     * While paused, the pipeline will not respond to the wakeword, but
+     * in order to support a quick {@link #resume()}, it will retain control
+     * of the microphone. No audio is explicitly read or analyzed. To fully
+     * release the pipeline's resources, see {@link #stop()}.
+     * </p>
+     */
+    public void pause() {
+        deactivate();
+        this.paused = true;
+    }
+
+    /**
+     * Resumes a paused speech pipeline, returning the pipeline to a passive
+     * listening state.
+     */
+    public void resume() {
+        this.paused = false;
+        synchronized (lock) {
+            lock.notify();
+        }
+    }
+
+    /**
      * stops the speech pipeline and releases all resources.
      */
     public void stop() {
@@ -238,9 +282,24 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     private void run() {
-        while (this.running)
+        synchronized (lock) {
+            while (this.running) {
+                step();
+            }
+            cleanup();
+        }
+    }
+
+    private void step() {
+        if (this.paused) {
+            try {
+                lock.wait();
+            } catch (InterruptedException e) {
+                this.running = false;
+            }
+        } else {
             dispatch();
-        cleanup();
+        }
     }
 
     private void dispatch() {

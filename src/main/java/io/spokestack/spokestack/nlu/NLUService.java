@@ -12,7 +12,7 @@ import io.spokestack.spokestack.util.AsyncResult;
  * and {@link NLUContext}.
  * </p>
  */
-public interface NLUService {
+public interface NLUService extends AutoCloseable {
 
     /**
      * Classifies a user utterance. Classification should be performed on a

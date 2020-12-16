@@ -9,6 +9,7 @@ import io.spokestack.spokestack.nlu.tensorflow.parsers.IdentityParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.IntegerParser;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.SelsetParser;
 import io.spokestack.spokestack.tts.SynthesisRequest;
+import io.spokestack.spokestack.tts.TTSEvent;
 import io.spokestack.spokestack.tts.TTSManager;
 import io.spokestack.spokestack.util.AsyncResult;
 import io.spokestack.spokestack.util.EventTracer;
@@ -171,24 +172,90 @@ public final class Spokestack extends SpokestackAdapter
     }
 
     /**
-     * Starts the speech pipeline in order to process user input via the
-     * microphone (or chosen input class).
+     * Prepares all registered Spokestack modules for use and starts the
+     * speech pipeline in passive listening mode.
      *
-     * @throws Exception if there is an error configuring or starting the speech
-     *                   pipeline.
+     * @throws Exception if there is an error configuring or starting a module.
      */
     public void start() throws Exception {
         if (this.speechPipeline != null) {
             this.speechPipeline.start();
         }
+        if (this.nlu != null) {
+            this.nlu.prepare();
+        }
+        if (this.tts != null) {
+            this.tts.prepare();
+        }
     }
 
     /**
-     * Stops the speech pipeline and releases all its internal resources.
+     * Pauses the speech pipeline, suspending passive listening. This can be
+     * useful for scenarios where you expect false positives for the wakeword
+     * to be possible.
+     *
+     * <p>
+     * This method will implicitly deactivate the pipeline, canceling any
+     * in-flight ASR requests.
+     * </p>
+     *
+     * <p>
+     * This method is called automatically when Spokestack is playing a TTS
+     * prompt if Spokestack is managing audio playback.
+     * </p>
+     *
+     * @see SpeechPipeline#pause()
+     */
+    public void pause() {
+        if (this.speechPipeline != null) {
+            this.speechPipeline.pause();
+        }
+    }
+
+    /**
+     * Resumes a paused speech pipeline, returning it to a passive listening
+     * state.
+     *
+     * <p>
+     * This method is called automatically when Spokestack finishes playing a
+     * TTS prompt if Spokestack is managing audio playback.
+     * </p>
+     *
+     * @see SpeechPipeline#resume()
+     */
+    public void resume() {
+        if (this.speechPipeline != null) {
+            this.speechPipeline.resume();
+        }
+    }
+
+    /**
+     * Stops the speech pipeline and releases internal resources held by all
+     * registered Spokestack modules.
+     *
+     * <p>
+     * In order to support restarting Spokestack (calling {@link #start()} after
+     * this method), this method does not clear registered
+     * listeners. To do this, close then destroy the current Spokestack
+     * instance and build a new one.
+     * </p>
      */
     public void stop() {
-        if (this.speechPipeline != null) {
-            this.speechPipeline.stop();
+        closeSafely(this.speechPipeline);
+        closeSafely(this.nlu);
+        closeSafely(this.tts);
+    }
+
+    private void closeSafely(AutoCloseable module) {
+        if (module == null) {
+            return;
+        }
+        try {
+            module.close();
+        } catch (Exception e) {
+            for (SpokestackAdapter listener : this.listeners) {
+                listener.onError(e);
+            }
         }
     }
 
@@ -257,36 +324,6 @@ public final class Spokestack extends SpokestackAdapter
      */
     public TTSManager getTts() {
         return tts;
-    }
-
-    /**
-     * Dynamically constructs TTS component classes, allocating any resources
-     * they control. It is only necessary to explicitly call this if the TTS
-     * module's resources have been freed via {@link #releaseTts()} or {@link
-     * #close()}.
-     *
-     * @throws Exception If there is an error constructing TTS components.
-     */
-    public void prepareTts() throws Exception {
-        if (this.tts != null) {
-            this.tts.prepare();
-        }
-    }
-
-    /**
-     * Stops activity in the TTS module and releases any resources held by its
-     * components. No internally queued audio will be played after this method
-     * is called, and the queue will be cleared.
-     *
-     * <p>
-     * Once released, an explicit call to {@link #prepareTts()} is required to
-     * reallocate TTS resources.
-     * </p>
-     */
-    public void releaseTts() {
-        if (this.tts != null) {
-            this.tts.release();
-        }
     }
 
     /**
@@ -390,13 +427,33 @@ public final class Spokestack extends SpokestackAdapter
     }
 
     @Override
+    public void eventReceived(@NotNull TTSEvent event) {
+        switch (event.type) {
+            case PLAYBACK_STARTED:
+                pause();
+                break;
+            case PLAYBACK_STOPPED:
+                resume();
+                break;
+            default:
+                // do nothing
+                break;
+        }
+    }
+
+    /**
+     * Release internal resources held by all registered Spokestack modules.
+     *
+     * <p>
+     * In order to support restarting Spokestack (calling {@link #start()} after
+     * this method), this method does not clear registered
+     * listeners. To do this, close then destroy the current Spokestack
+     * instance and build a new one.
+     * </p>
+     */
+    @Override
     public void close() {
-        if (this.speechPipeline != null) {
-            this.speechPipeline.close();
-        }
-        if (this.tts != null) {
-            this.tts.close();
-        }
+        stop();
     }
 
     /**

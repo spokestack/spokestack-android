@@ -101,6 +101,9 @@ public final class TTSManager implements AutoCloseable {
      * @param request The synthesis request data.
      */
     public void synthesize(SynthesisRequest request) {
+        if (this.ttsService == null) {
+            throw new IllegalStateException("TTS closed; call prepare()");
+        }
         this.ttsService.synthesize(request);
     }
 
@@ -159,9 +162,7 @@ public final class TTSManager implements AutoCloseable {
     @Override
     public void close() {
         release();
-        this.ttsService = null;
         this.output = null;
-        this.listeners.clear();
     }
 
     /**
