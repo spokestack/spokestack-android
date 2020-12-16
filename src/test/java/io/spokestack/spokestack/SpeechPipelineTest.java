@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
 import static org.junit.jupiter.api.Assertions.*;
+import static io.spokestack.spokestack.SpeechTestUtils.FreeInput;
 
 public class SpeechPipelineTest implements OnSpeechEventListener {
     private static final List<Class<?>> PROFILES = Arrays.asList(
@@ -160,6 +161,41 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         assertFalse(pipeline.getContext().isActive());
         assertEquals(-1, Input.counter);
         assertFalse(Stage.open);
+    }
+
+    @Test
+    public void testPause() throws Exception {
+        final SpeechPipeline pipeline = new SpeechPipeline.Builder()
+              .setInputClass("io.spokestack.spokestack.SpeechTestUtils$FreeInput")
+              .setProperty("sample-rate", 16000)
+              .setProperty("frame-width", 20)
+              .setProperty("buffer-width", 300)
+              .setProperty("trace-level", EventTracer.Level.DEBUG.value())
+              .build();
+
+        // startup
+        int frames = FreeInput.counter;
+        assertEquals(frames, 0);
+        pipeline.start();
+        assertTrue(pipeline.isRunning());
+        Thread.sleep(5);
+        assertTrue(FreeInput.counter > frames);
+
+        // we won't get any more frames if we're paused
+        pipeline.pause();
+
+        // wait for the pause to take effect
+        Thread.sleep(10);
+        frames = FreeInput.counter;
+
+        // wait some more to make sure we don't get any more frames
+        Thread.sleep(15);
+        assertEquals(FreeInput.counter, frames);
+
+        // after resuming, frames should start increasing almost immediately
+        pipeline.resume();
+        Thread.sleep(5);
+        assertTrue(FreeInput.counter > frames);
     }
 
     @Test

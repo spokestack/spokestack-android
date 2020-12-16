@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static io.spokestack.spokestack.SpeechTestUtils.FreeInput;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SystemClock.class})
@@ -285,7 +287,7 @@ public class SpokestackTest {
     }
 
     @Test
-    public void testClose() throws Exception {
+    public void testRestart() throws Exception {
         mockStatic(SystemClock.class);
         TestAdapter listener = new TestAdapter();
 
@@ -305,8 +307,8 @@ public class SpokestackTest {
               listener.speechEvents.poll(1, TimeUnit.SECONDS);
         assertEquals(SpeechContext.Event.ACTIVATE, event);
 
-        // modules don't work after close()
-        spokestack.close();
+        // modules don't work after stop()
+        spokestack.stop();
         assertNull(spokestack.getTts().getTtsService());
         assertNull(spokestack.getNlu().getNlu());
         assertThrows(
@@ -319,11 +321,51 @@ public class SpokestackTest {
               () -> spokestack.synthesize(request));
 
         // restart supported
-        spokestack.prepare();
+        spokestack.start();
         assertNotNull(spokestack.getTts().getTtsService());
         assertNotNull(spokestack.getNlu().getNlu());
         assertDoesNotThrow(() -> spokestack.classify("test"));
         assertDoesNotThrow(() -> spokestack.synthesize(request));
+    }
+
+    @Test
+    public void testPause() throws Exception {
+        mockStatic(SystemClock.class);
+        TestAdapter listener = new TestAdapter();
+
+        Spokestack.Builder builder = new Spokestack
+              .Builder(new SpeechPipeline.Builder(), mockTts())
+              .withoutWakeword()
+              .setConfig(testConfig())
+              .addListener(listener);
+
+        builder = mockAndroidComponents(builder);
+        builder.getPipelineBuilder()
+              .setInputClass("io.spokestack.spokestack.SpeechTestUtils$FreeInput");
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
+
+        // startup
+        int frames = FreeInput.counter;
+        assertEquals(frames, 0);
+        spokestack.start();
+        Thread.sleep(10);
+        assertTrue(FreeInput.counter > frames);
+
+        // we won't get any more frames if we're paused
+        spokestack.pause();
+
+        // wait for the pause to take effect
+        Thread.sleep(10);
+        frames = FreeInput.counter;
+
+        // wait some more to make sure we don't get any more frames
+        Thread.sleep(15);
+        assertEquals(FreeInput.counter, frames);
+
+        // after resuming, frames should start increasing almost immediately
+        spokestack.resume();
+        Thread.sleep(5);
+        assertTrue(FreeInput.counter > frames);
     }
 
     private NLUManager mockNlu() throws Exception {
