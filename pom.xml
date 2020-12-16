@@ -260,6 +260,8 @@
                <useSystemClassLoader>false</useSystemClassLoader>
                <argLine>${argLine} -Djava.library.path=./target -XX:-OmitStackTraceInFastThrow</argLine>
                <trimStackTrace>false</trimStackTrace>
+               <forkCount>4</forkCount>
+               <reuseForks>false</reuseForks>
             </configuration>
          </plugin>
 
