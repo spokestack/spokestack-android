@@ -14,7 +14,7 @@ public final class TaskHandler {
     /**
      * Initialize a new task handler.
      *
-     * @param runOnMainThread {@code true} if tasks submitted to this hanlder
+     * @param runOnMainThread {@code true} if tasks submitted to this handler
      *                        should run on the application's main {@code
      *                        Looper}.
      */
