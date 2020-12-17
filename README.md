@@ -53,7 +53,7 @@ android {
 dependencies {
     // ...
 
-    implementation 'io.spokestack:spokestack-android:10.0.0'
+    implementation 'io.spokestack:spokestack-android:11.0.0'
 
     // for TensorFlow Lite-powered wakeword detection and/or NLU, add this one too
     implementation 'org.tensorflow:tensorflow-lite:2.3.0'
