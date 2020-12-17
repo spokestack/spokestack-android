@@ -72,11 +72,11 @@ public final class SpeechPipeline implements AutoCloseable {
     private final List<String> stageClasses;
     private final SpeechConfig config;
     private final SpeechContext context;
+    private volatile boolean running;
+    private volatile boolean paused;
     private SpeechInput input;
     private List<SpeechProcessor> stages;
     private Thread thread;
-    private boolean running;
-    private boolean paused;
     private boolean managed;
 
     /**
@@ -227,7 +227,7 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     private void startThread() throws Exception {
-        this.thread = new Thread(this::run);
+        this.thread = new Thread(this::run, "Spokestack-speech-pipeline");
         this.running = true;
         this.thread.start();
     }
@@ -299,6 +299,9 @@ public final class SpeechPipeline implements AutoCloseable {
             }
         } else {
             dispatch();
+        }
+        if (Thread.currentThread().isInterrupted()) {
+            this.running = false;
         }
     }
 

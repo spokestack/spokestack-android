@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import androidx.annotation.NonNull;
 import io.spokestack.spokestack.android.AudioRecordError;
 import io.spokestack.spokestack.util.EventTracer;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -35,6 +36,16 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
     @Before
     public void before() {
         this.events.clear();
+    }
+
+    @After
+    public void after() {
+        // shut down any stray speech pipeline background threads
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (thread.getName().contains("Spokestack")) {
+                thread.interrupt();
+            }
+        }
     }
 
     @Test
