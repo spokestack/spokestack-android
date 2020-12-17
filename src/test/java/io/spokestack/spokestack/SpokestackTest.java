@@ -11,12 +11,12 @@ import io.spokestack.spokestack.tts.TTSManager;
 import io.spokestack.spokestack.tts.TTSTestUtils;
 import io.spokestack.spokestack.util.EventTracer;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +29,16 @@ import static io.spokestack.spokestack.SpeechTestUtils.FreeInput;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({SystemClock.class})
 public class SpokestackTest {
+
+    @After
+    public void after() {
+        // shut down any stray speech pipeline background threads
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (thread.getName().contains("Spokestack")) {
+                thread.interrupt();
+            }
+        }
+    }
 
     @Test
     public void testBuild() throws Exception {
