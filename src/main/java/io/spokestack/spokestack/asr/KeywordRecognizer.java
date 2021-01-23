@@ -146,7 +146,7 @@ public final class KeywordRecognizer implements SpeechProcessor {
     /** default keyword-fft-hop-length configuration value. */
     public static final int DEFAULT_FFT_HOP_LENGTH = 10;
     /** default keyword-mel-frame-length configuration value. */
-    public static final int DEFAULT_MEL_FRAME_LENGTH = 1090;
+    public static final int DEFAULT_MEL_FRAME_LENGTH = 110;
     /** default keyword-mel-frame-width configuration value. */
     public static final int DEFAULT_MEL_FRAME_WIDTH = 40;
     /** default keyword-encode-length configuration value. */
