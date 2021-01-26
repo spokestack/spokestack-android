@@ -1,4 +1,4 @@
-<a href="https://www.spokestack.io/docs/android/getting-started" alt="Getting Started with Android + Spokestack"><img src="images/spokestack-android.png" alt="Spokestack Android"></a>
+<a href="https://www.spokestack.io/docs/android/getting-started" title="Getting Started with Spokestack + Android"><img src="images/spokestack-android.png" alt="Spokestack Android"></a>
 
 [![CircleCI](https://circleci.com/gh/spokestack/spokestack-android.svg?style=shield)](https://circleci.com/gh/spokestack/spokestack-android)
 [![Coverage](https://coveralls.io/repos/github/spokestack/spokestack-android/badge.svg)](https://coveralls.io/github/spokestack/spokestack-android)
