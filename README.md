@@ -1,19 +1,10 @@
-# Spokestack Android
+<a href="https://www.spokestack.io/docs/android/getting-started" alt="Getting Started with Android + Spokestack"><img src="images/spokestack-android.png" alt="Spokestack Android"></a>
 
-## Status
 [![CircleCI](https://circleci.com/gh/spokestack/spokestack-android.svg?style=shield)](https://circleci.com/gh/spokestack/spokestack-android)
 [![Coverage](https://coveralls.io/repos/github/spokestack/spokestack-android/badge.svg)](https://coveralls.io/github/spokestack/spokestack-android)
 [ ![JCenter](https://api.bintray.com/packages/spokestack/io.spokestack/spokestack-android/images/download.svg) ](https://bintray.com/spokestack/io.spokestack/spokestack-android/_latestVersion)
 [![Javadocs](https://javadoc.io/badge2/io.spokestack/spokestack-android/javadoc.svg)](https://javadoc.io/doc/io.spokestack/spokestack-android)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
-
----
-
-<p align="center">
-  <img src="images/spokestack.png" alt="Spokestack logo">
-</p>
-
----
 
 Spokestack is an all-in-one solution for mobile voice interfaces on Android. It provides every piece of the speech processing puzzle, including voice activity detection, wakeword detection, speech recognition, natural language understanding (NLU), and speech synthesis (TTS). Under its default configuration (on newer Android devices), everything except TTS happens directly on the mobile device—no communication with the cloud means faster results and better privacy.
 
