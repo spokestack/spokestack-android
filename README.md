@@ -154,18 +154,15 @@ Ensure that your Bintray credentials are in your user Maven `settings.xml`:
 </servers>
 ```
 
-On a non-master branch, remove the -SNAPSHOT suffix from the version in `pom.xml`, then run the
-following command. This will deploy the package to Bintray and JCenter.
-
-```bash
-mvn deploy
-```
-
-Revert your above change using `git checkout .`, then use the Maven release plugin to tag the release and advance the version number.
+On a non-master branch, run the following command. This will prompt you to enter a version number and tag for the new version, push the tag to GitHub, and deploy the package to Bintray and JCenter.
 
 ```bash
 mvn release:clean release:prepare release:perform
 ```
+
+The Maven goal may fail due to a bug where it tries to upload the files twice, but the release has still happened.
+
+Complete the process by creating and merging a pull request for the new branch on GitHub, updating the release notes by editing the tag there, and ensuring that the VCS tag matches your new GitHub tag at Bintray, which will update the release notes on Bintray.
 
 For additional information about releasing see http://maven.apache.org/maven-release/maven-release-plugin/
 
