@@ -2,7 +2,7 @@
 
 [![CircleCI](https://circleci.com/gh/spokestack/spokestack-android.svg?style=shield)](https://circleci.com/gh/spokestack/spokestack-android)
 [![Coverage](https://coveralls.io/repos/github/spokestack/spokestack-android/badge.svg)](https://coveralls.io/github/spokestack/spokestack-android)
-[ ![JCenter](https://api.bintray.com/packages/spokestack/io.spokestack/spokestack-android/images/download.svg) ](https://bintray.com/spokestack/io.spokestack/spokestack-android/_latestVersion)
+[ ![Maven Central](https://img.shields.io/maven-central/v/io.spokestack/spokestack-android)](https://search.maven.org/search?q=spokestack-android)
 [![Javadocs](https://javadoc.io/badge2/io.spokestack/spokestack-android/javadoc.svg)](https://javadoc.io/doc/io.spokestack/spokestack-android)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -44,7 +44,7 @@ android {
 dependencies {
     // ...
 
-    implementation 'io.spokestack:spokestack-android:11.0.0'
+    implementation 'io.spokestack:spokestack-android:11.0.1'
 
     // for TensorFlow Lite-powered wakeword detection and/or NLU, add this one too
     implementation 'org.tensorflow:tensorflow-lite:2.3.0'
@@ -142,19 +142,19 @@ mvn checkstyle:check
 ```
 
 ### Release
-Ensure that your Bintray credentials are in your user Maven `settings.xml`:
+Ensure that your Sonatype/Maven Central credentials are in your user `settings.xml` (usually `~/.m2/settings.xml`):
 
 ```xml
 <servers>
     <server>
-        <id>bintray-spokestack-io.spokestack</id>
-        <username>username</username>
-        <password>bintray_api_key</password>
+        <id>ossrh</id>
+        <username>sonatype-username</username>
+        <password>sonatype-password</password>
     </server>
 </servers>
 ```
 
-On a non-master branch, run the following command. This will prompt you to enter a version number and tag for the new version, push the tag to GitHub, and deploy the package to Bintray and JCenter.
+On a non-master branch, run the following command. This will prompt you to enter a version number and tag for the new version, push the tag to GitHub, and deploy the package to the Sonatype repository.
 
 ```bash
 mvn release:clean release:prepare release:perform
@@ -162,13 +162,13 @@ mvn release:clean release:prepare release:perform
 
 The Maven goal may fail due to a bug where it tries to upload the files twice, but the release has still happened.
 
-Complete the process by creating and merging a pull request for the new branch on GitHub, updating the release notes by editing the tag there, and ensuring that the VCS tag matches your new GitHub tag at Bintray, which will update the release notes on Bintray.
+Complete the process by creating and merging a pull request for the new branch on GitHub and updating the release notes by editing the tag.
 
 For additional information about releasing see http://maven.apache.org/maven-release/maven-release-plugin/
 
 ## License
 
-Copyright 2020 Spokestack, Inc.
+Copyright 2021 Spokestack, Inc.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
