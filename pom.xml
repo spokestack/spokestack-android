@@ -2,11 +2,11 @@
    <modelVersion>4.0.0</modelVersion>
    <groupId>io.spokestack</groupId>
    <artifactId>spokestack-android</artifactId>
-   <version>11.0.2-SNAPSHOT</version>
+   <version>11.0.3-SNAPSHOT</version>
    <packaging>aar</packaging>
    <name>Spokestack Library for Android</name>
    <description>Core library of the Spokestack framework for Android</description>
-   <url>https://github.com/pylon/spokestack-android</url>
+   <url>https://github.com/spokestack/spokestack-android</url>
    <licenses>
       <license>
          <name>Apache License - v 2.0</name>
@@ -55,14 +55,12 @@
 
    <distributionManagement>
       <snapshotRepository>
-        <id>jfrog-snapshots</id>
-        <name>ojo</name>
-        <url>http://oss.jfrog.org/artifactory/oss-snapshot-local</url>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
       </snapshotRepository>
       <repository>
-        <id>bintray-spokestack-io.spokestack</id>
-        <name>spokestack-io.spokestack</name>
-        <url>https://api.bintray.com/maven/spokestack/io.spokestack/spokestack-android/;publish=1</url>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
       </repository>
    </distributionManagement>
 
