@@ -26,6 +26,12 @@ For a brief introduction, read on, but for more detailed guides, see the followi
 
 ## Installation
 
+---
+
+**Note**: Spokestack used to be hosted on JCenter, but since the announcement of its [discontinuation](https://jfrog.com/blog/into-the-sunset-bintray-jcenter-gocenter-and-chartcenter), we've moved distribution to Maven Central. Please ensure that your root-level `build.gradle` file includes `mavenCentral()` in its `repositories` block in order to access versions >= 11.0.2.
+
+---
+
 Add the following to your app's `build.gradle`:
 
 ```groovy
@@ -44,7 +50,7 @@ android {
 dependencies {
     // ...
 
-    implementation 'io.spokestack:spokestack-android:11.0.1'
+    implementation 'io.spokestack:spokestack-android:11.0.2'
 
     // for TensorFlow Lite-powered wakeword detection and/or NLU, add this one too
     implementation 'org.tensorflow:tensorflow-lite:2.3.0'
