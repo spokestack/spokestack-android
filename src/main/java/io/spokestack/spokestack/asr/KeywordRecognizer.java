@@ -150,7 +150,7 @@ public final class KeywordRecognizer implements SpeechProcessor {
     /** default keyword-mel-frame-width configuration value. */
     public static final int DEFAULT_MEL_FRAME_WIDTH = 40;
     /** default keyword-encode-length configuration value. */
-    public static final int DEFAULT_ENCODE_LENGTH = 920;
+    public static final int DEFAULT_ENCODE_LENGTH = 1000;
     /** default keyword-encode-width configuration value. */
     public static final int DEFAULT_ENCODE_WIDTH = 128;
     /** default recognition threshold value. */
