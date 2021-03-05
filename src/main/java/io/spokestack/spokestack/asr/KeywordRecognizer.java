@@ -46,7 +46,7 @@ import java.nio.ByteBuffer;
  * During detection, the highest scoring posterior is chosen as the
  * recognized class, and if its value is higher than the configured
  * threshold, that class is reported to the client through the speech
- * recognition event. Otherwise, the empty transcript ("") is reported. Note
+ * recognition event. Otherwise, a timeout event occurs. Note
  * that the detection model is only run on the frame in which the speech
  * context is deactivated, similar to the end-of-utterance mechanism used by
  * the other speech recognizers.
