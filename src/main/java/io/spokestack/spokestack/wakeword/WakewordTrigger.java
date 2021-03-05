@@ -49,7 +49,7 @@ import java.nio.ByteBuffer;
  * <p>
  * The detector's outputs are then compared against a configured threshold,
  * in order to determine whether to activate the pipeline. If the posterior
- * is greater than the thresold, the activation occurs.
+ * is greater than the threshold, the activation occurs.
  * </p>
  *
  * <p>
