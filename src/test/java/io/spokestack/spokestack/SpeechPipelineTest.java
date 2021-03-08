@@ -1,5 +1,6 @@
 package io.spokestack.spokestack;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.Semaphore;
@@ -105,17 +106,44 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
     }
 
     @Test
-    public void testProfiles() {
+    @SuppressWarnings("unchecked")
+    public void testProfiles() throws Exception {
         assertThrows(IllegalArgumentException.class, () ->
               new SpeechPipeline.Builder()
                     .useProfile("io.spokestack.InvalidProfile")
         );
 
-        // no pre-set profiles should throw errors on use
-        // (use instantiates the associated profile class)
+        SpeechConfig config = new SpeechConfig();
+        Field stageField = SpeechPipeline.Builder.class
+              .getDeclaredField("stageClasses");
+        stageField.setAccessible(true);
+
+        // all classes from all profiles should be accessible on the classpath
         for (Class<?> profileClass : PROFILES) {
-            new SpeechPipeline.Builder()
-                  .useProfile(profileClass.getCanonicalName());
+            SpeechPipeline.Builder builder =
+                  new SpeechPipeline.Builder()
+                        .useProfile(profileClass.getCanonicalName());
+
+            List<String> stages = (List<String>) stageField.get(builder);
+
+            for (String stageName : stages) {
+                try {
+                    SpeechProcessor processor = (SpeechProcessor) Class
+                          .forName(stageName)
+                          .getConstructor(SpeechConfig.class)
+                          .newInstance(new Object[]{config});
+                } catch (ClassNotFoundException e) {
+                    // we're checking for typos in the fully qualified stage
+                    // names here, so this is the only error we care about
+                    fail("stage " + stageName + " not found for profile " +
+                          profileClass);
+                } catch (Exception | Error e) {
+                    // various errors are expected because
+                    // this test doesn't provide a proper runtime environment
+                    // or configuration for the stages,
+                    // so do nothing here
+                }
+            }
         }
 
         // The implicated class requires a config property

@@ -40,7 +40,7 @@ public class PushToTalkSpokestackASR implements PipelineProfile {
         stages.add("io.spokestack.spokestack.webrtc.VoiceActivityDetector");
         stages.add("io.spokestack.spokestack.ActivationTimeout");
         stages.add(
-              "io.spokestack.spokestack.android.SpokestackCloudRecognizer");
+              "io.spokestack.spokestack.asr.SpokestackCloudRecognizer");
 
         return builder
               .setInputClass("io.spokestack.spokestack.android.MicrophoneInput")
