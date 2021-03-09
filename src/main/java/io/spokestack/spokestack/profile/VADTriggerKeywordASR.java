@@ -8,7 +8,33 @@ import java.util.List;
 
 /**
  * A speech pipeline profile that uses voice activity detection to activate
- * ASR based on keyword detection.
+ * ASR based on keyword detection. In other words, any speech will cause the
+ * pipeline to activate, and {@code KeywordRecognizer} acts as the ASR
+ * component, only transcribing utterances contained in its vocabulary.
+ *
+ * <p>
+ * The activation period ends either:
+ *
+ * <ul>
+ *   <li>
+ *      when speech stops, as determined by {@code VoiceActivityDetector}'s
+ *      configuration, or
+ *   </li>
+ *   <li>
+ *      when the activation period exceeds the timeout configured in
+ *      {@code ActivationTimeout}
+ *   </li>
+ * </ul>
+ *
+ * <p>
+ * If no valid keyword is detected during the activation period, a timeout
+ * event will be dispatched.
+ * </p>
+ *
+ * <p>
+ * The components in this profile process speech entirely on the local device;
+ * no cloud components are involved.
+ * </p>
  *
  * <p>
  * The keyword detector requires extra configuration, which must be
