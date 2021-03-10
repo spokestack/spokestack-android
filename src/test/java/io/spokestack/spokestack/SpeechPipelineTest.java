@@ -29,6 +29,7 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
           io.spokestack.spokestack.profile.VADTriggerAndroidASR.class,
           io.spokestack.spokestack.profile.VADTriggerAzureASR.class,
           io.spokestack.spokestack.profile.VADTriggerGoogleASR.class,
+          io.spokestack.spokestack.profile.VADTriggerKeywordASR.class,
           io.spokestack.spokestack.profile.VADTriggerSpokestackASR.class
     );
 
