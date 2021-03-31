@@ -118,6 +118,17 @@ public class SpokestackTest {
     }
 
     @Test
+    public void testPipelineProfile() {
+        // this only tests that the convenience method properly dispatches to
+        // the pipeline version, failing with an invalid profile;
+        // the valid profiles are tested by the speech pipeline test
+        assertThrows(IllegalArgumentException.class, () ->
+              new Spokestack.Builder()
+                    .withPipelineProfile("io.spokestack.InvalidProfile")
+        );
+    }
+
+    @Test
     public void testNlu() throws Exception {
         TestAdapter listener = new TestAdapter();
 

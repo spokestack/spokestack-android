@@ -698,6 +698,23 @@ public final class Spokestack extends SpokestackAdapter
         }
 
         /**
+         * Uses a {@link PipelineProfile} to configure the speech pipeline,
+         * returning the modified builder. Subsequent calls to {@code
+         * withPipelineProfile} or {@code setProperty} can override
+         * configuration set by a profile.
+         *
+         * @param profileClass class name of the profile to apply.
+         * @return the updated builder
+         * @throws IllegalArgumentException if the specified profile does not
+         *                                  exist
+         */
+        public Builder withPipelineProfile(String profileClass)
+              throws IllegalArgumentException {
+            this.pipelineBuilder.useProfile(profileClass);
+            return this;
+        }
+
+        /**
          * Sets a configuration value.
          *
          * @param key   Configuration property name
@@ -772,9 +789,7 @@ public final class Spokestack extends SpokestackAdapter
          * Signal that Spokestack's TensorFlow Lite wakeword detector should not
          * be used. This is equivalent to calling
          * <pre>
-         * builder
-         *     .getPipelineBuilder()
-         *     .useProfile(
+         * builder.withPipelineProfile(
          *         "io.spokestack.spokestack.profile.PushToTalkAndroidASR");
          * </pre>
          * <p>
@@ -787,8 +802,7 @@ public final class Spokestack extends SpokestackAdapter
         public Builder withoutWakeword() {
             String profileClass =
                   "io.spokestack.spokestack.profile.PushToTalkAndroidASR";
-            this.pipelineBuilder.useProfile(profileClass);
-            return this;
+            return this.withPipelineProfile(profileClass);
         }
 
         /**
