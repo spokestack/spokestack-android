@@ -2,6 +2,7 @@ package io.spokestack.spokestack.asr;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import androidx.annotation.NonNull;
 import org.junit.Test;
@@ -74,6 +75,37 @@ public class KeywordRecognizerTest {
 
         // close coverage
         new KeywordRecognizer(config, loader).close();
+    }
+
+    @Test
+    public void testMetadataParsing() {
+        final SpeechConfig config = new SpeechConfig();
+
+        final TensorflowModel.Loader loader = spy(TensorflowModel.Loader.class);
+        final TestModel filterModel = mock(TestModel.class);
+        final TestModel detectModel = mock(TestModel.class);
+        doReturn(filterModel).doReturn(detectModel).when(loader).load();
+
+        // invalid config
+        config
+              .put("sample-rate", 16000)
+              .put("frame-width", 10)
+              .put("keyword-filter-path", "filter-path")
+              .put("keyword-encode-path", "encode-path")
+              .put("keyword-detect-path", "detect-path")
+              .put("keyword-metadata-path", "invalid.json");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new KeywordRecognizer(config, loader);
+        });
+
+        // valid metadata file
+        config.put("keyword-metadata-path", "src/test/resources/keyword.json");
+        KeywordRecognizer recognizer = new KeywordRecognizer(config, loader);
+
+        // test parsing results
+        String[] classes = recognizer.getClassNames(config);
+        assertTrue(Arrays.equals(classes, new String[]{"up", "down"}));
     }
 
     @Test

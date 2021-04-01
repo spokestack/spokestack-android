@@ -1,5 +1,7 @@
 package io.spokestack.spokestack.asr;
 
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 import io.spokestack.spokestack.RingBuffer;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechContext;
@@ -7,6 +9,8 @@ import io.spokestack.spokestack.SpeechProcessor;
 import io.spokestack.spokestack.tensorflow.TensorflowModel;
 import org.jtransforms.fft.FloatFFT_1D;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -64,12 +68,6 @@ import java.nio.ByteBuffer;
  * </p>
  * <ul>
  *   <li>
- *      <b>keyword-classes</b> (string, required): comma-separated ordered
- *      list of class names for the keywords; the name corresponding to the
- *      most likely class will be returned in the transcript field when the
- *      recognition event is raised
- *   </li>
- *   <li>
  *      <b>keyword-filter-path</b> (string, required): file system path to the
  *      "filter" Tensorflow-Lite model, which is used to calculate a mel
  *      spectrogram frame from the linear STFT; its inputs should be shaped
@@ -86,6 +84,18 @@ import java.nio.ByteBuffer;
  *      <b>keyword-detect-path</b> (string, required): file system path to the
  *      "detect" Tensorflow-Lite model; its inputs should be shaped
  *      [encode-length, encode-width], and its outputs [len(classes)]
+ *   </li>
+ *   <li>
+ *      <b>keyword-metadata-path</b> (string): file system path to the
+ *      keyword model's metadata JSON file containing its classes.
+ *      Required if {@code keyword-classes} is not supplied.
+ *   </li>
+ *   <li>
+ *      <b>keyword-classes</b> (string): comma-separated ordered
+ *      list of class names for the keywords; the name corresponding to the
+ *      most likely class will be returned in the transcript field when the
+ *      recognition event is raised. Required if {@code keyword-metadata-path}
+ *      is not supplied.
  *   </li>
  *   <li>
  *      <b>keyword-pre-emphasis</b> (double): the pre-emphasis filter weight
@@ -206,7 +216,7 @@ public final class KeywordRecognizer implements SpeechProcessor {
             SpeechConfig config,
             TensorflowModel.Loader loader) {
         // parse the list of keyword class names
-        this.classes = config.getString("keyword-classes").split(",");
+        this.classes = getClassNames(config);
         if (this.classes.length < 1)
             throw new IllegalArgumentException("keyword-classes");
 
@@ -277,6 +287,29 @@ public final class KeywordRecognizer implements SpeechProcessor {
         // configure the keyword probability threshold
         this.threshold = (float) config
             .getDouble("keyword-threshold", (double) DEFAULT_THRESHOLD);
+    }
+
+    String[] getClassNames(SpeechConfig config) {
+        String[] classNames;
+        if (config.containsKey("keyword-metadata-path")) {
+            String path = config.getString("keyword-metadata-path");
+            KeywordMetadata metadata = parseMetadata(path);
+            classNames = metadata.getClassNames();
+        } else {
+            classNames = config.getString("keyword-classes").split(",");
+        }
+        return classNames;
+    }
+
+    private KeywordMetadata parseMetadata(String path) {
+        try (FileReader fileReader = new FileReader(path);
+             JsonReader reader = new JsonReader(fileReader)) {
+            Gson gson = new Gson();
+            return gson.fromJson(reader, KeywordMetadata.class);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(
+                  "keyword_metadata_parse_error", e);
+        }
     }
 
     /**
