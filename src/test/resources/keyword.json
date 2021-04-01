@@ -1,0 +1,21 @@
+{
+  "classes": [{
+    "name": "up",
+    "utterances": [{
+      "id": "3808cd80-9f1e-4336-afce-676c194f819a",
+      "text": "up"
+    }, {
+      "id": "18d8f641-6bf7-45b5-953b-c14086dd0768",
+      "text": "pup"
+    }]
+  }, {
+    "name": "down",
+    "utterances": [{
+      "id": "d368e2a8-1c8b-4c13-8ed8-03d98c5ee8cc",
+      "text": "down"
+    }]
+  }],
+  "name": "Test",
+  "type": "keyword",
+  "revision": "24d0c03a-13bf-40cc-86a3-bcc64d1b6004"
+}
