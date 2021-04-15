@@ -90,6 +90,22 @@ public class DialogueManagerTest {
 
         manager.load("newState");
         assertEquals("newState", manager.dump());
+
+        // finalize a prompt
+        Prompt prompt = new Prompt.Builder("id", "{{text}}")
+              .withVoice("{{voice}}")
+              .withProposal(new Proposal())
+              .endsConversation()
+              .build();
+
+        conversationData.set("text", "123");
+        conversationData.set("voice", "one two three");
+
+        FinalizedPrompt finalized = prompt.finalizePrompt(conversationData);
+
+        assertEquals("123", finalized.getText());
+        assertEquals("one two three", finalized.getVoice());
+        assertTrue(finalized.endsConversation());
     }
 
     @Test

@@ -134,6 +134,17 @@ public final class DialogueManager implements Callback<NLUResult> {
     }
 
     /**
+     * Finalize a prompt, interpolating template strings using the current
+     * conversation data store.
+     *
+     * @param prompt The prompt to be finalized.
+     * @return The finalized prompt.
+     */
+    public FinalizedPrompt finalizePrompt(Prompt prompt) {
+        return prompt.finalizePrompt(this.dataStore);
+    }
+
+    /**
      * Dump the dialogue policy's current state to the currently registered data
      * store. This can be used in conjunction with {@link #load(String) load()}
      * to resume a dialogue in progress in the next app session.
@@ -269,6 +280,15 @@ public final class DialogueManager implements Callback<NLUResult> {
         public Builder withDialoguePolicy(String policyClass) {
             setProperty("dialogue-policy-class", policyClass);
             return this;
+        }
+
+        /**
+         * @return whether this builder has a dialogue policy enabled via
+         * class or JSON file.
+         */
+        public boolean hasPolicy() {
+            return this.config.containsKey("dialogue-policy-file")
+                  || this.config.containsKey("dialogye-policy-class");
         }
 
         /**

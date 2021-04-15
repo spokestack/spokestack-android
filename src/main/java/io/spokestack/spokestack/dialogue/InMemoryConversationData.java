@@ -6,6 +6,11 @@ import java.util.Map;
 /**
  * A simple data store for conversation data that resides in memory and lasts
  * only as long as the dialogue manager holding it.
+ *
+ * <p>
+ * Formats values for both display and synthesis using {@link
+ * String#valueOf(Object)}.
+ * </p>
  */
 public class InMemoryConversationData implements ConversationData {
 

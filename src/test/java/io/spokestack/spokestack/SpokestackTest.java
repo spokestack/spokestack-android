@@ -2,6 +2,11 @@ package io.spokestack.spokestack;
 
 import android.content.Context;
 import android.os.SystemClock;
+import io.spokestack.spokestack.dialogue.DialogueEvent;
+import io.spokestack.spokestack.dialogue.DialogueManager;
+import io.spokestack.spokestack.dialogue.FinalizedPrompt;
+import io.spokestack.spokestack.dialogue.Prompt;
+import io.spokestack.spokestack.dialogue.Proposal;
 import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.nlu.tensorflow.NLUTestUtils;
@@ -21,6 +26,8 @@ import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -257,6 +264,48 @@ public class SpokestackTest {
     }
 
     @Test
+    public void testDialogue() throws Exception {
+        // just test convenience methods for now
+        TestAdapter listener = new TestAdapter();
+
+        SpeechPipeline.Builder pipelineBuilder = new SpeechPipeline.Builder();
+
+        Spokestack.Builder builder = new Spokestack
+              .Builder(pipelineBuilder, mockTts())
+              .withoutWakeword()
+              .addListener(listener);
+
+        // explicitly include dialogue management
+        builder.getDialogueBuilder()
+              .withPolicyFile("src/test/resources/dialogue.json");
+
+        builder = mockAndroidComponents(builder);
+        Spokestack spokestack = new Spokestack(builder, mockNlu());
+
+        listener.setSpokestack(spokestack);
+        DialogueManager dialogueManager = spokestack.getDialogueManager();
+
+        spokestack.putConversationData("key", "value");
+        Object storedValue = dialogueManager.getDataStore().get("key");
+        assertEquals("value", String.valueOf(storedValue));
+
+        Prompt prompt = new Prompt.Builder("id", "{{key}}")
+              .withVoice("{{voice}}")
+              .withProposal(new Proposal())
+              .endsConversation()
+              .build();
+
+        spokestack.putConversationData("voice", "one two three");
+
+        FinalizedPrompt finalized = spokestack.finalizePrompt(prompt);
+
+        assertNotNull(finalized);
+        assertEquals("value", finalized.getText());
+        assertEquals("one two three", finalized.getVoice());
+        assertTrue(finalized.endsConversation());
+    }
+
+    @Test
     public void testListenerManagement() throws Exception {
         mockStatic(SystemClock.class);
         TestAdapter listener = new TestAdapter();
@@ -420,6 +469,8 @@ public class SpokestackTest {
         SpeechContext speechContext;
         Spokestack spokestack;
         LinkedBlockingQueue<NLUResult> nluResults = new LinkedBlockingQueue<>();
+        LinkedBlockingQueue<DialogueEvent> dialogueEvents =
+              new LinkedBlockingQueue<>();
         LinkedBlockingQueue<TTSEvent> ttsEvents = new LinkedBlockingQueue<>();
         LinkedBlockingQueue<SpeechContext.Event> speechEvents =
               new LinkedBlockingQueue<>();
@@ -434,6 +485,7 @@ public class SpokestackTest {
         public void clear() {
             this.speechEvents.clear();
             this.nluResults.clear();
+            this.dialogueEvents.clear();
             this.ttsEvents.clear();
             this.traces.clear();
             this.errors.clear();
@@ -459,6 +511,11 @@ public class SpokestackTest {
                       new SynthesisRequest.Builder(result.getIntent()).build();
                 this.spokestack.synthesize(request);
             }
+        }
+
+        @Override
+        public void onDialogueEvent(@NotNull DialogueEvent event) {
+            this.dialogueEvents.add(event);
         }
 
         @Override

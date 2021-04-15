@@ -2,6 +2,7 @@ package io.spokestack.spokestack.dialogue;
 
 import androidx.annotation.NonNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -125,6 +126,32 @@ public final class Prompt {
      */
     public boolean endsConversation() {
         return endsConversation;
+    }
+
+    /**
+     * Finalize this prompt, filling in all placeholders with data from the
+     * conversation's data store.
+     *
+     * @param dataStore The current state of the conversation data to use for
+     *                  filling placeholders in prompts.
+     * @return A finalized version of this prompt ready for display/synthesis.
+     */
+    public FinalizedPrompt finalizePrompt(ConversationData dataStore) {
+        List<FinalizedPrompt> finalReprompts = new ArrayList<>();
+        for (Prompt prompt : this.reprompts) {
+            finalReprompts.add(prompt.finalizePrompt(dataStore));
+        }
+
+        FinalizedPrompt.Builder builder = new FinalizedPrompt.Builder(
+              this.id, this.getText(dataStore))
+              .withVoice(this.getVoice(dataStore))
+              .withProposal(this.proposal)
+              .withReprompts(finalReprompts);
+
+        if (this.endsConversation) {
+            builder.endsConversation();
+        }
+        return builder.build();
     }
 
     @Override

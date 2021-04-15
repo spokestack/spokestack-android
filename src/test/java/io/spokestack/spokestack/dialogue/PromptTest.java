@@ -53,4 +53,23 @@ public class PromptTest {
         assertEquals("one two three", reprompt.getVoice(data));
         assertTrue(reprompt.endsConversation());
     }
+
+    @Test
+    public void testFinalization() {
+        ConversationData data = new InMemoryConversationData();
+        Prompt prompt = new Prompt.Builder("id", "{{text}}")
+              .withVoice("{{voice}}")
+              .withProposal(new Proposal())
+              .endsConversation()
+              .build();
+
+        data.set("text", "123");
+        data.set("voice", "one two three");
+
+        FinalizedPrompt finalized = prompt.finalizePrompt(data);
+
+        assertEquals("123", finalized.getText());
+        assertEquals("one two three", finalized.getVoice());
+        assertTrue(finalized.endsConversation());
+    }
 }

@@ -2,6 +2,8 @@ package io.spokestack.spokestack;
 
 import android.content.Context;
 import io.spokestack.spokestack.dialogue.DialogueManager;
+import io.spokestack.spokestack.dialogue.FinalizedPrompt;
+import io.spokestack.spokestack.dialogue.Prompt;
 import io.spokestack.spokestack.nlu.NLUManager;
 import io.spokestack.spokestack.nlu.NLUResult;
 import io.spokestack.spokestack.nlu.tensorflow.parsers.DigitsParser;
@@ -145,6 +147,12 @@ public final class Spokestack extends SpokestackAdapter
             this.tts = builder.getTtsBuilder()
                   .addTTSListener(this)
                   .build();
+        }
+
+        if (builder.dialogueBuilder.hasPolicy()
+              || builder.speechConfig.containsKey("dialogue-policy-file")
+              || builder.speechConfig.containsKey("dialogue-policy-class")) {
+            this.dialogueManager = builder.dialogueBuilder.build();
         }
     }
 
@@ -346,6 +354,55 @@ public final class Spokestack extends SpokestackAdapter
     public void stopPlayback() {
         if (this.tts != null) {
             this.tts.stopPlayback();
+        }
+    }
+
+    // dialogue
+
+    /**
+     * @return The dialogue manager currently in use.
+     */
+    public DialogueManager getDialogueManager() {
+        return dialogueManager;
+    }
+
+    /**
+     * Finalize a prompt, interpolating template strings using the current
+     * conversation data store.
+     *
+     * <p>
+     * This method can only be used if a dialogue manager is active.
+     * </p>
+     *
+     * @param prompt The prompt to be finalized.
+     * @return The finalized prompt.
+     *
+     * @see DialogueManager#finalizePrompt(Prompt)
+     * @see io.spokestack.spokestack.dialogue.ConversationData
+     */
+    public FinalizedPrompt finalizePrompt(Prompt prompt) {
+        if (this.dialogueManager != null) {
+            return dialogueManager.finalizePrompt(prompt);
+        }
+        return null;
+    }
+
+    /**
+     * Stores an object in the conversation data store for use in interpolating
+     * system prompts.
+     *
+     * <p>
+     * This method can only be used if a dialogue manager is active.
+     * </p>
+     *
+     * @param key The name of the object to store.
+     * @param value The object to store.
+     *
+     * @see io.spokestack.spokestack.dialogue.ConversationData#set(String, Object)
+     */
+    public void putConversationData(String key, Object value) {
+        if (this.dialogueManager != null) {
+            dialogueManager.getDataStore().set(key, value);
         }
     }
 
@@ -948,7 +1005,9 @@ public final class Spokestack extends SpokestackAdapter
                           + "TTSManager.Builder.setAndroidContext()");
                 }
             }
-            if (!this.speechConfig.containsKey("dialogue-policy-file")
+
+            if (!this.dialogueBuilder.hasPolicy()
+                  && !this.speechConfig.containsKey("dialogue-policy-file")
                   && !this.speechConfig.containsKey("dialogue-policy-class")) {
                 this.useDialogue = false;
             }
