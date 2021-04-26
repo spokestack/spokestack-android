@@ -1,11 +1,14 @@
 package io.spokestack.spokestack.tts;
 
 import android.content.Context;
+import androidx.annotation.NonNull;
 import io.spokestack.spokestack.SpeechConfig;
 import io.spokestack.spokestack.SpeechOutput;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 
 /**
  * Manager for text-to-speech output in Spokestack.
@@ -52,11 +55,14 @@ import java.util.List;
  * reallocate a manager's resources.
  * </p>
  */
-public final class TTSManager implements AutoCloseable {
+public final class TTSManager implements AutoCloseable, TTSListener {
     private final String ttsServiceClass;
     private final String outputClass;
     private final SpeechConfig config;
     private final List<TTSListener> listeners = new ArrayList<>();
+    private final Queue<SynthesisRequest> requests = new ArrayDeque<>();
+    private final Object lock = new Object();
+    private boolean synthesizing = false;
     private TTSService ttsService;
     private SpeechOutput output;
     private Context appContext;
@@ -104,7 +110,10 @@ public final class TTSManager implements AutoCloseable {
         if (this.ttsService == null) {
             throw new IllegalStateException("TTS closed; call prepare()");
         }
-        this.ttsService.synthesize(request);
+        synchronized (lock) {
+            this.requests.add(request);
+        }
+        processQueue();
     }
 
     /**
@@ -113,6 +122,10 @@ public final class TTSManager implements AutoCloseable {
     public void stopPlayback() {
         if (this.output != null) {
             this.output.stopPlayback();
+        }
+        synchronized (lock) {
+            this.requests.clear();
+            this.synthesizing = false;
         }
     }
 
@@ -183,6 +196,7 @@ public final class TTSManager implements AutoCloseable {
                 this.output.setAndroidContext(appContext);
                 this.ttsService.addListener(this.output);
             }
+            this.ttsService.addListener(this);
             for (TTSListener listener : this.listeners) {
                 this.ttsService.addListener(listener);
                 if (this.output != null) {
@@ -233,6 +247,35 @@ public final class TTSManager implements AutoCloseable {
         event.setError(e);
         for (TTSListener listener : this.listeners) {
             listener.eventReceived(event);
+        }
+    }
+
+    @Override
+    public void eventReceived(@NonNull TTSEvent event) {
+        switch (event.type) {
+            case AUDIO_AVAILABLE:
+            case ERROR:
+                this.synthesizing = false;
+                processQueue();
+            default:
+                break;
+        }
+    }
+
+    private void processQueue() {
+        SynthesisRequest request = null;
+        if (!this.synthesizing) {
+            synchronized (lock) {
+                if (!this.synthesizing) {
+                    request = this.requests.poll();
+                    if (request != null) {
+                        this.synthesizing = true;
+                    }
+                }
+            }
+        }
+        if (request != null) {
+            this.ttsService.synthesize(request);
         }
     }
 

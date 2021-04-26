@@ -2,6 +2,7 @@ package io.spokestack.spokestack.tts;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * <p>
@@ -164,7 +165,7 @@ public class SynthesisRequest {
         private CharSequence textToSynthesize;
         private Mode synthesisMode = Mode.TEXT;
         private String ttsVoice = "demo-male";
-        private Map<String, String> metadata = new HashMap<>();
+        private HashMap<String, String> metadata = new HashMap<>();
 
         /**
          * Create a new {@code TTSInput} builder with the only required data,
@@ -208,7 +209,7 @@ public class SynthesisRequest {
          * @return The current builder.
          */
         public Builder withData(Map<String, String> requestData) {
-            this.metadata = requestData;
+            this.metadata.putAll(requestData);
             return this;
         }
 
@@ -220,6 +221,11 @@ public class SynthesisRequest {
          * builder.
          */
         public SynthesisRequest build() {
+            // add a random request ID if one doesn't exist
+            if (!metadata.containsKey("id")) {
+                UUID id = UUID.randomUUID();
+                metadata.put("id", id.toString());
+            }
             return new SynthesisRequest(textToSynthesize, synthesisMode,
                   ttsVoice, metadata);
         }
