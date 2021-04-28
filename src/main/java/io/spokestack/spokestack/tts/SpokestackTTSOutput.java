@@ -184,8 +184,8 @@ public class SpokestackTTSOutput extends SpeechOutput
             if (this.mediaPlayer != null) {
                 mediaPlayer.stop(true);
             }
+            resetPlayerState();
         });
-        resetPlayerState();
     }
 
     @NotNull
