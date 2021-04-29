@@ -11,27 +11,21 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.Buffer;
-import okio.BufferedSource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class SpokestackTTSClientTest {
     private Response invalidResponse;
-    private static final String AUDIO_URL =
-          "https://spokestack.io/tts/test.mp3";
     private static final Gson gson = new Gson();
     private OkHttpClient httpClient;
 
@@ -223,14 +217,6 @@ public class SpokestackTTSClientTest {
      */
     private class FakeResponder implements Interceptor {
 
-        private static final String TEXT_JSON =
-              "{\"data\": {\"synthesizeText\": {\"url\": \""
-                    + AUDIO_URL + "\"}}}";
-
-        private static final String ERROR_JSON =
-              "{\"data\": null, "
-                    + "\"errors\": [{\"message\": \"invalid_ssml\" }]}";
-
         @NotNull
         @Override
         public Response intercept(@NotNull Chain chain) throws IOException {
@@ -241,30 +227,11 @@ public class SpokestackTTSClientTest {
             }
             if (hasInvalidBody(request)) {
                 // simulate a GraphQL error, which are wrapped in HTTP 200s
-                return createResponse(request, ERROR_JSON);
+                return TTSTestUtils.createHttpResponse(request,
+                      TTSTestUtils.ERROR_JSON);
             }
-            return createResponse(request, TEXT_JSON);
-        }
-
-        private Response createResponse(Request request, String body)
-              throws IOException {
-            ResponseBody responseBody = mock(ResponseBody.class);
-            BufferedSource source = mock(BufferedSource.class);
-            when(source.readString(any(Charset.class))).thenReturn(body);
-            when(responseBody.source()).thenReturn(source);
-            Response.Builder builder = new Response.Builder()
-                  .request(request)
-                  .protocol(okhttp3.Protocol.HTTP_1_1)
-                  .code(200)
-                  .message("OK")
-                  .body(responseBody);
-
-            String requestId = request.header("x-request-id");
-            if (requestId != null) {
-                builder.header("x-request-id", requestId);
-            }
-
-            return builder.build();
+            return TTSTestUtils.createHttpResponse(request,
+                  TTSTestUtils.TEXT_JSON);
         }
 
         private boolean hasInvalidId(Request request) {

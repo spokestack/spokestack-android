@@ -160,6 +160,7 @@ public class SpokestackTTSServiceTest {
         public Response intercept(@NotNull Chain chain) throws IOException {
             Request request = chain.request();
             RequestBody body = request.body();
+            String requestId = request.header("x-request-id");
             Buffer buffer = new Buffer();
             body.writeTo(buffer);
             Map json = gson.fromJson(buffer.readUtf8(), Map.class);
@@ -169,10 +170,11 @@ public class SpokestackTTSServiceTest {
                 throw new IOException("test exc");
             }
 
-            return createResponse(text == null);
+            return createResponse(requestId, text == null);
         }
 
-        private Response createResponse(boolean isSsml) throws IOException {
+        private Response createResponse(String requestId,
+                                        boolean isSsml) throws IOException {
             Request request = new okhttp3.Request.Builder()
                   .url("http://example.com/")
                   .build();
@@ -185,6 +187,7 @@ public class SpokestackTTSServiceTest {
             when(body.source()).thenReturn(responseSource);
             return new Response.Builder()
                   .request(request)
+                  .header("x-request-id", requestId)
                   .protocol(okhttp3.Protocol.HTTP_1_1)
                   .code(200)
                   .message("OK")

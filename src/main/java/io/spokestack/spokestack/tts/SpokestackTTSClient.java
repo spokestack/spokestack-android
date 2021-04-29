@@ -107,11 +107,7 @@ public final class SpokestackTTSClient {
      *                and any additional metadata.
      */
     public void synthesize(SynthesisRequest request) {
-        HashMap<String, String> headers = new HashMap<>();
         String requestId = request.metadata.get("id");
-        if (requestId != null) {
-            headers.put("x-request-id", requestId);
-        }
 
         HashMap<String, String> variables = new HashMap<>();
         String param = "text";
@@ -135,12 +131,16 @@ public final class SpokestackTTSClient {
         }
         variables.put("voice", request.voice);
         String queryString = String.format(GRAPHQL_QUERY, param, method);
-        postSpeech(headers, queryString, variables);
+        postSpeech(requestId, queryString, variables);
     }
 
-    private void postSpeech(Map<String, String> headers,
+    private void postSpeech(String requestId,
                             String queryString,
                             Map<String, String> variables) {
+        HashMap<String, String> headers = new HashMap<>();
+        if (requestId != null) {
+            headers.put("x-request-id", requestId);
+        }
         if (this.ttsApiId == null) {
             ttsCallback.onError("API ID not provided");
             return;
