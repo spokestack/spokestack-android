@@ -177,6 +177,9 @@ public final class WakewordTrigger implements SpeechProcessor {
     // voice activity detection
     private boolean isSpeech;
 
+    // pipeline timeout sensitivity
+    private boolean isActive;
+
     // audio signal normalization and pre-emphasis
     private final float rmsTarget;
     private final float rmsAlpha;
@@ -338,19 +341,21 @@ public final class WakewordTrigger implements SpeechProcessor {
             throws Exception {
         // detect speech deactivation edges for wakeword deactivation
         boolean vadFall = this.isSpeech && !context.isSpeech();
+        boolean deactivate = this.isActive && !context.isActive();
         this.isSpeech = context.isSpeech();
+        this.isActive = context.isActive();
+
+        // always reset detector state on vad or pipeline deactivation
+        if (vadFall || deactivate) {
+            if (vadFall && !context.isActive())
+                trace(context);
+            reset();
+        }
 
         if (!context.isActive()) {
             // run the current frame through the detector pipeline
             // activate if a keyword phrase was detected
             sample(context, buffer);
-        }
-
-        // always reset detector state on a vad deactivation
-        if (vadFall) {
-            if (!context.isActive())
-                trace(context);
-            reset();
         }
     }
 
