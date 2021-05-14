@@ -82,7 +82,7 @@ public class WakewordTriggerTest {
         verify(env.encode, never()).run();
         verify(env.detect, never()).run();
 
-        assertEquals(null, env.event);
+        assertNull(env.event);
         assertFalse(env.context.isActive());
     }
 
@@ -99,7 +99,7 @@ public class WakewordTriggerTest {
         verify(env.encode, atLeast(1)).run();
         verify(env.detect, atLeast(1)).run();
 
-        assertEquals(null, env.event);
+        assertNull(env.event);
         assertFalse(env.context.isActive());
     }
 
@@ -115,7 +115,7 @@ public class WakewordTriggerTest {
         env.context.setSpeech(false);
         env.process();
 
-        assertEquals(null, env.event);
+        assertNull(env.event);
         assertFalse(env.context.isActive());
     }
 
@@ -168,6 +168,60 @@ public class WakewordTriggerTest {
     }
 
     @Test
+    public void testVadReset() throws Exception {
+        // verify that VAD-driven deactivation resets internal state
+        TestEnv env = new TestEnv(testConfig());
+
+        env.context.setSpeech(true);
+        env.detect.setOutputs(0);
+        env.process();
+
+        env.detect.setOutputs(1);
+        env.process();
+
+        assertEquals(SpeechContext.Event.ACTIVATE, env.event);
+        assertTrue(env.context.isActive());
+
+        env.context.setSpeech(false);
+        env.event = null;
+        env.detect.setOutputs(0);
+        env.process();
+
+        // no new activate event should be sent
+        assertNull(env.event);
+    }
+
+    @Test
+    public void testDeactivateReset() throws Exception {
+        // verify that context deactivation resets internal state
+        // increase the window size to ensure that it takes more than one frame
+        // to fill the sample buffer
+        SpeechConfig config = testConfig().put("fft-window-size", 320);
+        TestEnv env = new TestEnv(config);
+
+        env.context.setSpeech(true);
+        env.detect.setOutputs(0);
+        env.process();
+
+        env.detect.setOutputs(1);
+        // process twice to ensure the sample window is full
+        env.process();
+        env.process();
+
+        assertEquals(SpeechContext.Event.ACTIVATE, env.event);
+        assertTrue(env.context.isActive());
+
+        env.context.setActive(false);
+        env.event = null;
+        // a reset clears the sample window; if it's not cleared,
+        // a new activate event will be sent for the next frame
+        env.process();
+
+        // no new activate event should be sent
+        assertNull(env.event);
+    }
+
+    @Test
     public void testTracing() throws Exception {
         // exercise trace events on activation
         TestEnv env = new TestEnv(testConfig()
@@ -180,7 +234,7 @@ public class WakewordTriggerTest {
         env.detect.setOutputs(1);
         env.process();
 
-        assertTrue(env.context.getMessage() != null);
+        assertNotNull(env.context.getMessage());
     }
 
     public SpeechConfig testConfig() {
