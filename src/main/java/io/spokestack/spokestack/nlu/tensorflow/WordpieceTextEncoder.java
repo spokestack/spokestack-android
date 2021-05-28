@@ -89,8 +89,11 @@ final class WordpieceTextEncoder implements TextEncoder {
     @Override
     public int encodeSingle(String token) {
         ensureReady();
-        return this.vocabulary.getOrDefault(token,
-              this.vocabulary.get(UNKNOWN));
+        Integer tokenId = this.vocabulary.get(token);
+        if (tokenId == null) {
+            tokenId = this.vocabulary.get(UNKNOWN);
+        }
+        return tokenId;
     }
 
     @Override
