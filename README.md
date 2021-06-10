@@ -32,32 +32,57 @@ For a brief introduction, read on, but for more detailed guides, see the followi
 
 ---
 
+### A Note on API Level
+
+The minimum Android SDK version listed in Spokestack's manifest is 8 because that's all you should need to run wake word detection and speech recognition. To use other features, it's best to target at least API level 21.
+
+If you include ExoPlayer for TTS playback (see below), you might have trouble running on versions of Android older than this. If you run into this problem, try adding the following line to your `gradle.properties` file:
+
+```none
+android.enableDexingArtifactTransform=false
+```
+
+### Dependencies
+
 Add the following to your app's `build.gradle`:
 
 ```groovy
 android {
 
-    // ...
+  // ...
 
-    compileOptions {
-          sourceCompatibility JavaVersion.VERSION_1_8
-          targetCompatibility JavaVersion.VERSION_1_8
-    }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
 }
 
 // ...
 
 dependencies {
-    // ...
+  // ...
 
-    implementation 'io.spokestack:spokestack-android:11.0.2'
+  // make sure to check the badge above or "releases" on the right for the
+  // latest version!
+  implementation 'io.spokestack:spokestack-android:11.4.2'
 
-    // for TensorFlow Lite-powered wakeword detection and/or NLU, add this one too
-    implementation 'org.tensorflow:tensorflow-lite:2.3.0'
+  // for TensorFlow Lite-powered wakeword detection and/or NLU, add this one too
+  implementation 'org.tensorflow:tensorflow-lite:2.4.0'
 
-    // for automatic playback of TTS audio
-    implementation 'androidx.media:media:1.2.0'
-    implementation 'com.google.android.exoplayer:exoplayer-core:2.11.7'
+  // for automatic playback of TTS audio
+  implementation 'androidx.media:media:1.3.0'
+  implementation 'com.google.android.exoplayer:exoplayer-core:2.14.0'
+
+  // if you plan to use Google ASR, include these
+  implementation 'com.google.cloud:google-cloud-speech:1.22.2'
+  implementation 'io.grpc:grpc-okhttp:1.28.0'
+
+  // if you plan to use Azure Speech Service, include these, and
+  // note that you'll also need to add the following to your top-level
+  // build.gradle's `repositories` block:
+  // maven { url 'https://csspeechstorage.blob.core.windows.net/maven/' }
+  implementation 'com.microsoft.cognitiveservices.speech:client-sdk:1.9.0'
+
 }
 ```
 
@@ -65,7 +90,7 @@ dependencies {
 
 See the [quickstart guide](https://www.spokestack.io/docs/Android/getting-started) for more information, but here's the 30-second version of setup:
 
-1. You'll need to list the `INTERNET` permission in your manifest and request the `RECORD_AUDIO` permission at runtime. See our [skeleton project](https://github.com/spokestack/android-skeleton) for an example of this.
+1. You'll need to request the `RECORD_AUDIO` permission at runtime. See our [skeleton project](https://github.com/spokestack/android-skeleton) for an example of this. The `INTERNET` permission is also required but is included by the library's manifest by default.
 1. Add the following code somewhere, probably in an `Activity` if you're just starting out:
 
 ```kotlin
@@ -109,6 +134,15 @@ spokestack = Spokestack.Builder()
 
 In this case, you'll still need to `start()` Spokestack as above, but you'll also want to create a button somewhere that calls `spokestack.activate()` when pressed; this starts ASR, which transcribes user speech.
 
+Alternately, you can set Spokestack to start ASR any time it detects speech by using a non-default speech pipeline profile as described in the [speech pipeline documentation](https://www.spokestack.io/docs/android/speech-pipeline#how-do-i-set-it-up). In this case you'd want the `VADTriggerAndroidASR` profile:
+
+```kotlin
+// replace
+.withoutWakeword()
+// with
+.withPipelineProfile("io.spokestack.spokestack.profile.VADTriggerAndroidASR")
+```
+
 Note also the `addListener()` line during setup. Speech processing happens continuously on a background thread, so your app needs a way to find out when the user has spoken to it. Important events are delivered via events to a subclass of `SpokestackAdapter`. Your subclass can override as many of the following event methods as you like. Choosing to not implement one won't break anything; you just won't receive those events.
 
 * `speechEvent(SpeechContext.Event, SpeechContext)`: This communicates events from the speech pipeline, including everything from notifications that ASR has been activated/deactivated to partial and complete transcripts of user speech.
@@ -126,7 +160,7 @@ As we mentioned, classification is handled automatically if NLU is enabled, so t
 * `synthesize(SynthesisRequest)`: Sends text to Spokestack's cloud TTS service to be synthesized as audio. Under the default configuration, this audio will be played automatically when available.
 
 ## Development
-Maven is used for building/deployment, and the package is hosted at JCenter.
+Maven is used for building/deployment, and the package is hosted at Maven Central.
 
 This package requires the [Android NDK](https://developer.android.com/ndk/guides/index.html)
 to be installed and the `ANDROID_HOME` and `ANDROID_NDK_HOME` variables to be
