@@ -36,7 +36,7 @@ For a brief introduction, read on, but for more detailed guides, see the followi
 
 The minimum Android SDK version listed in Spokestack's manifest is 8 because that's all you should need to run wake word detection and speech recognition. To use other features, it's best to target at least API level 21.
 
-If you include ExoPlayer for TTS playback (see below), you might have trouble running on versions of Android older than this. If you run into this problem, try adding the following line to your `gradle.properties` file:
+If you include ExoPlayer for TTS playback (see below), you might have trouble running on versions of Android older than API level 24. If you run into this problem, try adding the following line to your `gradle.properties` file:
 
 ```none
 android.enableDexingArtifactTransform=false
