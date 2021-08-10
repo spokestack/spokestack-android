@@ -52,7 +52,7 @@ import java.nio.ByteOrder;
  *      <b>frame-width</b> (integer): speech frame width, in ms
  *   </li>
  *   <li>
- *      <b>locale</b> (string): language code for speech recognition
+ *      <b>locale</b> (string): BCP-47 language code for speech recognition
  *   </li>
  *   <li>
  *      <b>azure-api-key</b> (string): API key for the Azure Speech
@@ -70,6 +70,7 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
     private PushAudioInputStream audioStream;
     private AudioConfig audioConfig;
     private boolean active;
+    private String locale;
 
     // Azure speech requires little-endian (wav-format) data, so we buffer
     // audio frames internally to avoid mutating data coming from the speech
@@ -85,6 +86,10 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
         String apiKey = speechConfig.getString("azure-api-key");
         String region = speechConfig.getString("azure-region");
         int sampleRate = speechConfig.getInteger("sample-rate");
+
+        if (speechConfig.containsKey("locale")) {
+            this.locale = speechConfig.getString("locale");
+        }
 
         if (sampleRate != 16000) {
             throw new IllegalArgumentException(
@@ -103,6 +108,11 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
               com.microsoft.cognitiveservices.speech.SpeechConfig
                     .fromSubscription(apiKey, region);
         config.setProfanity(ProfanityOption.Raw);
+
+        if (this.locale != null) {
+            config.setSpeechRecognitionLanguage(this.locale);
+        }
+
         return config;
     }
 
