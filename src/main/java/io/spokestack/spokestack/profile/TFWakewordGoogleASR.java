@@ -47,7 +47,7 @@ import java.util.List;
  *      account credentials, used to authenticate with the speech API
  *   </li>
  *   <li>
- *      <b>locale</b> (string): language code for speech recognition
+ *      <b>locale</b> (string): BCP-47 language code for speech recognition
  *   </li>
  * </ul>
  *
