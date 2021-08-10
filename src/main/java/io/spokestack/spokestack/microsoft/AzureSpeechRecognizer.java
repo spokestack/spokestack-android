@@ -97,7 +97,7 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
                         + sampleRate);
         }
 
-        this.buffer = ByteBuffer.allocateDirect(4096)
+        this.buffer = ByteBuffer.allocateDirect(1500)
               .order(ByteOrder.LITTLE_ENDIAN);
         this.msConfig = createMsConfig(apiKey, region);
     }
@@ -178,6 +178,7 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
     private void listen(SpeechRecognizer rec, SpeechContext context) {
         RecognitionListener recognitionListener =
               new RecognitionListener(context);
+        rec.recognizing.addEventListener(recognitionListener);
         rec.recognized.addEventListener(recognitionListener);
 
         CancellationListener cancellationListener =
@@ -191,7 +192,6 @@ public class AzureSpeechRecognizer implements SpeechProcessor {
                 flush();
             }
 
-            frame.rewind();
             this.buffer.put(frame);
         }
     }
