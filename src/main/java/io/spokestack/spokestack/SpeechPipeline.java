@@ -167,12 +167,14 @@ public final class SpeechPipeline implements AutoCloseable {
     }
 
     /**
-     * starts up the speech pipeline.
+     * Starts the speech pipeline. If the pipeline is already running but has
+     * been paused, it will be resumed.
      *
      * @throws Exception on configuration/startup error
      */
     public void start() throws Exception {
         if (this.running) {
+            resume();
             this.context.traceDebug(
                   "attempting to start a running pipeline; ignoring");
             return;

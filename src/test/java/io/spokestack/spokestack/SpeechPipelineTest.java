@@ -241,6 +241,14 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         pipeline.resume();
         Thread.sleep(5);
         assertTrue(FreeInput.counter > frames);
+
+        // test that start() also resumes the pipeline
+        pipeline.pause();
+        Thread.sleep(10);
+        frames = FreeInput.counter;
+        pipeline.start();
+        Thread.sleep(5);
+        assertTrue(FreeInput.counter > frames);
     }
 
     @Test
