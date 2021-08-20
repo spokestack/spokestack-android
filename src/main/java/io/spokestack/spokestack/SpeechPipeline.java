@@ -258,8 +258,13 @@ public final class SpeechPipeline implements AutoCloseable {
     /**
      * Resumes a paused speech pipeline, returning the pipeline to a passive
      * listening state.
+     *
+     * Does nothing if the pipeline has not been previously paused.
      */
     public void resume() {
+        if (!this.paused) {
+            return;
+        }
         this.paused = false;
         synchronized (lock) {
             lock.notify();
