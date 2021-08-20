@@ -223,6 +223,9 @@ public class SpeechPipelineTest implements OnSpeechEventListener {
         Thread.sleep(5);
         assertTrue(FreeInput.counter > frames);
 
+        // resume before pause doesn't cause any hangs
+        pipeline.resume();
+
         // we won't get any more frames if we're paused
         pipeline.pause();
 
