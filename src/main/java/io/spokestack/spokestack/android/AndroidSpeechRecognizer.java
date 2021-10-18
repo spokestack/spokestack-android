@@ -64,10 +64,17 @@ import java.util.ArrayList;
  * <ul>
  *   <li>
  *      <b>wake-active-min</b> (integer): the minimum length of time, in
- *      milliseconds, that the recognizer will wait for speech before timing
+ *      milliseconds, that the recognizer should wait for speech before timing
  *      out.
  *   </li>
  * </ul>
+ *
+ * <p>
+ * The {@code wake-active-min} parameter merely sets a hint for the
+ * {@code Intent} used to start recognition, and Google
+ * <a href="https://developer.android.com/reference/android/speech/RecognizerIntent#EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS">
+ * does not guarantee</a> that this hint will be honored on all devices.
+ * </p>
  */
 public class AndroidSpeechRecognizer implements SpeechProcessor {
     private final int minActive;
